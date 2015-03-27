@@ -31,4 +31,5 @@ RUN sed -i -e 's/\/opt\/couchbase:\/sbin\/nologin/\/opt\/couchbase:\/bin\/sh/' /
 
 ADD scripts/couchbase-start /usr/local/bin/
 
-ENTRYPOINT /usr/local/bin/couchbase-start
+ENTRYPOINT ["/usr/local/bin/couchbase-start"]
+
