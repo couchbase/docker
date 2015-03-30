@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"text/template"
 )
 
@@ -287,16 +288,29 @@ type DockerfileVariant struct {
 	Version string
 }
 
+func (variant DockerfileVariant) isVersion2() bool {
+	return strings.HasPrefix(variant.Version, "2")
+}
+
 // Generate the rpm package name for this variant:
 // eg: couchbase-server-enterprise-3.0.2-centos6.x86_64.rpm
 func (variant DockerfileVariant) rpmPackageName() string {
-
-	return fmt.Sprintf(
-		"%v-%v-%v-centos6.x86_64.rpm",
-		variant.Product,
-		variant.Edition,
-		variant.Version,
-	)
+	// for 2.x, leave centos out of the rpm name
+	if variant.isVersion2() {
+		return fmt.Sprintf(
+			"%v-%v_%v_x86_64.rpm",
+			variant.Product,
+			variant.Edition,
+			variant.Version,
+		)
+	} else {
+		return fmt.Sprintf(
+			"%v-%v-%v-centos6.x86_64.rpm",
+			variant.Product,
+			variant.Edition,
+			variant.Version,
+		)
+	}
 }
 
 func (variant DockerfileVariant) versionDir() string {

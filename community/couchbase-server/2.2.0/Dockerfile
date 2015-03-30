@@ -4,7 +4,7 @@ MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 
 ENV CB_VERSION		2.2.0
 ENV CB_RELEASE_URL	http://packages.couchbase.com/releases
-ENV CB_PACKAGE		couchbase-server-community-2.2.0-centos6.x86_64.rpm
+ENV CB_PACKAGE		couchbase-server-community_2.2.0_x86_64.rpm
 
 # Add couchbase binaries to PATH
 ENV PATH $PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
