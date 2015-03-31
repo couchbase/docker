@@ -119,6 +119,8 @@ func generateVariant(variant DockerfileVariant) error {
 
 func generateDockerfile(variant DockerfileVariant) error {
 
+	log.Printf("generateDockerfile called with: %v", variant)
+
 	versionDir := variant.versionDir()
 
 	// figure out output filename
