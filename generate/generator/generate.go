@@ -188,14 +188,33 @@ func deployResources(variant DockerfileVariant) error {
 }
 
 func deployReadme(variant DockerfileVariant) error {
-	srcFile := path.Join(processingRoot, "README.md")
+
+	srcDir := path.Join(
+		processingRoot,
+		"generate",
+		"resources",
+		string(variant.Product),
+	)
+
+	srcFile := path.Join(srcDir, "README.md")
 	versionDir := variant.versionDir()
 	destFile := path.Join(versionDir, "README.md")
-	return CopyFile(srcFile, destFile)
-}
+	if err := CopyFile(srcFile, destFile); err != nil {
+		return err
+	}
 
-func generateSyncGw(edition, version string) error {
+	// if this is CouchbaseServer, overrwrite the top level
+	// README with one from the generate/resources dir
+	if variant.Product == ProductServer {
+		destFile2 := path.Join(processingRoot, "README.md")
+		if err := CopyFile(srcFile, destFile2); err != nil {
+			return err
+		}
+
+	}
+
 	return nil
+
 }
 
 func versionSubdirectories(dir string) []string {
