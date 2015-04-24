@@ -199,18 +199,9 @@ func deployReadme(variant DockerfileVariant) error {
 	srcFile := path.Join(srcDir, "README.md")
 	versionDir := variant.versionDir()
 	destFile := path.Join(versionDir, "README.md")
+
 	if err := CopyFile(srcFile, destFile); err != nil {
 		return err
-	}
-
-	// if this is CouchbaseServer, overrwrite the top level
-	// README with one from the generate/resources dir
-	if variant.Product == ProductServer {
-		destFile2 := path.Join(processingRoot, "README.md")
-		if err := CopyFile(srcFile, destFile2); err != nil {
-			return err
-		}
-
 	}
 
 	return nil
