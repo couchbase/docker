@@ -10,13 +10,13 @@ This README will guide you through running Couchbase Server under Docker.
 # Common Deployment Scenarios
 
 ## Single container on single host (easy)
-                                                  
+
                                                                                       
        ┌───────────────────────┐                                                      
-       │ Host OS (eg, Ubuntu)  │                                                      
+       │   Host OS (Ubuntu)    │                                                      
        │  ┌─────────────────┐  │                                                      
-       │  │Docker Container │  │                                                      
-       │  │     Engine      │  │                                                      
+       │  │  Container OS   │  │                                                      
+       │  │    (CentOS)     │  │                                                      
        │  │  ┌───────────┐  │  │                                                      
        │  │  │ Couchbase │  │  │                                                      
        │  │  │  Server   │  │  │                                                      
@@ -25,16 +25,16 @@ This README will guide you through running Couchbase Server under Docker.
        │  └─────────────────┘  │                                                      
        │                       │                                                      
        └───────────────────────┘                                                      
-                                                                                      
+
 
 ## Multiple hosts, single container on each host (easy)
 
-                                                                                      
+
        ┌───────────────────────┐  ┌───────────────────────┐  ┌───────────────────────┐
-       │ Host OS (eg, Ubuntu)  │  │ Host OS (eg, Ubuntu)  │  │ Host OS (eg, Ubuntu)  │
+       │   Host OS (Ubuntu)    │  │   Host OS (Ubuntu)    │  │   Host OS (Ubuntu)    │
        │  ┌─────────────────┐  │  │  ┌─────────────────┐  │  │  ┌─────────────────┐  │
-       │  │Docker Container │  │  │  │Docker Container │  │  │  │Docker Container │  │
-       │  │     Engine      │  │  │  │     Engine      │  │  │  │     Engine      │  │
+       │  │  Container OS   │  │  │  │  Container OS   │  │  │  │  Container OS   │  │
+       │  │    (CentOS)     │  │  │  │    (CentOS)     │  │  │  │    (CentOS)     │  │
        │  │  ┌───────────┐  │  │  │  │  ┌───────────┐  │  │  │  │  ┌───────────┐  │  │
        │  │  │ Couchbase │  │  │  │  │  │ Couchbase │  │  │  │  │  │ Couchbase │  │  │
        │  │  │  Server   │  │  │  │  │  │  Server   │  │  │  │  │  │  Server   │  │  │
@@ -47,7 +47,7 @@ This README will guide you through running Couchbase Server under Docker.
 
 ## Running in environments with SDN (easy)
 
-Some cloud providers, such as Joyent, provide Software Defined Networking (SDN) which simplifies the networking setup required to run Couchbase Server.
+Some cloud providers, such as Amazon ECS and Joyent's Triton Container Cloud, provide Software Defined Networking (SDN) which simplifies the networking setup required to run Couchbase Server.
 
                                                                                       
        ┌─────────────────────────────────────────────────────┐                        
@@ -69,17 +69,19 @@ Some cloud providers, such as Joyent, provide Software Defined Networking (SDN) 
 ## Multiple containers per host(s) (hard)
 
                                                                                       
-       ┌──────────────────────────────────────────────────┐                           
-       │               Host OS (eg, Ubuntu)               │                           
-       │  ┌─────────────────────────────────────────────┐ │                           
-       │  │           Docker Container Engine           │ │                           
-       │  │                                             │ │                           
-       │  │  ┌───────────┐  ┌───────────┐ ┌───────────┐ │ │                           
-       │  │  │ Couchbase │  │ Couchbase │ │ Couchbase │ │ │                           
-       │  │  │  Server   │  │  Server   │ │  Server   │ │ │                           
-       │  │  └───────────┘  └───────────┘ └───────────┘ │ │                           
-       │  │                                             │ │                           
-       │  └─────────────────────────────────────────────┘ │                           
-       │                                                  │                           
-       └──────────────────────────────────────────────────┘                           
+       ┌──────────────────────────────────────────────────────────┐                   
+       │                     Host OS (Ubuntu)                     │                   
+       │                                                          │                   
+       │  ┌───────────────┐ ┌───────────────┐  ┌───────────────┐  │                   
+       │  │ Container OS  │ │ Container OS  │  │ Container OS  │  │                   
+       │  │   (CentOS)    │ │   (CentOS)    │  │   (CentOS)    │  │                   
+       │  │ ┌───────────┐ │ │ ┌───────────┐ │  │ ┌───────────┐ │  │                   
+       │  │ │ Couchbase │ │ │ │ Couchbase │ │  │ │ Couchbase │ │  │                   
+       │  │ │  Server   │ │ │ │  Server   │ │  │ │  Server   │ │  │                   
+       │  │ └───────────┘ │ │ └───────────┘ │  │ └───────────┘ │  │                   
+       │  │               │ │               │  │               │  │                   
+       │  └───────────────┘ └───────────────┘  └───────────────┘  │                   
+       │                                                          │                   
+       └──────────────────────────────────────────────────────────┘                   
+
 
