@@ -42,3 +42,6 @@ RUN mkdir -p $GOPATH && \
 
 # Add Sync Gateway launch script
 ADD scripts/sync-gw-start /usr/local/bin/
+
+# Expose ports
+EXPOSE 4984 4985
