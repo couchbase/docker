@@ -6,7 +6,7 @@
 #
 # Required Args:
 #
-# -c the commit or branch to use.  If "image" is given, will use master branch at time of docker image build.
+# -c the commit or branch to use.  If "image" is given, will use the version used at time of docker image build.
 # -g the Sync Gateway config file or URL to use.
 
 usage="./sync-gw-start -c master -g http://gist.github.com/34324/sgconf.json"
@@ -36,13 +36,13 @@ if [ -z "$commit" ] ; then
     exit 1
 fi
 
-
 # if a commit was given, we need to update to that commit and rebuild
 if [ "$commit" != "image" ] ; then
     echo "Rebuilding Sync Gateway for commit: $commit"
+    rm -rf $SGROOT
+    cd /opt
+    git clone https://github.com/couchbase/sync_gateway.git
     cd $SGROOT
-    ./clean.sh && \
-    git pull && \
     git checkout $commit && \
     git submodule update --init --recursive && \
         ./build.sh && \
