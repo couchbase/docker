@@ -51,7 +51,8 @@ In this case, the most efficient way to run your cluster in Docker is to use the
 You can access the Couchbase Server Admin Console via port 8091 on any of the hosts.
 
 In addition to being easy to set up, this is also likely to be the most performant way to deploy a Docker-based cluster as there will be no Docker-imposed networking overhead.
-
+    
+                                                                                      
        ┌───────────────────────┐  ┌───────────────────────┐  ┌───────────────────────┐
        │  Host OS (Ubuntu...)  │  │  Host OS (Ubuntu...)  │  │  Host OS (Ubuntu...)  │
        │  ┌─────────────────┐  │  │  ┌─────────────────┐  │  │  ┌─────────────────┐  │
@@ -84,7 +85,7 @@ So the `docker run` command for nodes in Joyent becomes very easy:
     docker run -d couchbase/server
 
 Just remember to also specify `-P` for one or two nodes so you can connect to port 8091 for the Admin Console.
-
+    
                                                                                       
        ┌─────────────────────────────────────────────────────┐                        
        │                     Environment                     │                        
