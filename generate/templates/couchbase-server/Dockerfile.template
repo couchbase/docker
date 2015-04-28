@@ -33,3 +33,4 @@ ADD scripts/couchbase-start /usr/local/bin/
 
 ENTRYPOINT ["/usr/local/bin/couchbase-start"]
 
+EXPOSE 8091 8092 11207 11210 11211 18091 18092
