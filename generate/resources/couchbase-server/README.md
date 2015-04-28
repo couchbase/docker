@@ -130,6 +130,12 @@ You can choose to mount `/opt/couchbase/var` from the host as you like. If you d
        │                                                          │                   
        └──────────────────────────────────────────────────────────┘                   
 
+By the way, to find out what the internal IP addresses of your containers are, use this command:
+
+    docker inspect --format '{{ .NetworkSettings.IPAddress }}' _container ID_
+
+where _container ID_ is either the hexadecimal ID string (as shown by `docker ps`) or a container name (as assigned by `docker run --name`).
+
 
 ## Multiple hosts, multiple containers per host (hard)
 
