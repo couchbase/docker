@@ -17,11 +17,6 @@ mkdir -p var/lib/couchbase \
          var/lib/moxi
 chown -R couchbase:couchbase var
 
-# Increase ulimits
-ulimit -n 40960
-ulimit -c unlimited
-ulimit -l unlimited
-
 # Start couchbase, pass -noinput so it doesn't drop us in the erlang shell
 echo "Starting Couchbase Server -- Web UI available at http://<ip>:8091"
 su - couchbase -c "/opt/couchbase/bin/couchbase-server -- -noinput"
