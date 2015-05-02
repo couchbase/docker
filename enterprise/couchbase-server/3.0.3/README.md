@@ -204,13 +204,13 @@ Resulting container architecture:
 
 **Setting up your Couchbase cluster**
 
-1. After running the last `docker run` command above, get the <container_id>.  Lets call that <node_3_container_id>
+1. After running the last `docker run` command above, get the <container_id>.  Lets call that `<node_3_container_id>`
 
-1. Get the ip address of the node 3 container by running `docker inspect --format '{{ .NetworkSettings.IPAddress }}' <node_3_container_id>`.  Lets call that <node_3_ip_addr>.
+1. Get the ip address of the node 3 container by running `docker inspect --format '{{ .NetworkSettings.IPAddress }}' <node_3_container_id>`.  Lets call that `<node_3_ip_addr>`.
 
 1. From the host, connect to http://localhost:8091 in your browser and click the "Setup" button.
 
-1. In the hostname field, enter <node_3_ip_addr>
+1. In the hostname field, enter `<node_3_ip_addr>`
 
 1. Accept all default values in the setup wizard.  Choose a password that you will remember.
 
@@ -218,9 +218,9 @@ Resulting container architecture:
 
 1. For the two remaining containers
 
-    1. Get the ip address of the container by running `docker inspect --format '{{ .NetworkSettings.IPAddress }}' <node_x_container_id>`.  Lets call that <node_x_ip_addr>
+    1. Get the ip address of the container by running `docker inspect --format '{{ .NetworkSettings.IPAddress }}' <node_x_container_id>`.  Lets call that `<node_x_ip_addr>`
 
-    1. In the Server IP Address field, use <node_x_ip_addr> 
+    1. In the Server IP Address field, use `<node_x_ip_addr>` 
 
     1. In the password field, use the password created above.
 
