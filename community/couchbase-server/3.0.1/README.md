@@ -1,6 +1,8 @@
 
 This README will guide you through running Couchbase Server under Docker.
 
+[Couchbase Server](http://en.wikipedia.org/wiki/Couchbase_Server) is an open-source, distributed (shared-nothing architecture) NoSQL document-oriented database / KV store that is optimized for interactive applications.  It can be used as a drop-in replacement for memcached, as it speaks the memcached protocol.  It has roots in both Membase (a clustered memcached) and Apache CouchDB, but is distinct from both.  
+
 # Background Information
 
 ## Networking
