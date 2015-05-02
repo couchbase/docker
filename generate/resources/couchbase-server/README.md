@@ -86,7 +86,7 @@ Start a container on each host:
 docker run -d -v ~/couchbase:/opt/couchbase/var --net=host couchbase/server
 ```
 
-You can access the Couchbase Server Admin Console via port 8091 on any of the hosts. 
+You can access the Couchbase Server Admin Console via port 8091 on any of the hosts.  When configuring Couchbase, use the host IP address.
 
 In addition to being easy to set up, this is also likely to be the most performant way to deploy a Docker-based cluster as there will be no Docker-imposed networking overhead.
 
@@ -114,15 +114,29 @@ Some cloud providers, such as:
 * Amazon ECS
 * Google Container Engine
 
-provide Software Defined Networking (SDN) which simplifies the networking setup required to run Couchbase Server.  We have experimented with Couchbase Server deployments on Joyent's Triton offering and have been very pleased with the performance and ease of use, so this section will be based on those experiences.
+all provide Software Defined Networking (SDN) which simplifies the networking setup required to run Couchbase Server.  We have experimented with Couchbase Server deployments on Joyent's Triton offering and have been very pleased with the performance and ease of use, so this section will be based on those experiences.
 
-Within Joyent, a container is itself a first-class citizen; there is no "host" for the container. This is how they achieve bare-metal speeds while keeping the advantages of containerization. Each container is given an IP on an account-wide LAN. Every container can see every other container on these internal IP addresses, so when configuring the cluster, these are the IPs you should use. The network infrastructure between containers is handled automatically and efficiently.
+Within Joyent, a container is itself a first-class citizen; there is no "host" for the container. This is how they achieve bare-metal speeds while keeping the advantages of containerization.
 
-In addition, by specifying the `-P` option to `docker run`, you can request that a container be given a public IP that is visible from the internet. You should specify this option for at least one node in your cluster so that you can access the Admin Console, Client API ports, and so on. It is not necessary or desirable to specify this for every container.
+**Networking**
 
-The Docker Volume story is also different for Joyent. As mentioned, there is no "host" for a container in Joyent. Therefore the `-v` option is not used. All storage must be inside a container. Fortunately Joyent does not use a union filesystem for its Docker layer, but rather a highly efficient ZFS implementation. Therefore there is no performance penalty to using in-container storage.
+* Each container is given an IP on an account-wide LAN.
+* Every container can see every other container on these internal IP addresses.
+* When configuring a Couchbase cluster, internal IP addresses should be used.
+* The network infrastructure between containers is handled automatically and efficiently.
+* By specifying the `-P` option to `docker run`, you can request that a container be given a public IP that is visible from the internet.  You should specify this option for at least one node in your cluster so that you can access the Admin Console, Client API ports, and so on.  It is not necessary or desirable to specify `-P` for every container.
 
-As for data persistence and keeping data around while upgrading the version of Couchbase Server in your container, Joyent does support volume links between containers. You could therefore launch two containers per node in your cluster - one simply to host the storage, and the other running Couchbase Server. This will significantly increase your Joyent cost, however. A better solution is to stick with a single container per node, and use [rolling upgrades](http://blog.couchbase.com/Couchbase-rolling-upgrades "Couchbase blog on rolling upgrades") when you wish to upgrade to a newer Couchbase Server version.
+**Volumes**
+
+* There is no "host" for a container in Joyent. Therefore the `-v` option is not used.
+* All storage must be inside a container.
+* Joyent does not use a union filesystem for its Docker layer, but rather a highly efficient ZFS implementation.
+* There is no performance penalty to using in-container storage.
+
+**Persistent data and upgrades**
+
+* Joyent does support volume links between containers. You could therefore launch two containers per node in your cluster - one simply to host the storage, and the other running Couchbase Server.  (downside: extra cost)
+* Another option is to stick with a single container per node, and use [rolling upgrades](http://blog.couchbase.com/Couchbase-rolling-upgrades "Couchbase blog on rolling upgrades") when you wish to upgrade to a newer Couchbase Server version.
 
 So the `docker run` command for nodes in Joyent becomes very easy:
 
@@ -153,9 +167,12 @@ Resulting container architecture:
 
 ## Multiple containers on a single host (medium)
 
-This deployment scenario is useful for testing out a multi-node cluster on your local workstation. We would not recommend this for a production environment. Again, the norm for a production cluster is that each node runs on dedicated hardware.
-
-Still, if you want to play around with a local cluster to watch how rebalancing, failover, and so on work, this is probably the easiest way to achieve that. Network-wise, this is effectively the same as described the Software-Defined Network section: each container is given an internal IP address by Docker, and each of these IPs is visible to all other containers running on the same host. As above, these internal IPs should be used in the Admin Console when adding new nodes to the cluster. Likewise, for external access to the admin console, you should expose port 8091 of exactly one of the containers when you start it.
+* Useful for testing out a multi-node cluster on your local workstation.
+* Not recommended for production use.  (the norm for a production cluster is that each node runs on dedicated hardware)
+* Allows you to experiment with cluster rebalancing and failover.
+* The networking is effectively the same as described the Software-Defined Network section: each container is given an internal IP address by Docker, and each of these IPs is visible to all other containers running on the same host
+* Internal IPs should be used in the Admin Console when adding new nodes to the cluster
+* For external access to the admin console, you should expose port 8091 of exactly one of the containers when you start it.
 
 You can choose to mount `/opt/couchbase/var` from the host as you like. If you do so, though, remember to give each container a separate host directory!
 
@@ -220,5 +237,7 @@ Resulting container architecture:
 └─────────────────────────────────────────┘  └─────────────────────────────────────────┘
 ```
 
-This is very difficult to achieve with Docker, because there is no native way to allow each container unrestricted access to the internal IPs of containers running on other hosts. There are software networking layers such as [Flannel](https://github.com/coreos/flannel "Flannel") and [Weave](https://github.com/weaveworks/weave "Weave"), but it is beyond the scope of this README to cover how those might be configured. This is not a particularly useful deployment scenario for either testing or production use, so we will simply suggest that you not try this.
+* Difficult to achieve with plain vanilla Docker, as there is no native way to allow each container unrestricted access to the internal IPs of containers running on other hosts.
+* There are software networking layers such as [Flannel](https://github.com/coreos/flannel "Flannel") and [Weave](https://github.com/weaveworks/weave "Weave"), but it is beyond the scope of this README to cover how those might be configured.
+* This is not a particularly useful deployment scenario for either testing or production use, so we will simply suggest that you not try this.
 
