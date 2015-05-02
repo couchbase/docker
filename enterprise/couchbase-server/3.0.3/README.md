@@ -13,8 +13,8 @@ There are several deployment scenarios which this Docker image can easily suppor
 
 A Couchbase Server Docker container will write all persistent and node-specific data under the directory `/opt/couchbase/var`. We recommend mapping this directory to a directory on the host filesystem (using the `-v` option to `docker run`) for the following reasons:
 
-* Persistence. Storing `/opt/couchbase/var` outside the container allows you to delete the container and re-create it later. You can even update to a container running a later point release of Couchbase Server without losing your data.
-* Performance. In a standard Docker environment using a union filesystem, leaving `/opt/couchbase/var` "inside" the container will result in some amount of performance degradation.
+* **Persistence** Storing `/opt/couchbase/var` outside the container allows you to delete the container and re-create it later. You can even update to a container running a later point release of Couchbase Server without losing your data.
+* **Performance** In a standard Docker environment using a union filesystem, leaving `/opt/couchbase/var` "inside" the container will result in some amount of performance degradation.
 
 *SELinux workaround*
 
@@ -48,9 +48,9 @@ NOTE: the `--ulimit` flags only work on Docker 1.6 or later.
 
 # Common Deployment Scenarios
 
-## Single container on single host
+## Single host, single container
 
-This is a quick way to try out Couchbase Server on your own machine with no installation overhead - download and run! In this case, any networking configuration will work; the only real requirement is that port 8091 be exposed so that you can access the Couchbase Admin Console.
+This is a quick way to try out Couchbase Server on your own machine with no installation overhead - just *download and run*. In this case, any networking configuration will work; the only real requirement is that port 8091 be exposed so that you can access the Couchbase Admin Console.
 
 Start the container:
 
@@ -75,7 +75,7 @@ Resulting container architecture:
 ```
 
 
-## Multiple containers on single host
+## Single host, multiple containers
 
 * Useful for testing out a multi-node cluster on your local workstation.
 * Not recommended for production use.  (the norm for a production cluster is that each node runs on dedicated hardware)
@@ -84,7 +84,7 @@ Resulting container architecture:
 * Internal IPs should be used in the Admin Console when adding new nodes to the cluster
 * For external access to the admin console, you should expose port 8091 of exactly one of the containers when you start it.
 
-You can choose to mount `/opt/couchbase/var` from the host as you like. If you do so, though, remember to give each container a separate host directory!
+You can choose to mount `/opt/couchbase/var` from the host, however you *must give each container a separate host directory*.
 
 ```
 docker run -d -v ~/couchbase/node1:/opt/couchbase/var couchbase/server
@@ -171,7 +171,7 @@ Resulting container architecture:
 To configure Couchbase Server:
 
 * Access the Couchbase Server Admin Console via port 8091 on any of the hosts.
-* Follow the same steps from the **Multiple containers on single host** section, however use the use the host IP address itself rather than using `docker inspect` to discover the IP address.
+* Follow the same steps from the *Multiple containers on single host* section, however use the use the host IP address itself rather than using `docker inspect` to discover the IP address.
 
 
 ## Running in container clouds with SDN
