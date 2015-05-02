@@ -16,6 +16,29 @@ A Couchbase Server Docker container will write all persistent and node-specific 
 * Persistence. Storing `/opt/couchbase/var` outside the container allows you to delete the container and re-create it later. You can even update to a container running a later point release of Couchbase Server without losing your data.
 * Performance. In a standard Docker environment using a union filesystem, leaving `/opt/couchbase/var` "inside" the container will result in some amount of performance degradation.
 
+## Ulimits
+
+Couchbase normally expects the following changes to ulimits:
+
+```
+ulimit -n 40960        # nofile: max number of open files
+ulimit -c unlimited    # core: max core file size
+ulimit -l unlimited    # memlock: maximum locked-in-memory address space
+```
+
+These parameters come into play when running under heavy load, so if you are just doing light testing and development, you can ignore these.
+
+In order to set the ulimits in your container, you will need to run Couchbase Docker containers with the following additional `--ulimit` flags:
+
+```
+docker run -d --ulimit nofile=40960:40960 --ulimit core=100000000:100000000 --ulimit memlock=100000000:100000000 couchbase/server
+```
+
+Since `unlimited` is not supported as a value, it sets the core and memlock values to 100 GB.  If your system has more than 100 GB RAM, you will want to increase this value to match the available RAM on the system.
+
+NOTE: the `--ulimit` flags only work on Docker 1.6 or later.  See the [official Docker documentation](https://docs.docker.com/reference/commandline/cli/#setting-ulimits-in-a-container) for more details.  
+
+
 # Common Deployment Scenarios
 
 ## Single container on single host (easy)
@@ -25,7 +48,7 @@ This is a quick way to try out Couchbase Server on your own machine with no inst
 Start the container:
 
 ```
-docker run -d -v ~/couchbase:/opt/couchbase/var -p8091:8091 couchbase/server
+docker run -d -v ~/couchbase:/opt/couchbase/var -p 8091:8091 couchbase/server
 ```
 
 Resulting container architecture:
