@@ -121,7 +121,7 @@ Resulting container architecture:
 
 1. Accept all default values in the setup wizard.  Choose a password that you will remember.
 
-1. Choose the Add Servers button in the web UI
+1. Choose the Add Servers button in the Admin Console
 
 1. For the two remaining containers
 
@@ -136,17 +136,21 @@ Resulting container architecture:
 
 This is a typical Couchbase Server cluster, where each node runs on a dedicated host, presumably in the same datacenter with high speed network links between them. We assume that the datacenter LAN configuration allows each host in the cluster to see each other host via known IPs.
 
-In this case, the most efficient way to run your cluster in Docker is to use the host's own networking stack, by running each container with the `--net=host` option. There is no need to use `-p` to "expose" any ports. Each container will use the IP address(es) of its host.
+Currently, the only supported approach for this Couchbase deployment architecture is to use Dockers `--net=host` flag.
 
-Start a container on each host via:
+Using the `--net=host` flag will have the following effects:
+
+* The container will use the host's own networking stack, and bind directly to ports on the host.
+* Removes networking complications with Couchbase Server being behind a NAT.
+* From a networking perspective, it is effectively the same as running Couchbase Server directly on the host.
+* There is no need to use `-p` to "expose" any ports. Each container will use the IP address(es) of its host.
+* Increased efficiency, as there will be no Docker-imposed networking overhead.
+
+Start a container on *each host* via:
 
 ```
 docker run -d -v ~/couchbase:/opt/couchbase/var --net=host couchbase/server
 ```
-
-You can access the Couchbase Server Admin Console via port 8091 on any of the hosts.  When configuring Couchbase, you will need to use the host IP address.
-
-In addition to being easy to set up, this is also likely to be the most performant way to deploy a Docker-based cluster as there will be no Docker-imposed networking overhead.
 
 Resulting container architecture:
 
@@ -163,6 +167,12 @@ Resulting container architecture:
 │  └─────────────────┘  │  │  └─────────────────┘  │  │  └─────────────────┘  │
 └───────────────────────┘  └───────────────────────┘  └───────────────────────┘
 ```
+
+To configure Couchbase Server:
+
+* Access the Couchbase Server Admin Console via port 8091 on any of the hosts.
+* Follow the same steps from the **Multiple containers on single host** section, however use the use the host IP address itself rather than using `docker inspect` to discover the IP address.
+
 
 ## Running in container clouds with SDN
 
