@@ -48,7 +48,7 @@ NOTE: the `--ulimit` flags only work on Docker 1.6 or later.
 
 # Common Deployment Scenarios
 
-## Single container on single host (easy)
+## Single container on single host
 
 This is a quick way to try out Couchbase Server on your own machine with no installation overhead - download and run! In this case, any networking configuration will work; the only real requirement is that port 8091 be exposed so that you can access the Couchbase Admin Console.
 
@@ -74,9 +74,67 @@ Resulting container architecture:
 └───────────────────────┘                                                      
 ```
 
-## Multiple hosts in a single datacenter, single container on each host (easy)
 
-This is a typical Couchbase Server cluster, where each node runs on a dedicated host. We assume that the datacenter LAN configuration allows each host in the cluster to see each other host via known IPs.
+## Multiple containers on single host
+
+* Useful for testing out a multi-node cluster on your local workstation.
+* Not recommended for production use.  (the norm for a production cluster is that each node runs on dedicated hardware)
+* Allows you to experiment with cluster rebalancing and failover.
+* The networking is effectively the same as described the Software-Defined Network section: each container is given an internal IP address by Docker, and each of these IPs is visible to all other containers running on the same host
+* Internal IPs should be used in the Admin Console when adding new nodes to the cluster
+* For external access to the admin console, you should expose port 8091 of exactly one of the containers when you start it.
+
+You can choose to mount `/opt/couchbase/var` from the host as you like. If you do so, though, remember to give each container a separate host directory!
+
+```
+docker run -d -v ~/couchbase/node1:/opt/couchbase/var couchbase/server
+docker run -d -v ~/couchbase/node2:/opt/couchbase/var couchbase/server
+docker run -d -v ~/couchbase/node3:/opt/couchbase/var -p 8091:8091 couchbase/server
+```
+
+Resulting container architecture:
+
+```
+┌──────────────────────────────────────────────────────────┐                   
+│                     Host OS (Linux)                      │                   
+│                                                          │                   
+│  ┌───────────────┐ ┌───────────────┐  ┌───────────────┐  │                   
+│  │ Container OS  │ │ Container OS  │  │ Container OS  │  │                   
+│  │   (CentOS)    │ │   (CentOS)    │  │   (CentOS)    │  │                   
+│  │ ┌───────────┐ │ │ ┌───────────┐ │  │ ┌───────────┐ │  │                   
+│  │ │ Couchbase │ │ │ │ Couchbase │ │  │ │ Couchbase │ │  │                   
+│  │ │  Server   │ │ │ │  Server   │ │  │ │  Server   │ │  │                   
+│  │ └───────────┘ │ │ └───────────┘ │  │ └───────────┘ │  │                   
+│  └───────────────┘ └───────────────┘  └───────────────┘  │                   
+└──────────────────────────────────────────────────────────┘                   
+```
+
+**Setting up your Couchbase cluster**
+
+1. After running the last `docker run` command above, get the <container_id>.  Lets call that `<node_3_container_id>`
+
+1. Get the ip address of the node 3 container by running `docker inspect --format '{{ .NetworkSettings.IPAddress }}' <node_3_container_id>`.  Lets call that `<node_3_ip_addr>`.
+
+1. From the host, connect to http://localhost:8091 in your browser and click the "Setup" button.
+
+1. In the hostname field, enter `<node_3_ip_addr>`
+
+1. Accept all default values in the setup wizard.  Choose a password that you will remember.
+
+1. Choose the Add Servers button in the web UI
+
+1. For the two remaining containers
+
+    1. Get the ip address of the container by running `docker inspect --format '{{ .NetworkSettings.IPAddress }}' <node_x_container_id>`.  Lets call that `<node_x_ip_addr>`
+
+    1. In the Server IP Address field, use `<node_x_ip_addr>` 
+
+    1. In the password field, use the password created above.
+
+
+## Multiple hosts, single container on each host 
+
+This is a typical Couchbase Server cluster, where each node runs on a dedicated host, presumably in the same datacenter with high speed network links between them. We assume that the datacenter LAN configuration allows each host in the cluster to see each other host via known IPs.
 
 In this case, the most efficient way to run your cluster in Docker is to use the host's own networking stack, by running each container with the `--net=host` option. There is no need to use `-p` to "expose" any ports. Each container will use the IP address(es) of its host.
 
@@ -106,7 +164,7 @@ Resulting container architecture:
 └───────────────────────┘  └───────────────────────┘  └───────────────────────┘
 ```
 
-## Running in container clouds with SDN (easy)
+## Running in container clouds with SDN
 
 Some cloud providers, such as:
 
@@ -168,63 +226,7 @@ Resulting container architecture:
 └───────────────────────────────────────────────────────────────┘                         
 ```
 
-## Multiple containers on a single host (medium)
-
-* Useful for testing out a multi-node cluster on your local workstation.
-* Not recommended for production use.  (the norm for a production cluster is that each node runs on dedicated hardware)
-* Allows you to experiment with cluster rebalancing and failover.
-* The networking is effectively the same as described the Software-Defined Network section: each container is given an internal IP address by Docker, and each of these IPs is visible to all other containers running on the same host
-* Internal IPs should be used in the Admin Console when adding new nodes to the cluster
-* For external access to the admin console, you should expose port 8091 of exactly one of the containers when you start it.
-
-You can choose to mount `/opt/couchbase/var` from the host as you like. If you do so, though, remember to give each container a separate host directory!
-
-```
-docker run -d -v ~/couchbase/node1:/opt/couchbase/var couchbase/server
-docker run -d -v ~/couchbase/node2:/opt/couchbase/var couchbase/server
-docker run -d -v ~/couchbase/node3:/opt/couchbase/var -p 8091:8091 couchbase/server
-```
-
-Resulting container architecture:
-
-```
-┌──────────────────────────────────────────────────────────┐                   
-│                     Host OS (Linux)                      │                   
-│                                                          │                   
-│  ┌───────────────┐ ┌───────────────┐  ┌───────────────┐  │                   
-│  │ Container OS  │ │ Container OS  │  │ Container OS  │  │                   
-│  │   (CentOS)    │ │   (CentOS)    │  │   (CentOS)    │  │                   
-│  │ ┌───────────┐ │ │ ┌───────────┐ │  │ ┌───────────┐ │  │                   
-│  │ │ Couchbase │ │ │ │ Couchbase │ │  │ │ Couchbase │ │  │                   
-│  │ │  Server   │ │ │ │  Server   │ │  │ │  Server   │ │  │                   
-│  │ └───────────┘ │ │ └───────────┘ │  │ └───────────┘ │  │                   
-│  └───────────────┘ └───────────────┘  └───────────────┘  │                   
-└──────────────────────────────────────────────────────────┘                   
-```
-
-**Setting up your Couchbase cluster**
-
-1. After running the last `docker run` command above, get the <container_id>.  Lets call that `<node_3_container_id>`
-
-1. Get the ip address of the node 3 container by running `docker inspect --format '{{ .NetworkSettings.IPAddress }}' <node_3_container_id>`.  Lets call that `<node_3_ip_addr>`.
-
-1. From the host, connect to http://localhost:8091 in your browser and click the "Setup" button.
-
-1. In the hostname field, enter `<node_3_ip_addr>`
-
-1. Accept all default values in the setup wizard.  Choose a password that you will remember.
-
-1. Choose the Add Servers button in the web UI
-
-1. For the two remaining containers
-
-    1. Get the ip address of the container by running `docker inspect --format '{{ .NetworkSettings.IPAddress }}' <node_x_container_id>`.  Lets call that `<node_x_ip_addr>`
-
-    1. In the Server IP Address field, use `<node_x_ip_addr>` 
-
-    1. In the password field, use the password created above.
-
-## Multiple hosts, multiple containers per host (hard)
+## Multiple hosts, multiple containers per host
 
 ```
 ┌─────────────────────────────────────────┐  ┌─────────────────────────────────────────┐
