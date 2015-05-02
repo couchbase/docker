@@ -1,7 +1,7 @@
 
 This README will guide you through running Couchbase Server under Docker.
 
-[Couchbase Server](http://en.wikipedia.org/wiki/Couchbase_Server) is an open-source, distributed (shared-nothing architecture) NoSQL document-oriented database / KV store that is optimized for interactive applications.  It can be used as a drop-in replacement for memcached, as it speaks the memcached protocol.  It has roots in both Membase (a clustered memcached) and Apache CouchDB, but is distinct from both.  
+[Couchbase Server](http://en.wikipedia.org/wiki/Couchbase_Server) is an open-source, distributed (shared-nothing architecture) NoSQL document-oriented database and key-value store that is optimized for interactive applications.  It has roots in both Membase (a clustered memcached) and Apache CouchDB, but is distinct from both.  
 
 # Background Information
 
@@ -138,7 +138,7 @@ Resulting container architecture:
 
 This is a typical Couchbase Server cluster, where each node runs on a dedicated host, presumably in the same datacenter with high speed network links between them. We assume that the datacenter LAN configuration allows each host in the cluster to see each other host via known IPs.
 
-Currently, the only supported approach for this Couchbase deployment architecture is to use Dockers `--net=host` flag.
+Currently, the only supported approach for Couchbase Server on this deployment architecture is to use the `--net=host` flag.
 
 Using the `--net=host` flag will have the following effects:
 
