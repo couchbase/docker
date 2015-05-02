@@ -16,6 +16,14 @@ A Couchbase Server Docker container will write all persistent and node-specific 
 * Persistence. Storing `/opt/couchbase/var` outside the container allows you to delete the container and re-create it later. You can even update to a container running a later point release of Couchbase Server without losing your data.
 * Performance. In a standard Docker environment using a union filesystem, leaving `/opt/couchbase/var` "inside" the container will result in some amount of performance degradation.
 
+*SELinux workaround*
+
+If you have SELinux enabled, mounting host volumes in a container requires an extra step.  Assuming you are mounting the `~/couchbase` directory on the host filesystem, you will need to run the following command once before running your first container on that host:
+
+```
+mkdir ~/couchbase && chcon -Rt svirt_sandbox_file_t ~/couchbase
+```
+
 ## Ulimits
 
 Couchbase normally expects the following changes to ulimits:
@@ -36,8 +44,7 @@ docker run -d --ulimit nofile=40960:40960 --ulimit core=100000000:100000000 --ul
 
 Since `unlimited` is not supported as a value, it sets the core and memlock values to 100 GB.  If your system has more than 100 GB RAM, you will want to increase this value to match the available RAM on the system.
 
-NOTE: the `--ulimit` flags only work on Docker 1.6 or later.  See the [official Docker documentation](https://docs.docker.com/reference/commandline/cli/#setting-ulimits-in-a-container) for more details.  
-
+NOTE: the `--ulimit` flags only work on Docker 1.6 or later.
 
 # Common Deployment Scenarios
 
@@ -55,7 +62,7 @@ Resulting container architecture:
 
 ```
 ┌───────────────────────┐                                                      
-│   Host OS (Ubuntu)    │                                                      
+│   Host OS (Linux)     │                                                      
 │  ┌─────────────────┐  │                                                      
 │  │  Container OS   │  │                                                      
 │  │    (CentOS)     │  │                                                      
@@ -73,13 +80,13 @@ This is a "true" Couchbase Server cluster, where each node runs on a dedicated h
 
 In this case, the most efficient way to run your cluster in Docker is to use the host's own networking stack, by running each container with the `--net=host` option. There is no need to use `-p` to "expose" any ports. Each container will use the IP address(es) of its host.
 
-Start the container:
+Start a container on each host:
 
 ```
 docker run -d -v ~/couchbase:/opt/couchbase/var --net=host couchbase/server
 ```
 
-You can access the Couchbase Server Admin Console via port 8091 on any of the hosts.
+You can access the Couchbase Server Admin Console via port 8091 on any of the hosts. 
 
 In addition to being easy to set up, this is also likely to be the most performant way to deploy a Docker-based cluster as there will be no Docker-imposed networking overhead.
 
@@ -87,7 +94,7 @@ Resulting container architecture:
 
 ```
 ┌───────────────────────┐  ┌───────────────────────┐  ┌───────────────────────┐
-│   Host OS (Ubuntu)    │  │   Host OS (Ubuntu)    │  │   Host OS (Ubuntu)    │
+│   Host OS (Linux)     │  │   Host OS (Linux)     │  │   Host OS (Linux)     │
 │  ┌─────────────────┐  │  │  ┌─────────────────┐  │  │  ┌─────────────────┐  │
 │  │  Container OS   │  │  │  │  Container OS   │  │  │  │  Container OS   │  │
 │  │    (CentOS)     │  │  │  │    (CentOS)     │  │  │  │    (CentOS)     │  │
@@ -146,7 +153,7 @@ Resulting container architecture:
 
 ## Multiple containers on a single host (medium)
 
-This is not a very useful deployment scenario unless you simply want to test out a multi-node cluster on your local workstation. We would not recommend this for a production environment. Again, the norm for a production cluster is that each node runs on dedicated hardware.
+This deployment scenario is useful for testing out a multi-node cluster on your local workstation. We would not recommend this for a production environment. Again, the norm for a production cluster is that each node runs on dedicated hardware.
 
 Still, if you want to play around with a local cluster to watch how rebalancing, failover, and so on work, this is probably the easiest way to achieve that. Network-wise, this is effectively the same as described the Software-Defined Network section: each container is given an internal IP address by Docker, and each of these IPs is visible to all other containers running on the same host. As above, these internal IPs should be used in the Admin Console when adding new nodes to the cluster. Likewise, for external access to the admin console, you should expose port 8091 of exactly one of the containers when you start it.
 
@@ -162,7 +169,7 @@ Resulting container architecture:
 
 ```
 ┌──────────────────────────────────────────────────────────┐                   
-│                     Host OS (Ubuntu)                     │                   
+│                     Host OS (Linux)                      │                   
 │                                                          │                   
 │  ┌───────────────┐ ┌───────────────┐  ┌───────────────┐  │                   
 │  │ Container OS  │ │ Container OS  │  │ Container OS  │  │                   
@@ -186,7 +193,7 @@ where _container ID_ is either the hexadecimal ID string (as shown by `docker ps
 
 ```
 ┌─────────────────────────────────────────┐  ┌─────────────────────────────────────────┐
-│            Host OS (Ubuntu)             │  │            Host OS (Ubuntu)             │
+│            Host OS (Linux)              │  │            Host OS (Linux)              │
 │ ┌─────────────────┐ ┌─────────────────┐ │  │ ┌─────────────────┐ ┌─────────────────┐ │
 │ │  Container OS   │ │  Container OS   │ │  │ │  Container OS   │ │  Container OS   │ │
 │ │    (CentOS)     │ │    (CentOS)     │ │  │ │    (CentOS)     │ │    (CentOS)     │ │
@@ -199,3 +206,4 @@ where _container ID_ is either the hexadecimal ID string (as shown by `docker ps
 ```
 
 This is very difficult to achieve with Docker, because there is no native way to allow each container unrestricted access to the internal IPs of containers running on other hosts. There are software networking layers such as [Flannel](https://github.com/coreos/flannel "Flannel") and [Weave](https://github.com/weaveworks/weave "Weave"), but it is beyond the scope of this README to cover how those might be configured. This is not a particularly useful deployment scenario for either testing or production use, so we will simply suggest that you not try this.
+
