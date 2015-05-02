@@ -76,17 +76,17 @@ Resulting container architecture:
 
 ## Multiple hosts in a single datacenter, single container on each host (easy)
 
-This is a "true" Couchbase Server cluster, where each node runs on a dedicated host. We assume that the datacenter LAN configuration allows each host in the cluster to see each other host via known IPs.
+This is a typical Couchbase Server cluster, where each node runs on a dedicated host. We assume that the datacenter LAN configuration allows each host in the cluster to see each other host via known IPs.
 
 In this case, the most efficient way to run your cluster in Docker is to use the host's own networking stack, by running each container with the `--net=host` option. There is no need to use `-p` to "expose" any ports. Each container will use the IP address(es) of its host.
 
-Start a container on each host:
+Start a container on each host via:
 
 ```
 docker run -d -v ~/couchbase:/opt/couchbase/var --net=host couchbase/server
 ```
 
-You can access the Couchbase Server Admin Console via port 8091 on any of the hosts.  When configuring Couchbase, use the host IP address.
+You can access the Couchbase Server Admin Console via port 8091 on any of the hosts.  When configuring Couchbase, you will need to use the host IP address.
 
 In addition to being easy to set up, this is also likely to be the most performant way to deploy a Docker-based cluster as there will be no Docker-imposed networking overhead.
 
@@ -149,20 +149,23 @@ Just remember to also specify `-P` for one or two nodes so you can connect to po
 Resulting container architecture:
 
 ```
-┌─────────────────────────────────────────────────────┐                        
-│                   Container Cloud                   │                        
-│                                                     │                        
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │                        
-│  │  Couchbase  │  │  Couchbase  │  │  Couchbase  │  │                        
-│  │   Server    │  │   Server    │  │   Server    │  │                        
-│  │             │  │             │  │             │  │                        
-│  │ private ip: │  │ private ip: │  │ private ip: │  │                        
-│  │ 10.20.21.1  │  │ 10.20.21.1  │  │ 10.20.21.1  │  │                        
-│  │             │  │             │  │             │  │                        
-│  │ public ip:  │  │             │  │             │  │                        
-│  │ 62.87.22.8  │  │             │  │             │  │                        
-│  └─────────────┘  └─────────────┘  └─────────────┘  │                        
-└─────────────────────────────────────────────────────┘                        
+┌───────────────────────────────────────────────────────────────┐                         
+│                        Container Cloud                        │                         
+│ ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │                         
+│ │  Container OS   │  │  Container OS   │  │  Container OS   │ │                         
+│ │    (CentOS)     │  │    (CentOS)     │  │    (CentOS)     │ │                         
+│ │ ┌─────────────┐ │  │ ┌─────────────┐ │  │ ┌─────────────┐ │ │                         
+│ │ │  Couchbase  │ │  │ │  Couchbase  │ │  │ │  Couchbase  │ │ │                         
+│ │ │   Server    │ │  │ │   Server    │ │  │ │   Server    │ │ │                         
+│ │ │             │ │  │ │             │ │  │ │             │ │ │                         
+│ │ │ private ip: │ │  │ │ private ip: │ │  │ │ private ip: │ │ │                         
+│ │ │ 10.20.21.1  │ │  │ │ 10.20.21.2  │ │  │ │ 10.20.21.3  │ │ │                         
+│ │ │             │ │  │ │             │ │  │ │             │ │ │                         
+│ │ │ public ip:  │ │  │ │             │ │  │ │             │ │ │                         
+│ │ │ 62.87.22.8  │ │  │ │             │ │  │ │             │ │ │                         
+│ │ └─────────────┘ │  │ └─────────────┘ │  │ └─────────────┘ │ │                         
+│ └─────────────────┘  └─────────────────┘  └─────────────────┘ │                         
+└───────────────────────────────────────────────────────────────┘                         
 ```
 
 ## Multiple containers on a single host (medium)
