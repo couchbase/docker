@@ -52,16 +52,6 @@ NOTE: the `--ulimit` flags only work on Docker 1.6 or later.
 
 ## Single host, single container
 
-This is a quick way to try out Couchbase Server on your own machine with no installation overhead - just *download and run*. In this case, any networking configuration will work; the only real requirement is that port 8091 be exposed so that you can access the Couchbase Admin Console.
-
-Start the container:
-
-```
-docker run -d -v ~/couchbase:/opt/couchbase/var -p 8091:8091 couchbase/server
-```
-
-Resulting container architecture:
-
 ```
 ┌───────────────────────┐                                                      
 │   Host OS (Linux)     │                                                      
@@ -76,25 +66,47 @@ Resulting container architecture:
 └───────────────────────┘                                                      
 ```
 
+This is a quick way to try out Couchbase Server on your own machine with no installation overhead - just *download and run*. In this case, any networking configuration will work; the only real requirement is that port 8091 be exposed so that you can access the Couchbase Admin Console.
+
+**Start the container**
+
+```
+docker run -d -v ~/couchbase:/opt/couchbase/var -p 8091:8091 couchbase/server
+```
+
+**Verify container start**
+
+The `docker run` command above will return a container id, eg, `1163fd8df`.  Use the container id to view the logs:
+
+```
+$ docker logs 1163fd8df
+Starting Couchbase Server -- Web UI available at http://<ip>:8091
+```
+
+**Connect to the Admin Console**
+
+From the host, connect your browser to http://localhost:8091, and you should see the Couchbase Server welcome screen:
+
+![Welcome Screen](http://couchbase-mobile.s3.amazonaws.com/github-assets/couchbase_welcome_2.png)
+
+**Configure**
+
+* Click "Setup" button
+
+* For all Setup Wizard screens, leave all values as default and click "Next"
+
+After finishing the Setup Wizard, you should see:
+
+![Servers Screen](http://couchbase-mobile.s3.amazonaws.com/github-assets/couchbase_post_welcome.png)
+
+**Connect via SDK**
+
+At this point, you are ready to connect to your Couchbase Server node from one of the [Couchbase Client SDKs](http://docs.couchbase.com/couchbase-sdk-python-1.2/).
+
+You should run the SDK on the host and point it to `http://localhost:8091`
+
 
 ## Single host, multiple containers
-
-* Useful for testing out a multi-node cluster on your local workstation.
-* Not recommended for production use.  (the norm for a production cluster is that each node runs on dedicated hardware)
-* Allows you to experiment with cluster rebalancing and failover.
-* The networking is effectively the same as described the Software-Defined Network section: each container is given an internal IP address by Docker, and each of these IPs is visible to all other containers running on the same host
-* Internal IPs should be used in the Admin Console when adding new nodes to the cluster
-* For external access to the admin console, you should expose port 8091 of exactly one of the containers when you start it.
-
-You can choose to mount `/opt/couchbase/var` from the host, however you *must give each container a separate host directory*.
-
-```
-docker run -d -v ~/couchbase/node1:/opt/couchbase/var couchbase/server
-docker run -d -v ~/couchbase/node2:/opt/couchbase/var couchbase/server
-docker run -d -v ~/couchbase/node3:/opt/couchbase/var -p 8091:8091 couchbase/server
-```
-
-Resulting container architecture:
 
 ```
 ┌──────────────────────────────────────────────────────────┐                   
@@ -111,13 +123,28 @@ Resulting container architecture:
 └──────────────────────────────────────────────────────────┘                   
 ```
 
+* Useful for testing out a multi-node cluster on your local workstation.
+* Not recommended for production use.  (the norm for a production cluster is that each node runs on dedicated hardware)
+* Allows you to experiment with cluster rebalancing and failover.
+* The networking is effectively the same as described the Software-Defined Network section: each container is given an internal IP address by Docker, and each of these IPs is visible to all other containers running on the same host
+* Internal IPs should be used in the Admin Console when adding new nodes to the cluster
+* For external access to the admin console, you should expose port 8091 of exactly one of the containers when you start it.
+
+You can choose to mount `/opt/couchbase/var` from the host, however you *must give each container a separate host directory*.
+
+```
+docker run -d -v ~/couchbase/node1:/opt/couchbase/var couchbase/server
+docker run -d -v ~/couchbase/node2:/opt/couchbase/var couchbase/server
+docker run -d -v ~/couchbase/node3:/opt/couchbase/var -p 8091:8091 couchbase/server
+```
+
 **Setting up your Couchbase cluster**
 
 1. After running the last `docker run` command above, get the <container_id>.  Lets call that `<node_3_container_id>`
 
 1. Get the ip address of the node 3 container by running `docker inspect --format '{{ .NetworkSettings.IPAddress }}' <node_3_container_id>`.  Lets call that `<node_3_ip_addr>`.
 
-1. From the host, connect to http://localhost:8091 in your browser and click the "Setup" button.
+1. From the host, connect to the Admin Console via http://localhost:8091 in your browser and click the "Setup" button.
 
 1. In the hostname field, enter `<node_3_ip_addr>`
 
@@ -135,6 +162,20 @@ Resulting container architecture:
 
 
 ## Multiple hosts, single container on each host 
+
+```
+┌───────────────────────┐  ┌───────────────────────┐  ┌───────────────────────┐
+│   Host OS (Linux)     │  │   Host OS (Linux)     │  │   Host OS (Linux)     │
+│  ┌─────────────────┐  │  │  ┌─────────────────┐  │  │  ┌─────────────────┐  │
+│  │  Container OS   │  │  │  │  Container OS   │  │  │  │  Container OS   │  │
+│  │    (CentOS)     │  │  │  │    (CentOS)     │  │  │  │    (CentOS)     │  │
+│  │  ┌───────────┐  │  │  │  │  ┌───────────┐  │  │  │  │  ┌───────────┐  │  │
+│  │  │ Couchbase │  │  │  │  │  │ Couchbase │  │  │  │  │  │ Couchbase │  │  │
+│  │  │  Server   │  │  │  │  │  │  Server   │  │  │  │  │  │  Server   │  │  │
+│  │  └───────────┘  │  │  │  │  └───────────┘  │  │  │  │  └───────────┘  │  │
+│  └─────────────────┘  │  │  └─────────────────┘  │  │  └─────────────────┘  │
+└───────────────────────┘  └───────────────────────┘  └───────────────────────┘
+```
 
 This is a typical Couchbase Server cluster, where each node runs on a dedicated host, presumably in the same datacenter with high speed network links between them. We assume that the datacenter LAN configuration allows each host in the cluster to see each other host via known IPs.
 
@@ -154,22 +195,6 @@ Start a container on *each host* via:
 docker run -d -v ~/couchbase:/opt/couchbase/var --net=host couchbase/server
 ```
 
-Resulting container architecture:
-
-```
-┌───────────────────────┐  ┌───────────────────────┐  ┌───────────────────────┐
-│   Host OS (Linux)     │  │   Host OS (Linux)     │  │   Host OS (Linux)     │
-│  ┌─────────────────┐  │  │  ┌─────────────────┐  │  │  ┌─────────────────┐  │
-│  │  Container OS   │  │  │  │  Container OS   │  │  │  │  Container OS   │  │
-│  │    (CentOS)     │  │  │  │    (CentOS)     │  │  │  │    (CentOS)     │  │
-│  │  ┌───────────┐  │  │  │  │  ┌───────────┐  │  │  │  │  ┌───────────┐  │  │
-│  │  │ Couchbase │  │  │  │  │  │ Couchbase │  │  │  │  │  │ Couchbase │  │  │
-│  │  │  Server   │  │  │  │  │  │  Server   │  │  │  │  │  │  Server   │  │  │
-│  │  └───────────┘  │  │  │  │  └───────────┘  │  │  │  │  └───────────┘  │  │
-│  └─────────────────┘  │  │  └─────────────────┘  │  │  └─────────────────┘  │
-└───────────────────────┘  └───────────────────────┘  └───────────────────────┘
-```
-
 To configure Couchbase Server:
 
 * Access the Couchbase Server Admin Console via port 8091 on any of the hosts.
@@ -178,11 +203,32 @@ To configure Couchbase Server:
 
 ## Running in container clouds with SDN
 
+```
+┌───────────────────────────────────────────────────────────────┐                         
+│                        Container Cloud                        │                         
+│ ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │                         
+│ │  Container OS   │  │  Container OS   │  │  Container OS   │ │                         
+│ │    (CentOS)     │  │    (CentOS)     │  │    (CentOS)     │ │                         
+│ │ ┌─────────────┐ │  │ ┌─────────────┐ │  │ ┌─────────────┐ │ │                         
+│ │ │  Couchbase  │ │  │ │  Couchbase  │ │  │ │  Couchbase  │ │ │                         
+│ │ │   Server    │ │  │ │   Server    │ │  │ │   Server    │ │ │                         
+│ │ │             │ │  │ │             │ │  │ │             │ │ │                         
+│ │ │ private ip: │ │  │ │ private ip: │ │  │ │ private ip: │ │ │                         
+│ │ │ 10.20.21.1  │ │  │ │ 10.20.21.2  │ │  │ │ 10.20.21.3  │ │ │                         
+│ │ │             │ │  │ │             │ │  │ │             │ │ │                         
+│ │ │ public ip:  │ │  │ │             │ │  │ │             │ │ │                         
+│ │ │ 62.87.22.8  │ │  │ │             │ │  │ │             │ │ │                         
+│ │ └─────────────┘ │  │ └─────────────┘ │  │ └─────────────┘ │ │                         
+│ └─────────────────┘  └─────────────────┘  └─────────────────┘ │                         
+└───────────────────────────────────────────────────────────────┘                         
+```
+
 Some cloud providers, such as:
 
 * Joyent Triton Container Cloud
 * Amazon ECS
-* Google Container Engine
+* Google Container Engine (GKE)
+* Cloud providers running Google Kubernetes (RedHat OpenShift3)
 
 all provide Software Defined Networking (SDN) which simplifies the networking setup required to run Couchbase Server.  We have experimented with Couchbase Server deployments on Joyent's Triton offering and have been very pleased with the performance and ease of use, so this section will be based on those experiences.
 
@@ -215,28 +261,6 @@ docker run -d couchbase/server
 ```
 
 Just remember to also specify `-P` for one or two nodes so you can connect to port 8091 for the Admin Console.
-
-Resulting container architecture:
-
-```
-┌───────────────────────────────────────────────────────────────┐                         
-│                        Container Cloud                        │                         
-│ ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │                         
-│ │  Container OS   │  │  Container OS   │  │  Container OS   │ │                         
-│ │    (CentOS)     │  │    (CentOS)     │  │    (CentOS)     │ │                         
-│ │ ┌─────────────┐ │  │ ┌─────────────┐ │  │ ┌─────────────┐ │ │                         
-│ │ │  Couchbase  │ │  │ │  Couchbase  │ │  │ │  Couchbase  │ │ │                         
-│ │ │   Server    │ │  │ │   Server    │ │  │ │   Server    │ │ │                         
-│ │ │             │ │  │ │             │ │  │ │             │ │ │                         
-│ │ │ private ip: │ │  │ │ private ip: │ │  │ │ private ip: │ │ │                         
-│ │ │ 10.20.21.1  │ │  │ │ 10.20.21.2  │ │  │ │ 10.20.21.3  │ │ │                         
-│ │ │             │ │  │ │             │ │  │ │             │ │ │                         
-│ │ │ public ip:  │ │  │ │             │ │  │ │             │ │ │                         
-│ │ │ 62.87.22.8  │ │  │ │             │ │  │ │             │ │ │                         
-│ │ └─────────────┘ │  │ └─────────────┘ │  │ └─────────────┘ │ │                         
-│ └─────────────────┘  └─────────────────┘  └─────────────────┘ │                         
-└───────────────────────────────────────────────────────────────┘                         
-```
 
 ## Multiple hosts, multiple containers per host
 
