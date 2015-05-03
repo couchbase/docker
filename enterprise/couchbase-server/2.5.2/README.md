@@ -7,7 +7,7 @@ This README will guide you through running Couchbase Server under Docker.
 
 ## Networking
 
-Couchbase Server communicates on a number of different ports (see the [Couchbase Server documentation](http://docs.couchbase.com/admin/admin/Install/install-networkPorts.html "Network ports page on Couchbase Server documentation")). It also is not generally supported for nodes in a cluster to be behind any kind of NAT. For these reasons, Docker's default networking configuration is not ideally suited to Couchbase Server deployments.
+Couchbase Server communicates on a number of different ports (see the [Couchbase Server documentation](http://docs.couchbase.com/admin/admin/Install/install-networkPorts.html "Network ports page on Couchbase Server documentation")). It also is not generally supported for nodes in a cluster to be behind any kind of NAT.  For these reasons, Docker's default networking configuration is not ideally suited to Couchbase Server deployments.
 
 There are several deployment scenarios which this Docker image can easily support. These will be detailed below, along with recommended network arrangements for each.
 
@@ -36,7 +36,7 @@ ulimit -c unlimited    # core: max core file size
 ulimit -l unlimited    # memlock: maximum locked-in-memory address space
 ```
 
-These parameters come into play when running under heavy load, so if you are just doing light testing and development, you can ignore these.
+These ulimit settings are necessary when running under heavy load;  but if you are just doing light testing and development, you can omit these settings and everything will still work.
 
 In order to set the ulimits in your container, you will need to run Couchbase Docker containers with the following additional `--ulimit` flags:
 
@@ -228,7 +228,8 @@ Some cloud providers, such as:
 * Joyent Triton Container Cloud
 * Amazon ECS
 * Google Container Engine (GKE)
-* Cloud providers running Google Kubernetes (RedHat OpenShift3)
+* RedHat OpenShift V3
+* Any Cloud providers running Google Kubernetes
 
 all provide Software Defined Networking (SDN) which simplifies the networking setup required to run Couchbase Server.  We have experimented with Couchbase Server deployments on Joyent's Triton offering and have been very pleased with the performance and ease of use, so this section will be based on those experiences.
 
