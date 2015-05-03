@@ -1,7 +1,9 @@
 
 This README will guide you through running Couchbase Server under Docker.
 
-[Couchbase Server](http://en.wikipedia.org/wiki/Couchbase_Server) is an open-source, distributed (shared-nothing architecture) NoSQL document-oriented database and key-value store that is optimized for interactive applications.  It has roots in both Membase (a clustered memcached) and Apache CouchDB, but is distinct from both.  
+[Couchbase Server](http://en.wikipedia.org/wiki/Couchbase_Server) is an open-source, distributed (shared-nothing architecture) NoSQL document-oriented database and key-value store that is optimized for interactive applications.
+
+Licensing information is covered towards the end of this guide.
 
 # Background Information
 
@@ -150,6 +152,8 @@ docker run -d -v ~/couchbase/node3:/opt/couchbase/var -p 8091:8091 couchbase/ser
 
 1. Accept all default values in the setup wizard.  Choose a password that you will remember.
 
+1. Click the Server Nodes menu
+
 1. Choose the Add Servers button in the Admin Console
 
 1. For the two remaining containers
@@ -204,23 +208,18 @@ To configure Couchbase Server:
 ## Running in container clouds with SDN
 
 ```
-┌───────────────────────────────────────────────────────────────┐                         
-│                        Container Cloud                        │                         
-│ ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │                         
-│ │  Container OS   │  │  Container OS   │  │  Container OS   │ │                         
-│ │    (CentOS)     │  │    (CentOS)     │  │    (CentOS)     │ │                         
-│ │ ┌─────────────┐ │  │ ┌─────────────┐ │  │ ┌─────────────┐ │ │                         
-│ │ │  Couchbase  │ │  │ │  Couchbase  │ │  │ │  Couchbase  │ │ │                         
-│ │ │   Server    │ │  │ │   Server    │ │  │ │   Server    │ │ │                         
-│ │ │             │ │  │ │             │ │  │ │             │ │ │                         
-│ │ │ private ip: │ │  │ │ private ip: │ │  │ │ private ip: │ │ │                         
-│ │ │ 10.20.21.1  │ │  │ │ 10.20.21.2  │ │  │ │ 10.20.21.3  │ │ │                         
-│ │ │             │ │  │ │             │ │  │ │             │ │ │                         
-│ │ │ public ip:  │ │  │ │             │ │  │ │             │ │ │                         
-│ │ │ 62.87.22.8  │ │  │ │             │ │  │ │             │ │ │                         
-│ │ └─────────────┘ │  │ └─────────────┘ │  │ └─────────────┘ │ │                         
-│ └─────────────────┘  └─────────────────┘  └─────────────────┘ │                         
-└───────────────────────────────────────────────────────────────┘                         
+┌──────────────────────────────────────────────────────────┐                             
+│                     Container Cloud                      │                             
+│                                                          │                             
+│  ┌───────────────┐ ┌───────────────┐  ┌───────────────┐  │                             
+│  │ Container OS  │ │ Container OS  │  │ Container OS  │  │                             
+│  │   (CentOS)    │ │   (CentOS)    │  │   (CentOS)    │  │                             
+│  │ ┌───────────┐ │ │ ┌───────────┐ │  │ ┌───────────┐ │  │                             
+│  │ │ Couchbase │ │ │ │ Couchbase │ │  │ │ Couchbase │ │  │                             
+│  │ │  Server   │ │ │ │  Server   │ │  │ │  Server   │ │  │                             
+│  │ └───────────┘ │ │ └───────────┘ │  │ └───────────┘ │  │                             
+│  └───────────────┘ └───────────────┘  └───────────────┘  │                             
+└──────────────────────────────────────────────────────────┘                             
 ```
 
 Some cloud providers, such as:
@@ -283,3 +282,16 @@ Just remember to also specify `-P` for one or two nodes so you can connect to po
 * There are software networking layers such as [Flannel](https://github.com/coreos/flannel "Flannel") and [Weave](https://github.com/weaveworks/weave "Weave"), but it is beyond the scope of this README to cover how those might be configured.
 * This is not a particularly useful deployment scenario for either testing or production use, so we will simply suggest that you not try this.
 
+# Licensing
+
+Couchbase Server comes in two editions:
+
+* [Community Edition](http://www.couchbase.com/community) -- free for unrestricted use.
+
+* [Enterprise Edition](http://www.couchbase.com/agreement/subscription) -- free for development, paid subscription required for production deployment.
+
+By default, the `latest` docker tag points to the latest Enterprise Edition.  If you want the Community Edition instead, you should add the appropriate tag:
+
+```
+docker run couchbase/server:community-3.0.1
+```
