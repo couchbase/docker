@@ -228,7 +228,8 @@ Some cloud providers, such as:
 * Joyent Triton Container Cloud
 * Amazon ECS
 * Google Container Engine (GKE)
-* Cloud providers running Google Kubernetes (RedHat OpenShift3)
+* RedHat OpenShift V3
+* Any Cloud providers running Google Kubernetes
 
 all provide Software Defined Networking (SDN) which simplifies the networking setup required to run Couchbase Server.  We have experimented with Couchbase Server deployments on Joyent's Triton offering and have been very pleased with the performance and ease of use, so this section will be based on those experiences.
 
