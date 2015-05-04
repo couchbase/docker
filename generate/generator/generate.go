@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
 )
@@ -147,7 +148,13 @@ func generateDockerfile(variant DockerfileVariant) error {
 		CB_VERSION string
 		CB_PACKAGE string
 	}{
-		CB_VERSION: variant.Version,
+
+		// TODO: call variant.Version(), which will perform subsitution in
+		// sync gw case:
+		// if version is 0.0.0-forestdb_bucket, replace with:
+		// feature/forestdb_bucket.
+		// so git checkout works
+		CB_VERSION: variant.VersionWithSubstitutions(),
 		CB_PACKAGE: variant.rpmPackageName(),
 	}
 
@@ -312,6 +319,34 @@ type DockerfileVariant struct {
 
 func (variant DockerfileVariant) isVersion2() bool {
 	return strings.HasPrefix(variant.Version, "2")
+}
+
+// Get the version for this variant, possibly doing substitutions
+func (variant DockerfileVariant) VersionWithSubstitutions() string {
+
+	// if version is 0.0.0-xxx, replace with feature/xxx.
+	// (example: 0.0.0-forestdb -> feature/forestdb)
+	branchName := extraStuffAfterVersion(variant.Version)
+	if branchName != "" {
+		// do something with the branch name ..
+		return fmt.Sprintf("feature/%v", branchName)
+	}
+
+	return variant.Version
+
+}
+
+// Given a version like "1.0.0" or "0.0.0-forestdb", return
+// the extra stuff after the version, like "" or "forestdb" (respectively)
+func extraStuffAfterVersion(version string) string {
+	re := regexp.MustCompile(`[0-9]*.[0-9]*.[0-9]*-?(.*)`)
+	result := re.FindStringSubmatch(version)
+	if len(result) > 1 {
+		group1 := result[1]
+		return group1
+	}
+	return ""
+
 }
 
 // Generate the rpm package name for this variant:
