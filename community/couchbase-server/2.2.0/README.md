@@ -5,6 +5,8 @@ This README will guide you through running Couchbase Server under Docker.
 
 Licensing information is covered towards the end of this guide.
 
+For support, please visit the [Couchbase support forum](https://forums.couchbase.com/) or `#couchbase` on irc.freenode.net.
+
 # Background Information
 
 ## Networking
