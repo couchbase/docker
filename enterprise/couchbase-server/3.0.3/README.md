@@ -7,6 +7,14 @@ Licensing information is covered towards the end of this guide.
 
 For support, please visit the [Couchbase support forum](https://forums.couchbase.com/) or `#couchbase` on irc.freenode.net.
 
+# QuickStart
+
+```
+docker run -d -p 8091:8091 couchbase/server
+```
+
+At this point go to http://localhost:8091 from the host machine to see the Admin Console web UI.  More details and screenshots are given below in the **Single host, single container** section.
+
 # Background Information
 
 ## Networking
@@ -21,6 +29,8 @@ A Couchbase Server Docker container will write all persistent and node-specific 
 
 * **Persistence** Storing `/opt/couchbase/var` outside the container allows you to delete the container and re-create it later. You can even update to a container running a later point release of Couchbase Server without losing your data.
 * **Performance** In a standard Docker environment using a union filesystem, leaving `/opt/couchbase/var` "inside" the container will result in some amount of performance degradation.
+
+All of the example commands below will assume you are using volumes mapped to host directories.
 
 *SELinux workaround*
 
@@ -107,7 +117,7 @@ After finishing the Setup Wizard, you should see:
 
 At this point, you are ready to connect to your Couchbase Server node from one of the [Couchbase Client SDKs](http://docs.couchbase.com/couchbase-sdk-python-1.2/).
 
-You should run the SDK on the host and point it to `http://localhost:8091`
+You should run the SDK on the host and point it to `http://localhost:8091/pools`
 
 
 ## Single host, multiple containers
