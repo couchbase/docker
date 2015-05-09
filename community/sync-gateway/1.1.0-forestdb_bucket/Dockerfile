@@ -40,5 +40,7 @@ RUN mkdir -p $GOPATH && \
     cp bin/sync_gateway /usr/local/bin && \
     mkdir -p $SGROOT/data
 
+ENTRYPOINT ["/usr/local/bin/sync_gateway"]
+
 # Expose ports
 EXPOSE 4984 4985
