@@ -2,23 +2,29 @@
 
 # Couchbase Server start script. 
 
-if [ "$(id -u)" != "0" ]; then
-    echo "This script must be run as root"
-    exit 1
+set -e
+
+if [ "$1" = 'couchbase' ]
+then
+
+    if [ "$(id -u)" != "0" ]; then
+        echo "This script must be run as root"
+        exit 1
+    fi
+
+    # Create directories where couchbase stores its data
+    cd /opt/couchbase
+    mkdir -p var/lib/couchbase \
+        var/lib/couchbase/config \
+        var/lib/couchbase/data \
+        var/lib/couchbase/stats \
+        var/lib/couchbase/logs \
+        var/lib/moxi
+    chown -R couchbase:couchbase var
+
+    # Start couchbase, pass -noinput so it doesn't drop us in the erlang shell
+    echo "Starting Couchbase Server -- Web UI available at http://<ip>:8091"
+    exec gosu couchbase /opt/couchbase/bin/couchbase-server -- -noinput
 fi
 
-# Create directories where couchbase stores its data
-cd /opt/couchbase
-mkdir -p var/lib/couchbase \
-         var/lib/couchbase/config \
-         var/lib/couchbase/data \
-         var/lib/couchbase/stats \
-         var/lib/couchbase/logs \
-         var/lib/moxi
-chown -R couchbase:couchbase var
-
-# Start couchbase, pass -noinput so it doesn't drop us in the erlang shell
-echo "Starting Couchbase Server -- Web UI available at http://<ip>:8091"
-su - couchbase -c "/opt/couchbase/bin/couchbase-server -- -noinput"
-
-echo "couchbase-server finished running"
+exec "$@"
