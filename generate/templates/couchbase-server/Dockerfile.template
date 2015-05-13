@@ -27,3 +27,4 @@ ENTRYPOINT ["/usr/local/bin/couchbase-start"]
 CMD ["couchbase"]
 
 EXPOSE 8091 8092 11207 11210 11211 18091 18092
+VOLUME /opt/couchbase/lib
