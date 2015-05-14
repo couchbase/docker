@@ -4,7 +4,7 @@
 
 set -e
 
-if [ "$1" = 'couchbase' ]
+if [ "$1" = 'couchbase-server' ]
 then
 
     if [ "$(id -u)" != "0" ]; then
@@ -22,9 +22,9 @@ then
         var/lib/moxi
     chown -R couchbase:couchbase var
 
-    # Start couchbase, pass -noinput so it doesn't drop us in the erlang shell
+    # Start couchbase
     echo "Starting Couchbase Server -- Web UI available at http://<ip>:8091"
-    exec gosu couchbase /opt/couchbase/bin/couchbase-server -- -noinput
+    exec gosu couchbase "$@"
 fi
 
 exec "$@"
