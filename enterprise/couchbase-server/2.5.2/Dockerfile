@@ -1,18 +1,10 @@
-FROM centos:centos6.6
+FROM centos:6
 
 MAINTAINER Couchbase Docker Team <docker@couchbase.com>
-
-ENV CB_VERSION=2.5.2 \
-    CB_RELEASE_URL=http://packages.couchbase.com/releases \
-    CB_PACKAGE=couchbase-server-enterprise_2.5.2_x86_64.rpm \
-    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
 # Install yum dependencies
 RUN yum install -y tar \
     && yum clean all
-
-# Install couchbase
-RUN rpm --install $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE
 
 # Install gosu for startup script
 RUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
@@ -22,9 +14,18 @@ RUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364
     && rm /usr/local/bin/gosu.asc \
     && chmod +x /usr/local/bin/gosu
 
+ENV CB_VERSION=2.5.2 \
+    CB_RELEASE_URL=http://packages.couchbase.com/releases \
+    CB_PACKAGE=couchbase-server-enterprise_2.5.2_x86_64.rpm \
+    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
+
+# Install couchbase
+RUN rpm --install $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE
+
 COPY scripts/couchbase-start /usr/local/bin/
-ENTRYPOINT ["/usr/local/bin/couchbase-start"]
-CMD ["couchbase"]
+ENTRYPOINT ["couchbase-start"]
+CMD ["couchbase-server", "--", "-noinput"]
+# pass -noinput so it doesn't drop us in the erlang shell
 
 EXPOSE 8091 8092 11207 11210 11211 18091 18092
-VOLUME /opt/couchbase/lib
+VOLUME /opt/couchbase/var
