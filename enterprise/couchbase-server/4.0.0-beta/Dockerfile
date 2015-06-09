@@ -14,9 +14,9 @@ RUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364
     && rm /usr/local/bin/gosu.asc \
     && chmod +x /usr/local/bin/gosu
 
-ENV CB_VERSION=feature/beta \
+ENV CB_VERSION=4.0.0-beta \
     CB_RELEASE_URL=http://packages.couchbase.com/releases \
-    CB_PACKAGE=couchbase-server-enterprise-4.0.0-beta-centos6.x86_64.rpm \
+    CB_PACKAGE=couchbase-server-enterprise-4.0.0-beta-centos7.x86_64.rpm \
     PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
 # Install couchbase
