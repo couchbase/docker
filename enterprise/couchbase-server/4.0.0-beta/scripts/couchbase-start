@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# Couchbase Server start script. 
+
+set -e
+
+if [ "$1" = 'couchbase-server' ]
+then
+
+    if [ "$(id -u)" != "0" ]; then
+        echo "This script must be run as root"
+        exit 1
+    fi
+
+    # Create directories where couchbase stores its data
+    cd /opt/couchbase
+    mkdir -p var/lib/couchbase \
+        var/lib/couchbase/config \
+        var/lib/couchbase/data \
+        var/lib/couchbase/stats \
+        var/lib/couchbase/logs \
+        var/lib/moxi
+    chown -R couchbase:couchbase var
+
+    # Start couchbase
+    echo "Starting Couchbase Server -- Web UI available at http://<ip>:8091"
+    exec gosu couchbase "$@"
+fi
+
+exec "$@"
