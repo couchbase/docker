@@ -1,31 +1,32 @@
-FROM centos:6
+FROM ubuntu:12.04
 
 MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 
-# Install yum dependencies
-RUN yum install -y tar \
-    && yum clean all
+ENV CB_VERSION		3.0.1
+ENV CB_RELEASE_URL	http://packages.couchbase.com/releases
+ENV CB_PACKAGE		couchbase-server-community_3.0.1-ubuntu12.04_amd64.deb
 
-# Install gosu for startup script
-RUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
-    && curl -o /usr/local/bin/gosu -sSL "https://github.com/tianon/gosu/releases/download/1.4/gosu-amd64" \
-    && curl -o /usr/local/bin/gosu.asc -sSL "https://github.com/tianon/gosu/releases/download/1.4/gosu-amd64.asc" \
-    && gpg --verify /usr/local/bin/gosu.asc \
-    && rm /usr/local/bin/gosu.asc \
-    && chmod +x /usr/local/bin/gosu
+# Add couchbase binaries to PATH
+ENV PATH $PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
-ENV CB_VERSION=3.0.3 \
-    CB_RELEASE_URL=http://packages.couchbase.com/releases \
-    CB_PACKAGE=couchbase-server-enterprise-3.0.3-centos6.x86_64.rpm \
-    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
+# Install dependancies
+RUN apt-get update && \
+    apt-get install -yq runit wget python3-minimal && \
+    apt-get autoremove && apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Add bootstrap script
+ADD scripts/entrypoint.sh /entrypoint.sh
+
+# Add runnit script for couchbase-server
+ADD scripts/run /etc/service/couchbase-server/run
 
 # Install couchbase
-RUN rpm --install $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE
+RUN wget -N $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \
+    dpkg -i ./$CB_PACKAGE
 
-COPY scripts/couchbase-start /usr/local/bin/
-ENTRYPOINT ["couchbase-start"]
-CMD ["couchbase-server", "--", "-noinput"]
-# pass -noinput so it doesn't drop us in the erlang shell
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["couchbase-server"]
 
 EXPOSE 8091 8092 11207 11210 11211 18091 18092
 VOLUME /opt/couchbase/var
