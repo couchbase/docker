@@ -9,7 +9,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Add bootstrap script
-ADD scripts/entrypoint.sh /entrypoint.sh
+ADD scripts/entrypoint.sh /
 
 # Add runnit script for couchbase-server
 ADD scripts/run /etc/service/couchbase-server/run
