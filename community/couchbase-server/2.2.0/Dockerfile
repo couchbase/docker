@@ -2,16 +2,9 @@ FROM ubuntu:12.04
 
 MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 
-ENV CB_VERSION		3.0.1
-ENV CB_RELEASE_URL	http://packages.couchbase.com/releases
-ENV CB_PACKAGE		couchbase-server-community_3.0.1-ubuntu12.04_amd64.deb
-
-# Add couchbase binaries to PATH
-ENV PATH $PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
-
 # Install dependancies
 RUN apt-get update && \
-    apt-get install -yq runit wget python3-minimal && \
+    apt-get install -yq runit wget && \
     apt-get autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -20,6 +13,12 @@ ADD scripts/entrypoint.sh /entrypoint.sh
 
 # Add runnit script for couchbase-server
 ADD scripts/run /etc/service/couchbase-server/run
+
+ENV CB_VERSION=2.2.0 \
+    CB_RELEASE_URL=http://packages.couchbase.com/releases \
+    CB_PACKAGE=couchbase-server-community_2.2.0_x86_64.deb \
+    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
+
 
 # Install couchbase
 RUN wget -N $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \
