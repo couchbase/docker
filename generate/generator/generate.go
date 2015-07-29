@@ -155,7 +155,7 @@ func generateDockerfile(variant DockerfileVariant) error {
 		// feature/forestdb_bucket.
 		// so git checkout works
 		CB_VERSION: variant.VersionWithSubstitutions(),
-		CB_PACKAGE: variant.rpmPackageName(),
+		CB_PACKAGE: variant.debPackageName(),
 	}
 
 	templateBytes, err := ioutil.ReadFile(sourceTemplate)
@@ -377,6 +377,28 @@ func (variant DockerfileVariant) rpmPackageName() string {
 		)
 	}
 }
+
+// Generate the rpm package name for this variant:
+// eg: couchbase-server-enterprise-3.0.2-ubuntu12.04_amd64.deb
+func (variant DockerfileVariant) debPackageName() string {
+	// for 2.x, leave ubuntu12.04 out of the deb name
+	if variant.isVersion2() {
+		return fmt.Sprintf(
+			"%v-%v_%v_x86_64.deb",
+			variant.Product,
+			variant.Edition,
+			variant.Version,
+		)
+	} else {
+		return fmt.Sprintf(
+			"%v-%v-%v-ubuntu12.04_amd64.deb",
+			variant.Product,
+			variant.Edition,
+			variant.Version,
+		)
+	}
+}
+
 
 func (variant DockerfileVariant) versionDir() string {
 	versionDir := path.Join(

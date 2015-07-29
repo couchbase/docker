@@ -27,7 +27,7 @@ $ cd <project-dir>/generate/generator
 $ go run generate.go <project-dir>
 ```
 
-Where `<project-dir>` is the absolute path to the directory where you checked out this repo, for example: `/Users/tleyden/Development/couchbase-docker/generate/generator`
+Where `<project-dir>` is the absolute path to the directory where you checked out this repo, for example: `/Users/tleyden/Development/couchbase-docker`
 
 Expected output:
 

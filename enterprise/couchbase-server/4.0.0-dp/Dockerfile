@@ -1,31 +1,32 @@
-FROM centos:6
+FROM ubuntu:12.04
 
 MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 
-# Install yum dependencies
-RUN yum install -y tar \
-    && yum clean all
+# Install dependancies
+RUN apt-get update && \
+    apt-get install -yq runit wget && \
+    apt-get autoremove && apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install gosu for startup script
-RUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
-    && curl -o /usr/local/bin/gosu -sSL "https://github.com/tianon/gosu/releases/download/1.4/gosu-amd64" \
-    && curl -o /usr/local/bin/gosu.asc -sSL "https://github.com/tianon/gosu/releases/download/1.4/gosu-amd64.asc" \
-    && gpg --verify /usr/local/bin/gosu.asc \
-    && rm /usr/local/bin/gosu.asc \
-    && chmod +x /usr/local/bin/gosu
+# Add bootstrap script
+ADD scripts/entrypoint.sh /
+RUN chmod 755 /entrypoint.sh
+
+# Add runnit script for couchbase-server
+ADD scripts/run /etc/service/couchbase-server/run
+RUN chmod 755 /etc/service/couchbase-server/run
 
 ENV CB_VERSION=feature/dp \
     CB_RELEASE_URL=http://packages.couchbase.com/releases \
-    CB_PACKAGE=couchbase-server-enterprise-4.0.0-dp-centos6.x86_64.rpm \
+    CB_PACKAGE=couchbase-server-enterprise-4.0.0-dp-ubuntu12.04_amd64.deb \
     PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
 # Install couchbase
-RUN rpm --install $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE
+RUN wget -N $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \
+    dpkg -i ./$CB_PACKAGE && rm -f ./$CB_PACKAGE
 
-COPY scripts/couchbase-start /usr/local/bin/
-ENTRYPOINT ["couchbase-start"]
-CMD ["couchbase-server", "--", "-noinput"]
-# pass -noinput so it doesn't drop us in the erlang shell
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["couchbase-server"]
 
 EXPOSE 8091 8092 11207 11210 11211 18091 18092
 VOLUME /opt/couchbase/var
