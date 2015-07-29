@@ -147,15 +147,11 @@ func generateDockerfile(variant DockerfileVariant) error {
 	params := struct {
 		CB_VERSION string
 		CB_PACKAGE string
+		CB_EXTRA_DEPS string
 	}{
-
-		// TODO: call variant.Version(), which will perform subsitution in
-		// sync gw case:
-		// if version is 0.0.0-forestdb_bucket, replace with:
-		// feature/forestdb_bucket.
-		// so git checkout works
 		CB_VERSION: variant.VersionWithSubstitutions(),
 		CB_PACKAGE: variant.debPackageName(),
+		CB_EXTRA_DEPS: variant.extraDependencies(),
 	}
 
 	templateBytes, err := ioutil.ReadFile(sourceTemplate)
@@ -399,6 +395,14 @@ func (variant DockerfileVariant) debPackageName() string {
 	}
 }
 
+// Specify any extra dependencies, based on variant
+func (variant DockerfileVariant) extraDependencies() string {
+	if variant.Product == "couchbase-server" &&
+	   variant.isVersion2() {
+		return "librtmp0"
+	}
+	return ""
+}
 
 func (variant DockerfileVariant) versionDir() string {
 	versionDir := path.Join(
