@@ -331,15 +331,15 @@ func (variant DockerfileVariant) isVersion2() bool {
 
 // Get the version for this variant, possibly doing substitutions
 func (variant DockerfileVariant) VersionWithSubstitutions() string {
-
-	// if version is 0.0.0-xxx, replace with feature/xxx.
-	// (example: 0.0.0-forestdb -> feature/forestdb)
-	branchName := extraStuffAfterVersion(variant.Version)
-	if branchName != "" {
-		// do something with the branch name ..
-		return fmt.Sprintf("feature/%v", branchName)
+	if variant.Product == "sync-gateway" {
+		// if version is 0.0.0-xxx, replace with feature/xxx.
+		// (example: 0.0.0-forestdb -> feature/forestdb)
+		branchName := extraStuffAfterVersion(variant.Version)
+		if branchName != "" {
+			// do something with the branch name ..
+			return fmt.Sprintf("feature/%v", branchName)
+		}
 	}
-
 	return variant.Version
 
 }
