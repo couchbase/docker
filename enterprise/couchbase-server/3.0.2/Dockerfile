@@ -4,17 +4,9 @@ MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 
 # Install dependencies
 RUN apt-get update && \
-    apt-get install -yq runit wget && \
+    apt-get install -yq runit wget python-httplib2 && \
     apt-get autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Add bootstrap script
-ADD scripts/entrypoint.sh /
-RUN chmod 755 /entrypoint.sh
-
-# Add runit script for couchbase-server
-ADD scripts/run /etc/service/couchbase-server/run
-RUN chmod 755 /etc/service/couchbase-server/run
 
 ENV CB_VERSION=3.0.2 \
     CB_RELEASE_URL=http://packages.couchbase.com/releases \
@@ -25,6 +17,13 @@ ENV CB_VERSION=3.0.2 \
 RUN wget -N $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \
     dpkg -i ./$CB_PACKAGE && rm -f ./$CB_PACKAGE
 
+# Add runit script for couchbase-server
+COPY scripts/run /etc/service/couchbase-server/run
+RUN chmod 755 /etc/service/couchbase-server/run
+
+# Add bootstrap script
+COPY scripts/entrypoint.sh /
+RUN chmod 755 /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["couchbase-server"]
 
