@@ -2,7 +2,7 @@ FROM ubuntu:12.04
 
 MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 
-# Install dependancies
+# Install dependencies
 RUN apt-get update && \
     apt-get install -yq runit wget && \
     apt-get autoremove && apt-get clean && \
@@ -12,7 +12,7 @@ RUN apt-get update && \
 ADD scripts/entrypoint.sh /
 RUN chmod 755 /entrypoint.sh
 
-# Add runnit script for couchbase-server
+# Add runit script for couchbase-server
 ADD scripts/run /etc/service/couchbase-server/run
 RUN chmod 755 /etc/service/couchbase-server/run
 

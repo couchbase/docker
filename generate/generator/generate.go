@@ -391,7 +391,7 @@ func (variant DockerfileVariant) debPackageName() string {
 		)
 	} else {
 		return fmt.Sprintf(
-			"%v-%v-%v-ubuntu12.04_amd64.deb",
+			"%v-%v_%v-ubuntu12.04_amd64.deb",
 			variant.Product,
 			variant.Edition,
 			variant.Version,
