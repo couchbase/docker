@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+	"net/http"
 )
 
 // Convert Dockerfile.template into version specific Dockerfile
@@ -148,10 +149,12 @@ func generateDockerfile(variant DockerfileVariant) error {
 		CB_VERSION string
 		CB_PACKAGE string
 		CB_EXTRA_DEPS string
+		CB_SHA256 string
 	}{
 		CB_VERSION: variant.VersionWithSubstitutions(),
 		CB_PACKAGE: variant.debPackageName(),
 		CB_EXTRA_DEPS: variant.extraDependencies(),
+		CB_SHA256: variant.getSHA256(),
 	}
 
 	templateBytes, err := ioutil.ReadFile(sourceTemplate)
@@ -312,8 +315,27 @@ type DockerfileVariant struct {
 	Edition Edition
 	Product Product
 	Version string
+	SHA256 string
 }
 
+func (variant DockerfileVariant) getSHA256() string {
+	resp, err := http.Get("http://packages.couchbase.com/releases/" +
+		variant.Version + "/" + variant.debPackageName() + ".sha256")
+	log.Printf("http://packages.couchbase.com/releases/" +
+		variant.Version + "/" + variant.debPackageName() + ".sha256")
+	if err != nil {
+		log.Printf("Error downloading SHA256 file")
+		return "MISSING SHA256 ERROR"
+	} else {
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Printf("Error download content of SHA256 file")
+			return "HTTP ERROR"
+		}
+		return strings.Fields(fmt.Sprintf("%s", body))[0]
+	}
+}
 func (variant DockerfileVariant) isVersion2() bool {
 	return strings.HasPrefix(variant.Version, "2")
 }
@@ -330,7 +352,6 @@ func (variant DockerfileVariant) VersionWithSubstitutions() string {
 		}
 	}
 	return variant.Version
-
 }
 
 // Given a version like "1.0.0" or "0.0.0-forestdb", return
@@ -343,7 +364,6 @@ func extraStuffAfterVersion(version string) string {
 		return group1
 	}
 	return ""
-
 }
 
 // Generate the rpm package name for this variant:
@@ -367,7 +387,7 @@ func (variant DockerfileVariant) rpmPackageName() string {
 	}
 }
 
-// Generate the rpm package name for this variant:
+// Generate the deb package name for this variant:
 // eg: couchbase-server-enterprise-3.0.2-ubuntu12.04_amd64.deb
 func (variant DockerfileVariant) debPackageName() string {
 	// for 2.x, leave ubuntu12.04 out of the deb name

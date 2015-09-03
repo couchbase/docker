@@ -11,10 +11,12 @@ RUN apt-get update && \
 ENV CB_VERSION=3.0.1 \
     CB_RELEASE_URL=http://packages.couchbase.com/releases \
     CB_PACKAGE=couchbase-server-community_3.0.1-ubuntu12.04_amd64.deb \
+    CB_SHA256=59efbd8924969f71c9a6b438afea94d974db51607464c55d7a2d527368026150 \
     PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
 # Install couchbase
 RUN wget -N $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \
+    echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - && \
     dpkg -i ./$CB_PACKAGE && rm -f ./$CB_PACKAGE
 
 # Add runit script for couchbase-server

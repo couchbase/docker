@@ -11,10 +11,12 @@ RUN apt-get update && \
 ENV CB_VERSION={{ .CB_VERSION }} \
     CB_RELEASE_URL=http://packages.couchbase.com/releases \
     CB_PACKAGE={{ .CB_PACKAGE }} \
+    CB_SHA256={{ .CB_SHA256 }} \
     PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
 # Install couchbase
 RUN wget -N $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \
+    echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - && \
     dpkg -i ./$CB_PACKAGE && rm -f ./$CB_PACKAGE
 
 # Add runit script for couchbase-server
