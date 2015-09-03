@@ -23,7 +23,6 @@ RUN chmod 755 /etc/service/couchbase-server/run
 
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
-RUN chmod 755 /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["couchbase-server"]
 

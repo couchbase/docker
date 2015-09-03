@@ -253,14 +253,7 @@ func CopyFile(source string, dest string) (err error) {
 	_, err = io.Copy(destfile, sourcefile)
 	if err == nil {
 		sourceinfo, err := os.Stat(source)
-		if err != nil {
-			// this isn't working as expected.
-			//
-			// source file:
-			// -rwxr-xr-x  1 tleyden  staff   1.3K Apr 26 19:05 sync-gw-start
-			// dest file:
-			// -rw-r--r--  1 tleyden  staff   1.3K Apr 27 09:20 sync-gw-start
-			// ^^ why isn't dest file +x?
+		if err == nil {
 			err = os.Chmod(dest, sourceinfo.Mode())
 			if err != nil {
 				log.Printf("Error chmod %v", dest)
