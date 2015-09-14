@@ -12,7 +12,8 @@ ENV CB_VERSION=4.0.0-rc0 \
     CB_RELEASE_URL=http://packages.couchbase.com/releases \
     CB_PACKAGE=couchbase-server-enterprise_4.0.0-rc0-ubuntu12.04_amd64.deb \
     CB_SHA256=7c37660632dd5da27c75df451da54bc48ed721d561a5a8063b9c0a7f9220342a \
-    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
+    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install \
+    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/couchbase/lib
 
 # Install couchbase
 RUN wget -N $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \
