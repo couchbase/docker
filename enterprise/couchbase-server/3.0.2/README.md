@@ -138,7 +138,7 @@ You should run the SDK on the host and point it to `http://localhost:8091/pools`
 ```
 
 * Useful for testing out a multi-node cluster on your local workstation.
-* Not recommended for production use.  (the norm for a production cluster is that each node runs on dedicated hardware)
+* Not recommended for production use.  (The norm for a production cluster is that each node runs on dedicated hardware.)
 * Allows you to experiment with cluster rebalancing and failover.
 * The networking is effectively the same as described the Software-Defined Network section: each container is given an internal IP address by Docker, and each of these IPs is visible to all other containers running on the same host
 * Internal IPs should be used in the Admin Console when adding new nodes to the cluster
