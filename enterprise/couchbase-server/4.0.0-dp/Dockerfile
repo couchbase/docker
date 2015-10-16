@@ -26,7 +26,6 @@ RUN wget -N $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \
 
 # Add runit script for couchbase-server
 COPY scripts/run /etc/service/couchbase-server/run
-RUN chmod 755 /etc/service/couchbase-server/run
 
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
