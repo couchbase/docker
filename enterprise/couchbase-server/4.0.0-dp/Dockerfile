@@ -15,6 +15,10 @@ ENV CB_VERSION=4.0.0-dp \
     PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install \
     LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/couchbase/lib
 
+# Create Couchbase user with UID 1000 (necessary to match default
+# boot2docker UID)
+RUN groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M
+
 # Install couchbase
 RUN wget -N $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \
     echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - && \
