@@ -1,7 +1,7 @@
 
 This README will guide you through running Couchbase Server under Docker.
 
-[Couchbase Server](http://en.wikipedia.org/wiki/Couchbase_Server) is open-source, distributed (shared-nothing architecture) NoSQL document-oriented database and key-value store optimized for interactive applications.
+[Couchbase Server](http://en.wikipedia.org/wiki/Couchbase_Server) is an open-source, distributed (shared-nothing architecture) NoSQL document-oriented database and key-value store optimized for interactive applications.
 
 Licensing information is covered towards the end of this guide.
 
@@ -19,7 +19,7 @@ At this point go to http://localhost:8091 from the host machine to see the Admin
 
 ## Networking
 
-Couchbase Server communicates using different ports (see the [Couchbase Server documentation](http://docs.couchbase.com/admin/admin/Install/install-networkPorts.html "Network ports page on Couchbase Server documentation")). Also, it is not supported that the cluster nodes be placed behind any NAT.  For these reasons, Docker's default networking configuration is not ideally suited to Couchbase Server deployments.
+Couchbase Server communicates on a large numbver of different ports (see the [Couchbase Server documentation](http://docs.couchbase.com/admin/admin/Install/install-networkPorts.html "Network ports page on Couchbase Server documentation")). Also, it is generally not supported that the cluster nodes be placed behind any NAT.  For these reasons, Docker's default networking configuration is not ideally suited to Couchbase Server deployments.
 
 There are several deployment scenarios which this Docker image can easily support. These will be detailed below, along with recommended network arrangements for each.
 
@@ -107,7 +107,7 @@ From the host, connect your browser to http://localhost:8091, and you should see
 
 * Click "Setup" button
 
-* For all Setup Wizard screens, leave all values as default and click "Next."
+* For all Setup Wizard screens, leave all values as default and click "Next".
 
 After finishing the Setup Wizard, you should see:
 
