@@ -1,7 +1,7 @@
 
 This README will guide you through running Couchbase Server under Docker.
 
-[Couchbase Server](http://en.wikipedia.org/wiki/Couchbase_Server) is an open-source, distributed (shared-nothing architecture) NoSQL document-oriented database and key-value store distributed (shared-nothing architecture) NoSQL document-oriented database and key-value store optimized for interactive applications.
+[Couchbase Server](http://en.wikipedia.org/wiki/Couchbase_Server) is an open-source, distributed (shared-nothing architecture) NoSQL document-oriented database and key-value store optimized for interactive applications.
 
 Licensing information is covered towards the end of this guide.
 
@@ -233,8 +233,8 @@ To configure Couchbase Server:
 │ └─────────────────┘ └─────────────────┘ │  │ └─────────────────┘ └─────────────────┘ │
 └─────────────────────────────────────────┘  └─────────────────────────────────────────┘
 ```
-This deployment scenario is:
-* Difficult to achieve with plain vanilla Docker, as there is no native way to allow to each container unrestricted access to the internal IPs of containers running on other hosts.
+
+* This deployment scenario is difficult to achieve with plain vanilla Docker, as there is no native way to allow to each container unrestricted access to the internal IPs of containers running on other hosts.
 * There are software networking layers such as [Flannel](https://github.com/coreos/flannel "Flannel") and [Weave](https://github.com/weaveworks/weave "Weave"), but it is beyond the scope of this README to explain how those might be configured.
 * This deployment scenario is not particularly useful either for testing or production. You will be better off checking out the various available [cloud hosting scenarios](https://github.com/couchbase/docker/wiki#container-specific-cloud-hosting-platforms).
 
