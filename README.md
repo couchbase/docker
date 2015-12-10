@@ -3,8 +3,8 @@ This repository contains the Dockerfiles and configuration scripts for the Offic
 
 If you are a casual user, you probably don't care about this repo, instead you should head over to one of the Couchbase Dockerhub repositories:
 
-* [Couchbase Server](https://registry.hub.docker.com/u/couchbase/server/)
-* [Sync Gateway](https://hub.docker.com/u/couchbase/sync-gateway)
+* [Couchbase Server](https://hub.docker.com/r/couchbase/server/)
+* [Sync Gateway](https://hub.docker.com/r/couchbase/sync-gateway)
 
 # Directory layout
 
