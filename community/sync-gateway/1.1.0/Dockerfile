@@ -1,4 +1,4 @@
-FROM tleyden5iwx/forestdb
+FROM centos:centos7
 
 MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 
