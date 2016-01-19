@@ -362,12 +362,10 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 		}
 		return "centos:centos7"
 	case ProductServer:
-		// TODO: maybe for Couchbase 4.x, we can change this to Ubuntu 14.04?
-		// See https://github.com/couchbase/docker/pull/28
-		if strings.HasPrefix(variant.Version, "4") {
-			return "ubuntu:14.04"
+		if strings.HasPrefix(variant.Version, "2") || strings.HasPrefix(variant.Version, "3") {
+			return "ubuntu:12.04"
 		}
-		return "ubuntu:12.04"
+		return "ubuntu:14.04"
 	default:
 		panic("Unexpected product")
 	}
