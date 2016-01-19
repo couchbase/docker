@@ -151,12 +151,14 @@ func generateDockerfile(variant DockerfileVariant) error {
 		CB_EXTRA_DEPS       string
 		CB_SHA256           string
 		GO_COMPILER_VERSION string
+		DOCKER_BASE_IMAGE   string
 	}{
 		CB_VERSION:          variant.VersionWithSubstitutions(),
 		CB_PACKAGE:          variant.debPackageName(),
 		CB_EXTRA_DEPS:       variant.extraDependencies(),
 		CB_SHA256:           variant.getSHA256(),
 		GO_COMPILER_VERSION: variant.goCompilerVersion(),
+		DOCKER_BASE_IMAGE:   variant.dockerBaseImage(),
 	}
 
 	templateBytes, err := ioutil.ReadFile(sourceTemplate)
@@ -349,6 +351,23 @@ func (variant DockerfileVariant) goCompilerVersion() string {
 
 	return "1.5.2"
 
+}
+
+func (variant DockerfileVariant) dockerBaseImage() string {
+
+	switch variant.Product {
+	case ProductSyncGw:
+		if strings.Contains(variant.Version, "forestdb") {
+			return "tleyden5iwx/forestdb"
+		}
+		return "centos:centos7"
+	case ProductServer:
+		// TODO: maybe for Couchbase 4.x, we can change this to Ubuntu 14.04?
+		// See https://github.com/couchbase/docker/pull/28
+		return "ubuntu:12.04"
+	default:
+		panic("Unexpected product")
+	}
 }
 
 func (variant DockerfileVariant) isVersion2() bool {

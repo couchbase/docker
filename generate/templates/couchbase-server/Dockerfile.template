@@ -1,4 +1,4 @@
-FROM ubuntu:12.04
+FROM {{ .DOCKER_BASE_IMAGE }}
 
 MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 

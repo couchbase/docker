@@ -1,4 +1,4 @@
-FROM tleyden5iwx/forestdb
+FROM {{ .DOCKER_BASE_IMAGE }}
 
 MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 
