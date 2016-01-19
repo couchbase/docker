@@ -17,7 +17,7 @@ RUN yum -y update && \
     mercurial \
     wget 
 
-# Download and install Go 1.4
+# Download and install Go
 RUN wget http://golang.org/dl/go1.4.2.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf go1.4.2.linux-amd64.tar.gz && \
     rm go1.4.2.linux-amd64.tar.gz

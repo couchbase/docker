@@ -17,7 +17,7 @@ RUN yum -y update && \
     mercurial \
     wget 
 
-# Download and install Go 1.4
+# Download and install Go
 RUN wget http://golang.org/dl/go1.4.2.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf go1.4.2.linux-amd64.tar.gz && \
     rm go1.4.2.linux-amd64.tar.gz
@@ -34,7 +34,7 @@ RUN mkdir -p $GOPATH && \
     cd /opt && \ 
     git clone https://github.com/couchbase/sync_gateway.git && \
     cd $SGROOT && \
-    git checkout feature/forestdb_bucket && \	
+    git checkout 1.1.0-forestdb_bucket && \	
     git submodule update --init --recursive && \
     ./build.sh && \
     cp bin/sync_gateway /usr/local/bin && \

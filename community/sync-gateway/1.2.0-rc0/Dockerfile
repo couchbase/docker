@@ -34,7 +34,7 @@ RUN mkdir -p $GOPATH && \
     cd /opt && \ 
     git clone https://github.com/couchbase/sync_gateway.git && \
     cd $SGROOT && \
-    git checkout 1.0.4 && \	
+    git checkout 1.2.0-rc0 && \	
     git submodule update --init --recursive && \
     ./build.sh && \
     cp bin/sync_gateway /usr/local/bin && \
