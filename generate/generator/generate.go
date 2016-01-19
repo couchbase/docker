@@ -5,13 +5,13 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"text/template"
-	"net/http"
 )
 
 // Convert Dockerfile.template into version specific Dockerfile
@@ -146,15 +146,17 @@ func generateDockerfile(variant DockerfileVariant) error {
 
 	// template parameters
 	params := struct {
-		CB_VERSION string
-		CB_PACKAGE string
-		CB_EXTRA_DEPS string
-		CB_SHA256 string
+		CB_VERSION          string
+		CB_PACKAGE          string
+		CB_EXTRA_DEPS       string
+		CB_SHA256           string
+		GO_COMPILER_VERSION string
 	}{
-		CB_VERSION: variant.VersionWithSubstitutions(),
-		CB_PACKAGE: variant.debPackageName(),
-		CB_EXTRA_DEPS: variant.extraDependencies(),
-		CB_SHA256: variant.getSHA256(),
+		CB_VERSION:          variant.VersionWithSubstitutions(),
+		CB_PACKAGE:          variant.debPackageName(),
+		CB_EXTRA_DEPS:       variant.extraDependencies(),
+		CB_SHA256:           variant.getSHA256(),
+		GO_COMPILER_VERSION: variant.goCompilerVersion(),
 	}
 
 	templateBytes, err := ioutil.ReadFile(sourceTemplate)
@@ -315,7 +317,7 @@ type DockerfileVariant struct {
 	Edition Edition
 	Product Product
 	Version string
-	SHA256 string
+	SHA256  string
 }
 
 func (variant DockerfileVariant) getSHA256() string {
@@ -336,6 +338,19 @@ func (variant DockerfileVariant) getSHA256() string {
 		return strings.Fields(fmt.Sprintf("%s", body))[0]
 	}
 }
+
+func (variant DockerfileVariant) goCompilerVersion() string {
+
+	if variant.Product == ProductSyncGw {
+		if strings.HasPrefix(variant.Version, "1.1") {
+			return "1.4.2"
+		}
+	}
+
+	return "1.5.2"
+
+}
+
 func (variant DockerfileVariant) isVersion2() bool {
 	return strings.HasPrefix(variant.Version, "2")
 }
@@ -345,10 +360,12 @@ func (variant DockerfileVariant) VersionWithSubstitutions() string {
 	if variant.Product == "sync-gateway" {
 		// if version is 0.0.0-xxx, replace with feature/xxx.
 		// (example: 0.0.0-forestdb -> feature/forestdb)
-		branchName := extraStuffAfterVersion(variant.Version)
-		if branchName != "" {
-			// do something with the branch name ..
-			return fmt.Sprintf("feature/%v", branchName)
+		extraStuff := extraStuffAfterVersion(variant.Version)
+		switch extraStuff {
+		case "forestdb":
+			return fmt.Sprintf("feature/%v", extraStuff)
+		default:
+			return variant.Version
 		}
 	}
 	return variant.Version
@@ -411,7 +428,7 @@ func (variant DockerfileVariant) debPackageName() string {
 // Specify any extra dependencies, based on variant
 func (variant DockerfileVariant) extraDependencies() string {
 	if variant.Product == "couchbase-server" &&
-	   variant.isVersion2() {
+		variant.isVersion2() {
 		return "librtmp0"
 	}
 	return ""

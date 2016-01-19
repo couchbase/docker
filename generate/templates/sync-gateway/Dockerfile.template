@@ -17,10 +17,10 @@ RUN yum -y update && \
     mercurial \
     wget 
 
-# Download and install Go 1.4
-RUN wget http://golang.org/dl/go1.4.2.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.4.2.linux-amd64.tar.gz && \
-    rm go1.4.2.linux-amd64.tar.gz
+# Download and install Go
+RUN wget http://golang.org/dl/go{{ .GO_COMPILER_VERSION }}.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go{{ .GO_COMPILER_VERSION }}.linux-amd64.tar.gz && \
+    rm go{{ .GO_COMPILER_VERSION }}.linux-amd64.tar.gz
 
 # install common go packages
 RUN go get github.com/tools/godep && \
