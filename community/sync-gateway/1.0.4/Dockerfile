@@ -9,6 +9,7 @@ ENV PATH $PATH:$GOPATH/bin:$GOROOT/bin
 
 # Get dependencies
 RUN yum -y update && \
+    yum groupinstall -y development && \
     yum install -y \
     bc \
     curl \
