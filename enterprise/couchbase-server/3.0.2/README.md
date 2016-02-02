@@ -10,10 +10,10 @@ For support, please visit the [Couchbase support forum](https://forums.couchbase
 # QuickStart
 
 ```
-docker run -d -p 8091:8091 couchbase/server
+docker run -d -p 8091-8093:8091-8093 -p 11210:11210 couchbase/server
 ```
 
-At this point go to http://localhost:8091 from the host machine to see the Admin Console web UI.  More details and screenshots are given below in the **Single host, single container** section.
+At this point go to http://localhost:8091 from the host machine to see the Admin Console web UI.  More details and screenshots are given below in the **Single host, single container** section.  Also, if you are using SSL, you will need to open up more ports (`11207`, `18091-18093`), see the [Network configuration](http://developer.couchbase.com/documentation/server/4.0/install/install-ports.html) documentation for more details.
 
 # Background Information
 
@@ -85,7 +85,7 @@ This is a quick way to try out Couchbase Server on your own machine with no inst
 **Start the container**
 
 ```
-docker run -d -v ~/couchbase:/opt/couchbase/var -p 8091:8091 couchbase/server
+docker run -d -v ~/couchbase:/opt/couchbase/var -p 8091-8093:8091-8093 -p 11210:11210 couchbase/server
 ```
 
 **Verify container start**
@@ -149,7 +149,7 @@ You can choose to mount `/opt/couchbase/var` from the host, however you *must gi
 ```
 docker run -d -v ~/couchbase/node1:/opt/couchbase/var couchbase/server
 docker run -d -v ~/couchbase/node2:/opt/couchbase/var couchbase/server
-docker run -d -v ~/couchbase/node3:/opt/couchbase/var -p 8091:8091 couchbase/server
+docker run -d -v ~/couchbase/node3:/opt/couchbase/var -p 8091-8093:8091-8093 -p 11210:11210 couchbase/server
 ```
 
 **Setting up your Couchbase cluster**
