@@ -41,3 +41,27 @@ Expected output:
 ```
 
 At this point, you should push your changes to github.
+
+# Adding a new Couchbase Server version + dockerhub tag
+
+**Create directory**
+
+```
+$ cd <project-dir>/enterprise/couchbase-server
+```
+
+**Regerate from templates**
+
+See instructions above.
+
+**Push to github**
+
+Commit and push to github
+
+**Kick off dockerhub build**
+
+Login to dockerhub (you need to be on the couchbase team for this step) and create a new build that corresponds to that directory, and enter a matching tag, eg:
+
+* **Branch**: master
+* **Dockerfile Location**: /enterprise/couchbase-server/3.1.3
+* **Docker Tag Name**: enterprise-3.1.3
