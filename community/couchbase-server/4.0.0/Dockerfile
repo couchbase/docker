@@ -20,8 +20,8 @@ RUN apt-get update && \
 
 ENV CB_VERSION=4.0.0 \
     CB_RELEASE_URL=http://packages.couchbase.com/releases \
-    CB_PACKAGE=couchbase-server-community_4.0.0-ubuntu12.04_amd64.deb \
-    CB_SHA256=404007eaedc3d01997eea800fcce0d0a0339bc3ab79c1c48741210f435c719f0 \
+    CB_PACKAGE=couchbase-server-community_4.0.0-ubuntu14.04_amd64.deb \
+    CB_SHA256=e275717da0c22efb846b397a1ffeaf63a21ec91e4e481efe3b59de0a0d530982 \
     PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install \
     LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/couchbase/lib
 
