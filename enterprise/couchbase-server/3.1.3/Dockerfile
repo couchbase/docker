@@ -2,9 +2,19 @@ FROM ubuntu:12.04
 
 MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 
-# Install dependencies
+# Install dependencies:
+#  runit: for container process management
+#  wget: for downloading .deb
+#  python-httplib2: used by CLI tools
+# Additional dependencies for system commands used by cbcollect_info:
+#  lsof: lsof
+#  lshw: lshw
+#  sysstat: iostat, sar, mpstat
+#  net-tools: ifconfig, arp, netstat
+#  numactl: numactl 
 RUN apt-get update && \
-    apt-get install -yq runit wget python-httplib2  && \
+    apt-get install -yq runit wget python-httplib2 \
+    lsof lshw sysstat net-tools numactl  && \
     apt-get autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -26,6 +36,13 @@ RUN wget -N $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \
 
 # Add runit script for couchbase-server
 COPY scripts/run /etc/service/couchbase-server/run
+
+# Add dummy script for commands invoked by cbcollect_info that
+# make no sense in a Docker container
+COPY scripts/dummy.sh /usr/local/bin/iptables-save
+COPY scripts/dummy.sh /usr/local/bin/lvdisplay
+COPY scripts/dummy.sh /usr/local/bin/vgdisplay
+COPY scripts/dummy.sh /usr/local/bin/pvdisplay
 
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
