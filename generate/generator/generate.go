@@ -362,10 +362,7 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 		}
 		return "centos:centos7"
 	case ProductServer:
-		if strings.HasPrefix(variant.Version, "2") || strings.HasPrefix(variant.Version, "3") {
-			return "ubuntu:12.04"
-		}
-		return "ubuntu:14.04"
+		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	default:
 		panic("Unexpected product")
 	}
@@ -373,6 +370,18 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 
 func (variant DockerfileVariant) isVersion2() bool {
 	return strings.HasPrefix(variant.Version, "2")
+}
+
+func (variant DockerfileVariant) isVersion3() bool {
+	return strings.HasPrefix(variant.Version, "3")
+}
+
+func (variant DockerfileVariant) ubuntuVersion() string {
+	// Intended for use by Couchbase Server only
+	if variant.isVersion2() || variant.isVersion3() {
+		return "12.04"
+	}
+	return "14.04"
 }
 
 // Get the version for this variant, possibly doing substitutions
@@ -437,10 +446,11 @@ func (variant DockerfileVariant) debPackageName() string {
 		)
 	} else {
 		return fmt.Sprintf(
-			"%v-%v_%v-ubuntu12.04_amd64.deb",
+			"%v-%v_%v-ubuntu%v_amd64.deb",
 			variant.Product,
 			variant.Edition,
 			variant.Version,
+			variant.ubuntuVersion(),
 		)
 	}
 }
