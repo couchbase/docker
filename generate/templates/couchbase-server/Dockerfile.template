@@ -39,10 +39,11 @@ COPY scripts/run /etc/service/couchbase-server/run
 
 # Add dummy script for commands invoked by cbcollect_info that
 # make no sense in a Docker container
-COPY scripts/dummy.sh /usr/local/bin/iptables-save
-COPY scripts/dummy.sh /usr/local/bin/lvdisplay
-COPY scripts/dummy.sh /usr/local/bin/vgdisplay
-COPY scripts/dummy.sh /usr/local/bin/pvdisplay
+COPY scripts/dummy.sh /usr/local/bin/
+RUN ln -s dummy.sh /usr/local/bin/iptables-save && \
+    ln -s dummy.sh /usr/local/bin/lvdisplay && \
+    ln -s dummy.sh /usr/local/bin/vgdisplay && \
+    ln -s dummy.sh /usr/local/bin/pvdisplay
 
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
