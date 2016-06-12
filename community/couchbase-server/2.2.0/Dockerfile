@@ -11,7 +11,7 @@ MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 #  lshw: lshw
 #  sysstat: iostat, sar, mpstat
 #  net-tools: ifconfig, arp, netstat
-#  numactl: numactl 
+#  numactl: numactl
 RUN apt-get update && \
     apt-get install -yq runit wget python-httplib2 \
     lsof lshw sysstat net-tools numactl librtmp0 && \
@@ -43,6 +43,9 @@ RUN ln -s dummy.sh /usr/local/bin/iptables-save && \
     ln -s dummy.sh /usr/local/bin/lvdisplay && \
     ln -s dummy.sh /usr/local/bin/vgdisplay && \
     ln -s dummy.sh /usr/local/bin/pvdisplay
+
+# Fix library path for bundled cURL
+COPY scripts/curl.sh /usr/local/bin/curl
 
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
