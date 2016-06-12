@@ -22,8 +22,7 @@ ENV CB_VERSION=4.1.1 \
     CB_RELEASE_URL=http://packages.couchbase.com/releases \
     CB_PACKAGE=couchbase-server-enterprise_4.1.1-ubuntu14.04_amd64.deb \
     CB_SHA256=65c0ee37f0e6d816257b32a36207ec9b8e81c84112beb657c851f9aacb9b4382 \
-    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install \
-    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/couchbase/lib
+    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
 # Create Couchbase user with UID 1000 (necessary to match default
 # boot2docker UID)

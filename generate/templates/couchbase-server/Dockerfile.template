@@ -22,8 +22,7 @@ ENV CB_VERSION={{ .CB_VERSION }} \
     CB_RELEASE_URL=http://packages.couchbase.com/releases \
     CB_PACKAGE={{ .CB_PACKAGE }} \
     CB_SHA256={{ .CB_SHA256 }} \
-    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install \
-    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/couchbase/lib
+    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
 # Create Couchbase user with UID 1000 (necessary to match default
 # boot2docker UID)
