@@ -11,7 +11,7 @@ MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 #  lshw: lshw
 #  sysstat: iostat, sar, mpstat
 #  net-tools: ifconfig, arp, netstat
-#  numactl: numactl 
+#  numactl: numactl
 RUN apt-get update && \
     apt-get install -yq runit wget python-httplib2 \
     lsof lshw sysstat net-tools numactl librtmp0 && \
@@ -22,8 +22,7 @@ ENV CB_VERSION=2.2.0 \
     CB_RELEASE_URL=http://packages.couchbase.com/releases \
     CB_PACKAGE=couchbase-server-community_2.2.0_x86_64.deb \
     CB_SHA256=051b0905e13241de19fbd9efb1e22a421f33429a1db3e4b5e3ae8756b9e4d6a2 \
-    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install \
-    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/couchbase/lib
+    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
 # Create Couchbase user with UID 1000 (necessary to match default
 # boot2docker UID)
@@ -44,6 +43,9 @@ RUN ln -s dummy.sh /usr/local/bin/iptables-save && \
     ln -s dummy.sh /usr/local/bin/lvdisplay && \
     ln -s dummy.sh /usr/local/bin/vgdisplay && \
     ln -s dummy.sh /usr/local/bin/pvdisplay
+
+# Fix library path for bundled cURL
+COPY scripts/curl.sh /usr/local/bin/curl
 
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
