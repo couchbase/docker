@@ -22,8 +22,7 @@ ENV CB_VERSION=3.1.3 \
     CB_RELEASE_URL=http://packages.couchbase.com/releases \
     CB_PACKAGE=couchbase-server-community_3.1.3-ubuntu12.04_amd64.deb \
     CB_SHA256=dc919f78a74ae1f627b9bee26e3da70a33ceb1b3fd3259f2ed85b0754e6fcd41 \
-    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install \
-    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/couchbase/lib
+    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
 # Create Couchbase user with UID 1000 (necessary to match default
 # boot2docker UID)
