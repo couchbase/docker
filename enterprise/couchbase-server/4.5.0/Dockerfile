@@ -18,10 +18,10 @@ RUN apt-get update && \
     apt-get autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-ENV CB_VERSION=4.5.0-beta \
+ENV CB_VERSION=4.5.0 \
     CB_RELEASE_URL=http://packages.couchbase.com/releases \
-    CB_PACKAGE=couchbase-server-enterprise_4.5.0-beta-ubuntu14.04_amd64.deb \
-    CB_SHA256=a231b755bfa041e1700b73d9b5c91ac3e4169fa378ae49ab0ae5fb19ad69da12 \
+    CB_PACKAGE=couchbase-server-enterprise_4.5.0-ubuntu14.04_amd64.deb \
+    CB_SHA256=441398302210c0d73f27bdab741b471fc9da116bf45f521b314345f04560716e \
     PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install \
     LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/couchbase/lib
 
