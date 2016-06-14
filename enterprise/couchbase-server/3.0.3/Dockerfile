@@ -6,14 +6,15 @@ MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 #  runit: for container process management
 #  wget: for downloading .deb
 #  python-httplib2: used by CLI tools
+#  chrpath: for fixing curl, below
 # Additional dependencies for system commands used by cbcollect_info:
 #  lsof: lsof
 #  lshw: lshw
 #  sysstat: iostat, sar, mpstat
 #  net-tools: ifconfig, arp, netstat
-#  numactl: numactl 
+#  numactl: numactl
 RUN apt-get update && \
-    apt-get install -yq runit wget python-httplib2 \
+    apt-get install -yq runit wget python-httplib2 chrpath \
     lsof lshw sysstat net-tools numactl  && \
     apt-get autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -22,8 +23,7 @@ ENV CB_VERSION=3.0.3 \
     CB_RELEASE_URL=http://packages.couchbase.com/releases \
     CB_PACKAGE=couchbase-server-enterprise_3.0.3-ubuntu12.04_amd64.deb \
     CB_SHA256=13e925fa8b806aecd09751bdb7be1f8cfa188ad894e266108e8c44785c08e474 \
-    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install \
-    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/couchbase/lib
+    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
 # Create Couchbase user with UID 1000 (necessary to match default
 # boot2docker UID)
@@ -44,6 +44,9 @@ RUN ln -s dummy.sh /usr/local/bin/iptables-save && \
     ln -s dummy.sh /usr/local/bin/lvdisplay && \
     ln -s dummy.sh /usr/local/bin/vgdisplay && \
     ln -s dummy.sh /usr/local/bin/pvdisplay
+
+# Fix curl RPATH
+RUN chrpath -r '$ORIGIN/../lib' /opt/couchbase/bin/curl
 
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
