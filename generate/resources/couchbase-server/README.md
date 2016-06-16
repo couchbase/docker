@@ -33,6 +33,7 @@ You can also execute N1QL queries from the commandline. To run a query from comm
 Then, navigate to the `bin` directory under Couchbase Server installation and run cbq command line tool and execute the N1QL Query on `beer-sample` bucket
 
 `/opt/couchbase/bin/cbq`
+
 ```cbq> SELECT name FROM `beer-sample` WHERE  brewery_id ="mishawaka_brewing";```
 
 For more query samples, refer to the [Running your first N1QL query](http://developer.couchbase.com/documentation/server/4.5/getting-started/first-n1ql-query.html) guide.   
@@ -42,52 +43,46 @@ Couchbase Server SDKs comes in many languages:  C SDK 2.4/2.5 Go, Java, .NET, No
 
 For running a sample application, refer to the [Running a sample Web app](http://developer.couchbase.com/documentation/server/4.5/travel-app/index.html) guide.
 
-# Best Practices with Couchbase Server on Containers #
+# Requirements and Best Practices #
+## Container Requirements ##
+Official Couchbase Server containers on Docker Hub are based on Ubuntu 14.04. 
 
-## Networking ##
+** Docker Container Resource Requirements ** : For minimum container requirements, you can follow [Couchbase Server minimum HW recommendations](http://developer.couchbase.com/documentation/server/current/install/pre-install.html) for development, test and production environments. 
 
-Couchbase Server communicates on many different ports (see the [Couchbase Server documentation](http://docs.couchbase.com/admin/admin/Install/install-networkPorts.html "Network ports page on Couchbase Server documentation")). Also, it is generally not supported that the cluster nodes be placed behind any NAT.  For these reasons, Docker's default networking configuration is not ideally suited to Couchbase Server deployments.
+## Best Practices ##
+** Avoid a Single Point of Failure :** Couchbase Server's resilience and high-availability are achieved through creating a cluster of independent nodes and replicating data between them so that any individual node failure doesn't lead to loss of access to your data. In a containerized environment, if you were to run multiple nodes on the same piece of physical hardware, you can inadvertently re-introduce a single point of failure. In environments where you control VM placement, we advise ensuring each Couchbase Server node runs on a different piece of physical hardware.
 
-There are several deployment scenarios which this Docker image can easily support. These will be detailed below, along with recommended network arrangements for each.
+** Sizing your containers :** Physical hardware performance characteristics are well understood. Even though containers insert a lightweight layer between Couchbase Server and the underlying OS, there is still a small overhead in running Couchbase Server in containers. For stability and better performance predictability, It is recommended to have at least 2 cores dedicated to the container in development environments and 4 cores dedicated to the container rather than shared across multiple containers for Couchbase Server instances running in production. 
+With an over-committed environment you can end up with containers competing with each other causing unpredictable performance and sometimes stability issues. 
 
-## Volumes
+** Map Couchbase Node Specific Data to a Local Folder :** A Couchbase Server Docker container will write all persistent and node-specific data under the directory /opt/couchbase/var by default. It is recommended to map this directory to a directory on the host file system using the `-v` option to `docker run` to get persistence and performance.
+* Persistence: Storing `/opt/couchbase/var` outside the container with the `-v` option, allows you to delete the container and recreate it later without loosing the data in Couchbase Server. You can even update to a container running a later release/version of Couchbase Server without losing your data.
+* Performance: In a standard Docker environment using a union file system, leaving /opt/couchbase/var inside the container results in some amount of performance degradation.
 
-A Couchbase Server Docker container will write all persistent and node-specific data under the directory `/opt/couchbase/var`. We recommend mapping this directory to a directory on the host filesystem (using the `-v` option to `docker run`) for the following reasons:
+> NOTE for SELinux : If you have SELinux enabled, mounting the host volumes in a container requires an extra step. Assuming you are mounting the `~/couchbase` directory on the host file system, you need to run the following command once before running your first container on that host:
 
-* **Persistence** Storing `/opt/couchbase/var` outside the container allows you to delete the container and re-create it later. You can even update to a container running a later point release of Couchbase Server without losing your data.
-* **Performance** In a standard Docker environment using a union filesystem, leaving `/opt/couchbase/var` "inside" the container will result in some amount of performance degradation.
+`mkdir ~/couchbase && chcon -Rt svirt_sandbox_file_t ~/couchbase`
 
-All of the example commands below will assume you are using volumes mapped to host directories.
+** Increase ULIMIT in Production Deployments :** Couchbase Server normally expects the following changes to ulimits: 
+`ulimit -n 40960        # nofile: max number of open files`
 
-*SELinux workaround*
+`ulimit -c unlimited    # core: max core file size`
 
-If you have SELinux enabled, mounting host volumes in a container requires an extra step.  Assuming you are mounting the `~/couchbase` directory on the host filesystem, you will need to run the following command once before running your first container on that host:
+`ulimit -l unlimited    # memlock: maximum locked-in-memory address space`
 
-```
-mkdir ~/couchbase && chcon -Rt svirt_sandbox_file_t ~/couchbase
-```
+These ulimit settings are necessary when running under heavy load. If you are just doing light testing and development, you can omit these settings, and everything will still work. 
 
-## Ulimits
+To set the ulimits in your container, you will need to run Couchbase Docker containers with the following additional --ulimit flags: 
 
-Couchbase normally expects the following changes to ulimits:
+`docker run -d --ulimit nofile=40960:40960 --ulimit core=100000000:100000000 --ulimit memlock=100000000:100000000 --name db -p 8091-8094:8091-8094 -p 11210:11210 couchbase``
 
-```
-ulimit -n 40960        # nofile: max number of open files
-ulimit -c unlimited    # core: max core file size
-ulimit -l unlimited    # memlock: maximum locked-in-memory address space
-```
+Since "unlimited" is not supported as a value, it sets the core and memlock values to 100 GB. If your system has more than 100 GB RAM, you will want to increase this value to match the available RAM on the system. 
 
-These ulimit settings are necessary when running under heavy load;  but if you are just doing light testing and development, you can omit these settings, and everything will still work.
+Note:The --ulimit flags only work on Docker 1.6 or later.
 
-To set the ulimits in your container, you will need to run Couchbase Docker containers with the following additional `--ulimit` flags:
+** Networking :** Couchbase Server communicates on many different ports (see the [Couchbase Server documentation](http://docs.couchbase.com/admin/admin/Install/install-networkPorts.html "Network ports page on Couchbase Server documentation")). Also, it is generally not supported that the cluster nodes be placed behind any NAT. For these reasons, Docker's default networking configuration is not ideally suited to Couchbase Server deployments. For production deployments it is recomended to use --net=host setting to avoid performance and reliability issues. 
 
-```
-docker run -d --ulimit nofile=40960:40960 --ulimit core=100000000:100000000 --ulimit memlock=100000000:100000000 couchbase/server
-```
 
-Since `unlimited` is not supported as a value, it sets the core and memlock values to 100 GB.  If your system has more than 100 GB RAM, you will want to increase this value to match the available RAM on the system.
-
-NOTE: the `--ulimit` flags only work on Docker 1.6 or later.
 
 # Common Deployment Scenarios
 
