@@ -7,14 +7,16 @@ For support, please visit the [Couchbase support forum](https://forums.couchbase
 
 # QuickStart with Couchbase Server and Docker #
 
-Step - 1 : ```docker run -d --name db -p 8091-8094:8091-8094 -p 11210:11210 couchbase```
-Step - 2 : Next, visit http://localhost:8091 on the host machine to see the Web Console to start Couchbase Server setup.
+**Step - 1 :** ```docker run -d --name db -p 8091-8094:8091-8094 -p 11210:11210 couchbase```
+**Step - 2 :** Next, visit `http://localhost:8091` on the host machine to see the Web Console to start Couchbase Server setup.
+
 TODO: Image : link to the setup wizard fist page.  
+
 Walk through the Setup wizard and accept the default values. 
 - Note: You may need to lower the RAM allocated to various services to fit within the bounds of the resource of the containers.
 - Enable the beer-sample bucket to load some sample data.
 
-Note: For detailed information on configuring the Server, see [Initial Couchbase Server Setup](http://developer.couchbase.com/documentation/server/4.5/install/init-setup.html).
+**Note :** For detailed information on configuring the Server, see [Initial Couchbase Server Setup](http://developer.couchbase.com/documentation/server/4.5/install/init-setup.html).
 
 ## Running A N1QL Query on the Cluster ##
 Simply switch to the Query tab on the Web Console at http://localhost:8091. Run the following N1QL Query
