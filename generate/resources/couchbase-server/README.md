@@ -133,5 +133,5 @@ Couchbase Server comes in 2 Editions: Enterprise Edition and Community Edition. 
 By default, the `latest` Docker tag points to the latest Enterprise Edition.  If you want the Community Edition instead, you should add the appropriate tag , such as 
 
 ```
-docker run couchbase/server:community-4.0.0
+docker run couchbase:community-4.0.0
 ```
