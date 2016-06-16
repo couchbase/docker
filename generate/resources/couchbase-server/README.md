@@ -1,19 +1,41 @@
 
 This README will guide you through running Couchbase Server under Docker.
 
-[Couchbase Server](http://en.wikipedia.org/wiki/Couchbase_Server) is an open-source, distributed (shared-nothing architecture) NoSQL document-oriented database and key-value store optimized for interactive applications.
+[Couchbase Server](http://www.couchbase.com/nosql-databases/couchbase-server) is a NoSQL document database with a distributed architecture for performance, scalability, and availability. It enables developers to build applications easier and faster by leveraging the power of SQL with the flexibility of JSON.
 
-Licensing information is covered towards the end of this guide.
+For support, please visit the [Couchbase support forum](https://forums.couchbase.com/) or Stack Overflow (http://stackoverflow.com/questions/tagged/couchbase)
 
-For support, please visit the [Couchbase support forum](https://forums.couchbase.com/) or `#couchbase` on irc.freenode.net.
+# QuickStart with Couchbase Server and Docker #
 
-# QuickStart
+Step - 1 : ```docker run -d --name db -p 8091-8094:8091-8094 -p 11210:11210 couchbase```
+Step - 2 : Next, visit http://localhost:8091 on the host machine to see the Web Console to start Couchbase Server setup.
+TODO: Image : link to the setup wizard fist page.  
+Walk through the Setup wizard and accept the default values. 
+- Note: You may need to lower the RAM allocated to various services to fit within the bounds of the resource of the containers.
+- Enable the beer-sample bucket to load some sample data.
 
-```
-docker run -d -p 8091-8093:8091-8093 -p 11210:11210 couchbase/server
-```
+Note: For detailed information on configuring the Server, see [Initial Couchbase Server Setup](http://developer.couchbase.com/documentation/server/4.5/install/init-setup.html).
 
-At this point go to http://localhost:8091 from the host machine to see the Admin Console web UI.  More details and screenshots are given below in the **Single host, single container** section.  Also, if you are using SSL, you will need to open up more ports (`11207`, `18091-18093`), see the [Network configuration](http://developer.couchbase.com/documentation/server/4.0/install/install-ports.html) documentation for more details.
+## Running A N1QL Query on the Cluster ##
+Simply switch to the Query tab on the Web Console at http://localhost:8091. Run the following N1QL Query
+```SELECT name FROM `beer-sample` WHERE  brewery_id ="mishawaka_brewing";```
+
+To run a query from command line query tool, run the interactive shell on the container
+bash -c "clear && docker exec -it db sh"
+Navigate to the bin directory under couchbase
+cd /opt/couchbase/bin
+Run cbq command line tool
+./cbq
+Execute the N1QL Query on `beer-sample` bucket
+cbq> SELECT name FROM `beer-sample` WHERE  brewery_id ="mishawaka_brewing";
+
+For more query samples, refer to the “running your first N1QL query” guide here: http://developer.couchbase.com/documentation/server/4.5/getting-started/first-n1ql-query.html 
+
+## Connect via SDK ##
+SDK communicates with Couchbase Server services over various ports using the name that is used to register each node in the server nodes tab. Given each node is registered using the local IP address, applications using the SDK need to be within the private IP network the Couchbase Server containers are in. You can do this by running your application in another container on the same physical machine.
+
+You can deploy a sample application to a container using the “running a sample Web app” guide here:
+http://developer.couchbase.com/documentation/server/4.5/travel-app/index.html
 
 # Background Information
 
