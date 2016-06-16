@@ -13,7 +13,7 @@ For additional questions and feedback, please visit the [Couchbase Forums](https
 
 **Step - 2 :** Next, visit `http://localhost:8091` on the host machine to see the Web Console to start Couchbase Server setup.
 
-![setup splash screen](generate/resources/couchbase-server/images/setup-initial.jpg)
+![setup splash screen](https://raw.githubusercontent.com/cihanb/docker/master/generate/resources/couchbase-server/images/setup-initial.jpg)
 
 Walk through the Setup wizard and accept the default values. 
 - Note: You may need to lower the RAM allocated to various services to fit within the bounds of the resource of the containers.
