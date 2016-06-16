@@ -83,66 +83,13 @@ Note:The --ulimit flags only work on Docker 1.6 or later.
 ** Networking :** Couchbase Server communicates on many different ports (see the [Couchbase Server documentation](http://docs.couchbase.com/admin/admin/Install/install-networkPorts.html "Network ports page on Couchbase Server documentation")). Also, it is generally not supported that the cluster nodes be placed behind any NAT. For these reasons, Docker's default networking configuration is not ideally suited to Couchbase Server deployments. For production deployments it is recomended to use --net=host setting to avoid performance and reliability issues. 
 
 
+# Multi Node Couchbase Server Cluster Deployment Topologies #
+With multi node Couchbase Server clusters, there are 2 popular topologies. 
+* All Couchbase Server containers on one physical machine: This model is commonly used for scale-minimized deployments simulating production deployments for development and test purposes. 
+* Each Couchbase Server container on its own machine: This model is commonly used for production deployments. It prevents Couchbase Server nodes from stepping over each other and gives you better performance predictability.  This is the supported topology in production with Couchbase Server 4.5 and higher. 
 
-# Common Deployment Scenarios
-
-## Single host, single container
-
-```
-┌───────────────────────┐
-│   Host OS (Linux)     │
-│  ┌─────────────────┐  │
-│  │  Container OS   │  │
-│  │    (Ubuntu)     │  │
-│  │  ┌───────────┐  │  │
-│  │  │ Couchbase │  │  │
-│  │  │  Server   │  │  │
-│  │  └───────────┘  │  │
-│  └─────────────────┘  │
-└───────────────────────┘
-```
-
-This deployment scenario is a quick way to try out Couchbase Server on your own machine with no installation overhead - just *download and run*. In this case, any networking configuration will work; the only real requirement is that port 8091 be exposed so that you can access the Couchbase Web Console.
-
-**Start the container**
-
-```
-docker run -d -v ~/couchbase:/opt/couchbase/var -p 8091-8093:8091-8093 -p 11210:11210 couchbase/server
-```
-
-**Verify container start**
-
-The `docker run` command above will return a container ID, such as `1163fd8df`.  Use the container ID to view the logs:
-
-```
-$ docker logs 1163fd8df
-Starting Couchbase Server -- Web UI available at http://<ip>:8091
-```
-
-**Connect to the Admin Console**
-
-From the host, connect your browser to http://localhost:8091, and you should see the Couchbase Server welcome screen:
-
-![Welcome Screen](http://couchbase-mobile.s3.amazonaws.com/github-assets/couchbase_welcome_2.png)
-
-**Configure**
-
-* Click "Setup" button
-
-* For all Setup Wizard screens, leave all values as default and click "Next".
-
-After finishing the Setup Wizard, you should see:
-
-![Servers Screen](http://couchbase-mobile.s3.amazonaws.com/github-assets/couchbase_post_welcome.png)
-
-**Connect via SDK**
-
-At this point, you are ready to connect to your Couchbase Server node from one of the [Couchbase Client SDKs](http://docs.couchbase.com/couchbase-sdk-python-1.2/).
-
-You should run the SDK on the host and point it to `http://localhost:8091/pools`
-
-
-## Single host, multiple containers
+## Development and Test Cluster Deployment with Multiple Couchbase Server Containers on One Physical Machine
+In this deployment model all containers are placed on the same physical node. Placing all containers on a single physical machine means all containers will compete for the same resources. That is fine for test systems, however it isn’t recommended for applications sensitive to performance in production.
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -159,45 +106,7 @@ You should run the SDK on the host and point it to `http://localhost:8091/pools`
 └──────────────────────────────────────────────────────────┘
 ```
 
-This deployment scenario is:
-* Useful for testing out a multi-node cluster on your local workstation.
-* Not recommended for production use.  (The norm for a production cluster is that each node runs on dedicated hardware.)
-* Allows you to experiment with cluster rebalancing and failover.
-* The networking is effectively the same as described in the Software-Defined Network section: Docker assigns an internal IP address to each container, and each of these IPs is visible to all other containers running on the same host.
-* Internal IPs should be used in the Admin Console when adding new nodes to the cluster.
-* For external access to the admin console, you should expose port 8091 of exactly one of the containers when you start it.
 
-You can choose to mount `/opt/couchbase/var` from the host. However, you *must give each container a separate host directory*.
-
-```
-docker run -d -v ~/couchbase/node1:/opt/couchbase/var couchbase/server
-docker run -d -v ~/couchbase/node2:/opt/couchbase/var couchbase/server
-docker run -d -v ~/couchbase/node3:/opt/couchbase/var -p 8091-8093:8091-8093 -p 11210:11210 couchbase/server
-```
-
-**Setting up your Couchbase cluster**
-
-1. After running the last `docker run` command above, get the <container_id>.  Let's call that `<node_3_container_id>`.
-
-1. Get the IP address of the node 3 container by running `docker inspect --format '{{ .NetworkSettings.IPAddress }}' <node_3_container_id>`.  Let's call that `<node_3_ip_addr>`.
-
-1. From the host, connect to the Couchbase Web Console via http://localhost:8091 in your browser and click the "Setup" button.
-
-1. In the hostname field, enter `<node_3_ip_addr>`.
-
-1. Accept all default values in the setup wizard.  Choose a password that you will remember.
-
-1. Click the Server Nodes menu.
-
-1. Choose the Add Servers button in the Couchbase Web Console.
-
-1. For the two remaining containers:
-
-    1. Get the IP address of the container by running `docker inspect --format '{{ .NetworkSettings.IPAddress }}' <node_x_container_id>`.  Let's call that `<node_x_ip_addr>`.
-
-    1. In the Server IP Address field, use `<node_x_ip_addr>`.
-
-    1. In the password field, use the password created above.
 
 
 ## Multiple hosts, single container on each host
