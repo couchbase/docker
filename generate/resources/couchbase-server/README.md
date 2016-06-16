@@ -19,6 +19,8 @@ Walk through the Setup wizard and accept the default values.
 - Note: You may need to lower the RAM allocated to various services to fit within the bounds of the resource of the containers.
 - Enable the beer-sample bucket to load some sample data.
 
+![setup step-1 screen](https://raw.githubusercontent.com/cihanb/docker/master/generate/resources/couchbase-server/images/setup-step1.jpg)
+
 **Note :** For detailed information on configuring the Server, see [Initial Couchbase Server Setup](http://developer.couchbase.com/documentation/server/4.5/install/init-setup.html).
 
 ## Running A N1QL Query on the Couchbase Server Cluster ##
