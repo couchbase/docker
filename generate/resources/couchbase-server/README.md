@@ -6,6 +6,7 @@ This README will guide you through running Couchbase Server with Docker Containe
 For additional questions and feedback, please visit the [Couchbase Forums](https://forums.couchbase.com/) or [Stack Overflow] (http://stackoverflow.com/questions/tagged/couchbase).
 
 # QuickStart with Couchbase Server and Docker #
+Here is how to get a single node Couchbase Server cluster running on Docker containers:
 
 **Step - 1 :** Run Couchbase Server docker container
 
