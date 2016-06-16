@@ -7,7 +7,8 @@ For support, please visit the [Couchbase support forum](https://forums.couchbase
 
 # QuickStart with Couchbase Server and Docker #
 
-**Step - 1 :** ```docker run -d --name db -p 8091-8094:8091-8094 -p 11210:11210 couchbase```
+**Step - 1 :** Run Couchbase Server docker container
+```docker run -d --name db -p 8091-8094:8091-8094 -p 11210:11210 couchbase```
 
 **Step - 2 :** Next, visit `http://localhost:8091` on the host machine to see the Web Console to start Couchbase Server setup.
 
@@ -19,30 +20,34 @@ Walk through the Setup wizard and accept the default values.
 
 **Note :** For detailed information on configuring the Server, see [Initial Couchbase Server Setup](http://developer.couchbase.com/documentation/server/4.5/install/init-setup.html).
 
-## Running A N1QL Query on the Cluster ##
-Simply switch to the Query tab on the Web Console at http://localhost:8091. Run the following N1QL Query
+## Running A N1QL Query on the Couchbase Server Cluster ##
+N1QL is the SQL based query language for Couchbase Server. Simply switch to the Query tab on the Web Console at `http://localhost:8091` and Run the following N1QL Query:
+
 ```SELECT name FROM `beer-sample` WHERE  brewery_id ="mishawaka_brewing";```
 
-To run a query from command line query tool, run the interactive shell on the container
-bash -c "clear && docker exec -it db sh"
-Navigate to the bin directory under couchbase
-cd /opt/couchbase/bin
-Run cbq command line tool
-./cbq
-Execute the N1QL Query on `beer-sample` bucket
-cbq> SELECT name FROM `beer-sample` WHERE  brewery_id ="mishawaka_brewing";
+You can also execute N1QL queries from the commandline. To run a query from command line query tool, run the interactive shell on the container:
 
-For more query samples, refer to the “running your first N1QL query” guide here: http://developer.couchbase.com/documentation/server/4.5/getting-started/first-n1ql-query.html 
+`bash -c "clear && docker exec -it db sh"`
+
+Then, navigate to the `bin` directory under Couchbase Server installation:
+
+`cd /opt/couchbase/bin`
+
+Next, run cbq command line tool and execute the N1QL Query on `beer-sample` bucket
+`./cbq`
+
+```cbq> SELECT name FROM `beer-sample` WHERE  brewery_id ="mishawaka_brewing";```
+
+For more query samples, refer to the [Running your first N1QL query](http://developer.couchbase.com/documentation/server/4.5/getting-started/first-n1ql-query.html) guide.   
 
 ## Connect via SDK ##
-SDK communicates with Couchbase Server services over various ports using the name that is used to register each node in the server nodes tab. Given each node is registered using the local IP address, applications using the SDK need to be within the private IP network the Couchbase Server containers are in. You can do this by running your application in another container on the same physical machine.
+Couchbase Server SDKs comes in many languages:  C SDK 2.4/2.5 Go, Java, .NET, Node.js, PHP, Python. Simply run your application through the Couchbase Server SDK of your choice on the host, and point it to http://localhost:8091/pools to connect to the container.
 
-You can deploy a sample application to a container using the “running a sample Web app” guide here:
-http://developer.couchbase.com/documentation/server/4.5/travel-app/index.html
+For running a sample application, refer to the [Running a sample Web app](http://developer.couchbase.com/documentation/server/4.5/travel-app/index.html) guide.
 
-# Background Information
+# Best Practices with Couchbase Server on Containers #
 
-## Networking
+## Networking ##
 
 Couchbase Server communicates on many different ports (see the [Couchbase Server documentation](http://docs.couchbase.com/admin/admin/Install/install-networkPorts.html "Network ports page on Couchbase Server documentation")). Also, it is generally not supported that the cluster nodes be placed behind any NAT.  For these reasons, Docker's default networking configuration is not ideally suited to Couchbase Server deployments.
 
