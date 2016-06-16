@@ -8,6 +8,7 @@ For support, please visit the [Couchbase support forum](https://forums.couchbase
 # QuickStart with Couchbase Server and Docker #
 
 **Step - 1 :** ```docker run -d --name db -p 8091-8094:8091-8094 -p 11210:11210 couchbase```
+
 **Step - 2 :** Next, visit `http://localhost:8091` on the host machine to see the Web Console to start Couchbase Server setup.
 
 TODO: Image : link to the setup wizard fist page.  
