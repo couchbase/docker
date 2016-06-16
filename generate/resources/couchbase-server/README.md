@@ -63,26 +63,24 @@ With an over-committed environment you can end up with containers competing with
 
 > NOTE for SELinux : If you have SELinux enabled, mounting the host volumes in a container requires an extra step. Assuming you are mounting the `~/couchbase` directory on the host file system, you need to run the following command once before running your first container on that host:
 
-`mkdir ~/couchbase && chcon -Rt svirt_sandbox_file_t ~/couchbase`
+> `mkdir ~/couchbase && chcon -Rt svirt_sandbox_file_t ~/couchbase`
 
 **Increase ULIMIT in Production Deployments :** Couchbase Server normally expects the following changes to ulimits: 
 `ulimit -n 40960        # nofile: max number of open files`
-
 `ulimit -c unlimited    # core: max core file size`
-
 `ulimit -l unlimited    # memlock: maximum locked-in-memory address space`
 
 These ulimit settings are necessary when running under heavy load. If you are just doing light testing and development, you can omit these settings, and everything will still work. 
 
 To set the ulimits in your container, you will need to run Couchbase Docker containers with the following additional --ulimit flags: 
 
-`docker run -d --ulimit nofile=40960:40960 --ulimit core=100000000:100000000 --ulimit memlock=100000000:100000000 --name db -p 8091-8094:8091-8094 -p 11210:11210 couchbase``
+`docker run -d --ulimit nofile=40960:40960 --ulimit core=100000000:100000000 --ulimit memlock=100000000:100000000 --name db -p 8091-8094:8091-8094 -p 11210:11210 couchbase`
 
 Since "unlimited" is not supported as a value, it sets the core and memlock values to 100 GB. If your system has more than 100 GB RAM, you will want to increase this value to match the available RAM on the system. 
 
-Note:The --ulimit flags only work on Docker 1.6 or later.
+> Note:The --ulimit flags only work on Docker 1.6 or later.
 
-**Networking :** Couchbase Server communicates on many different ports (see the [Couchbase Server documentation](http://docs.couchbase.com/admin/admin/Install/install-networkPorts.html "Network ports page on Couchbase Server documentation")). Also, it is generally not supported that the cluster nodes be placed behind any NAT. For these reasons, Docker's default networking configuration is not ideally suited to Couchbase Server deployments. For production deployments it is recomended to use --net=host setting to avoid performance and reliability issues. 
+**Network Configuration and Ports :** Couchbase Server communicates on many different ports (see the [Couchbase Server documentation](http://docs.couchbase.com/admin/admin/Install/install-networkPorts.html "Network ports page on Couchbase Server documentation")). Also, it is generally not supported that the cluster nodes be placed behind any NAT. For these reasons, Docker's default networking configuration is not ideally suited to Couchbase Server deployments. For production deployments it is recomended to use `--net=host` setting to avoid performance and reliability issues. 
 
 # Multi Node Couchbase Server Cluster Deployment Topologies #
 With multi node Couchbase Server clusters, there are 2 popular topologies. 
