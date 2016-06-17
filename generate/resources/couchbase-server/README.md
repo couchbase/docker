@@ -123,6 +123,8 @@ You can find more details on setting up Couchbase Server in this topology in Cou
 
 # Additional References 
 [Couchbase Server and Containers](http://www.couchbase.com/containers)
+[Getting Started with Couchbbase Server and Docker](http://developer.couchbase.com/documentation/server/4.5/install/getting-started-docker.html)
+Detailed Walk-through for [Deploying Couchbase Server on Docker Containers](http://developer.couchbase.com/documentation/server/4.5/install/deploy-with-docker-hub.html)
 
 # Licensing
 Couchbase Server comes in 2 Editions: Enterprise Edition and Community Edition. You can find details on the differences between the 2 and licensing details on the [Couchbase Server Editions](http://developer.couchbase.com/documentation/server/4.5/introduction/editions.html) page.
