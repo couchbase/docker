@@ -86,7 +86,7 @@ Since "unlimited" is not supported as a value, it sets the core and memlock valu
 # Multi Node Couchbase Server Cluster Deployment Topologies #
 With multi node Couchbase Server clusters, there are 2 popular topologies. 
 * All Couchbase Server containers on one physical machine: This model is commonly used for scale-minimized deployments simulating production deployments for development and test purposes. Placing all containers on a single physical machine means all containers will compete for the same resources. Placing all containers on a single physical machine also eliminates the built-in protection against Couchbase Server node failures with replication when the single physical machine fail, all containers experience unavailability at the same time loosing all replicas. These restrictions may be acceptable for test systems, however it isn’t recommended for applications in production. 
-You can find more details on setting up Couchbase Server in this topology in the TODO:LINK in technical documentation.
+You can find more details on setting up Couchbase Server in this topology in Couchbase Server [documentation](http://developer.couchbase.com/documentation/server/4.5/install/docker-deploy-multi-node-cluster.html).
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -104,7 +104,8 @@ You can find more details on setting up Couchbase Server in this topology in the
 ```
 
 * Each Couchbase Server container on its own machine: This model is commonly used for production deployments. It prevents Couchbase Server nodes from stepping over each other and gives you better performance predictability.  This is the supported topology in production with Couchbase Server 4.5 and higher. 
-You can find more details on setting up Couchbase Server in this topology in the TODO:LINK in technical documentation.
+You can find more details on setting up Couchbase Server in this topology in Couchbase Server [documentation](http://developer.couchbase.com/documentation/server/4.5/install/docker-deploy-multi-node-cluster.html).
+.
 
 ```
 ┌───────────────────────┐  ┌───────────────────────┐  ┌───────────────────────┐
