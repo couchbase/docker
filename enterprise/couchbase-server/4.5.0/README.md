@@ -1,258 +1,155 @@
 
-This README will guide you through running Couchbase Server under Docker.
+This README will guide you through running Couchbase Server with Docker Containers.
 
-[Couchbase Server](http://en.wikipedia.org/wiki/Couchbase_Server) is an open-source, distributed (shared-nothing architecture) NoSQL document-oriented database and key-value store optimized for interactive applications.
+[Couchbase Server](http://www.couchbase.com/nosql-databases/couchbase-server) is a NoSQL document database with a distributed architecture for performance, scalability, and availability. It enables developers to build applications easier and faster by leveraging the power of SQL with the flexibility of JSON.
 
-Licensing information is covered towards the end of this guide.
+For additional questions and feedback, please visit the [Couchbase Forums](https://forums.couchbase.com/) or [Stack Overflow](http://stackoverflow.com/questions/tagged/couchbase).
 
-For support, please visit the [Couchbase support forum](https://forums.couchbase.com/) or `#couchbase` on irc.freenode.net.
+# QuickStart with Couchbase Server and Docker
 
-# QuickStart
+Here is how to get a single node Couchbase Server cluster running on Docker containers:
 
-```
-docker run -d -p 8091-8093:8091-8093 -p 11210:11210 couchbase/server
-```
+**Step - 1 :** Run Couchbase Server docker container
 
-At this point go to http://localhost:8091 from the host machine to see the Admin Console web UI.  More details and screenshots are given below in the **Single host, single container** section.  Also, if you are using SSL, you will need to open up more ports (`11207`, `18091-18093`), see the [Network configuration](http://developer.couchbase.com/documentation/server/4.0/install/install-ports.html) documentation for more details.
+`docker run -d --name db -p 8091-8094:8091-8094 -p 11210:11210 couchbase`
 
-# Background Information
+**Step - 2 :** Next, visit `http://localhost:8091` on the host machine to see the Web Console to start Couchbase Server setup.
 
-## Networking
+![setup splash screen](https://raw.githubusercontent.com/cihanb/docker/master/generate/resources/couchbase-server/images/setup-initial.jpg)
 
-Couchbase Server communicates on many different ports (see the [Couchbase Server documentation](http://docs.couchbase.com/admin/admin/Install/install-networkPorts.html "Network ports page on Couchbase Server documentation")). Also, it is generally not supported that the cluster nodes be placed behind any NAT.  For these reasons, Docker's default networking configuration is not ideally suited to Couchbase Server deployments.
+Walk through the Setup wizard and accept the default values.
 
-There are several deployment scenarios which this Docker image can easily support. These will be detailed below, along with recommended network arrangements for each.
+-	Note: You may need to lower the RAM allocated to various services to fit within the bounds of the resource of the containers.
+-	Enable the beer-sample bucket to load some sample data.
 
-## Volumes
+![setup step-1 screen](https://raw.githubusercontent.com/cihanb/docker/master/generate/resources/couchbase-server/images/setup-step1.jpg)
 
-A Couchbase Server Docker container will write all persistent and node-specific data under the directory `/opt/couchbase/var`. We recommend mapping this directory to a directory on the host filesystem (using the `-v` option to `docker run`) for the following reasons:
+**Note :** For detailed information on configuring the Server, see [Initial Couchbase Server Setup](http://developer.couchbase.com/documentation/server/4.5/install/init-setup.html).
 
-* **Persistence** Storing `/opt/couchbase/var` outside the container allows you to delete the container and re-create it later. You can even update to a container running a later point release of Couchbase Server without losing your data.
-* **Performance** In a standard Docker environment using a union filesystem, leaving `/opt/couchbase/var` "inside" the container will result in some amount of performance degradation.
+## Running A N1QL Query on the Couchbase Server Cluster
 
-All of the example commands below will assume you are using volumes mapped to host directories.
+N1QL is the SQL based query language for Couchbase Server. Simply switch to the Query tab on the Web Console at `http://localhost:8091` and run the following N1QL Query in the query window:
 
-*SELinux workaround*
+```SELECT name FROM `beer-sample` WHERE brewery_id ="mishawaka_brewing";```
 
-If you have SELinux enabled, mounting host volumes in a container requires an extra step.  Assuming you are mounting the `~/couchbase` directory on the host filesystem, you will need to run the following command once before running your first container on that host:
+You can also execute N1QL queries from the commandline. To run a query from command line query tool, run the interactive shell on the container:
 
-```
-mkdir ~/couchbase && chcon -Rt svirt_sandbox_file_t ~/couchbase
-```
+`docker exec -it db sh`
 
-## Ulimits
+Then, navigate to the `bin` directory under Couchbase Server installation and run cbq command line tool and execute the N1QL Query on `beer-sample` bucket
 
-Couchbase normally expects the following changes to ulimits:
+`/opt/couchbase/bin/cbq`
 
-```
+```cbq> SELECT name FROM `beer-sample` WHERE brewery_id ="mishawaka_brewing";```
+
+For more query samples, refer to the [Running your first N1QL query](http://developer.couchbase.com/documentation/server/4.5/getting-started/first-n1ql-query.html) guide.
+
+## Connect to the Couchbase Server Cluster via Applications and SDKs
+Couchbase Server SDKs comes in many languages: C SDK 2.4/2.5 Go, Java, .NET, Node.js, PHP, Python. Simply run your application through the Couchbase Server SDK of your choice on the host, and point it to http://localhost:8091/pools to connect to the container.
+
+For running a sample application, refer to the [Running a sample Web app](http://developer.couchbase.com/documentation/server/4.5/travel-app/index.html) guide.
+
+# Requirements and Best Practices
+
+## Container Requirements
+
+Official Couchbase Server containers on Docker Hub are based on Ubuntu 14.04.
+
+**Docker Container Resource Requirements :** For minimum container requirements, you can follow [Couchbase Server minimum HW recommendations](http://developer.couchbase.com/documentation/server/current/install/pre-install.html) for development, test and production environments.
+
+## Best Practices
+
+**Avoid a Single Point of Failure :** Couchbase Server's resilience and high-availability are achieved through creating a cluster of independent nodes and replicating data between them so that any individual node failure doesn't lead to loss of access to your data. In a containerized environment, if you were to run multiple nodes on the same piece of physical hardware, you can inadvertently re-introduce a single point of failure. In environments where you control VM placement, we advise ensuring each Couchbase Server node runs on a different piece of physical hardware.
+
+**Sizing your containers :** Physical hardware performance characteristics are well understood. Even though containers insert a lightweight layer between Couchbase Server and the underlying OS, there is still a small overhead in running Couchbase Server in containers. For stability and better performance predictability, It is recommended to have at least 2 cores dedicated to the container in development environments and 4 cores dedicated to the container rather than shared across multiple containers for Couchbase Server instances running in production. With an over-committed environment you can end up with containers competing with each other causing unpredictable performance and sometimes stability issues.
+
+**Map Couchbase Node Specific Data to a Local Folder :** A Couchbase Server Docker container will write all persistent and node-specific data under the directory /opt/couchbase/var by default. It is recommended to map this directory to a directory on the host file system using the `-v` option to `docker run` to get persistence and performance.
+
+-	Persistence: Storing `/opt/couchbase/var` outside the container with the `-v` option allows you to delete the container and recreate it later without losing the data in Couchbase Server. You can even update to a container running a later release/version of Couchbase Server without losing your data.
+-	Performance: In a standard Docker environment using a union file system, leaving /opt/couchbase/var inside the container results in some amount of performance degradation.
+
+> NOTE for SELinux : If you have SELinux enabled, mounting the host volumes in a container requires an extra step. Assuming you are mounting the `~/couchbase` directory on the host file system, you need to run the following command once before running your first container on that host:
+>
+> `mkdir ~/couchbase && chcon -Rt svirt_sandbox_file_t ~/couchbase`
+
+**Increase ULIMIT in Production Deployments :** Couchbase Server normally expects the following changes to ulimits:
+
+```console
 ulimit -n 40960        # nofile: max number of open files
 ulimit -c unlimited    # core: max core file size
 ulimit -l unlimited    # memlock: maximum locked-in-memory address space
 ```
 
-These ulimit settings are necessary when running under heavy load;  but if you are just doing light testing and development, you can omit these settings, and everything will still work.
+These ulimit settings are necessary when running under heavy load. If you are just doing light testing and development, you can omit these settings, and everything will still work.
 
-To set the ulimits in your container, you will need to run Couchbase Docker containers with the following additional `--ulimit` flags:
+To set the ulimits in your container, you will need to run Couchbase Docker containers with the following additional --ulimit flags:
 
-```
-docker run -d --ulimit nofile=40960:40960 --ulimit core=100000000:100000000 --ulimit memlock=100000000:100000000 couchbase/server
-```
+`docker run -d --ulimit nofile=40960:40960 --ulimit core=100000000:100000000 --ulimit memlock=100000000:100000000 --name db -p 8091-8094:8091-8094 -p 11210:11210 couchbase`
 
-Since `unlimited` is not supported as a value, it sets the core and memlock values to 100 GB.  If your system has more than 100 GB RAM, you will want to increase this value to match the available RAM on the system.
+Since "unlimited" is not supported as a value, it sets the core and memlock values to 100 GB. If your system has more than 100 GB RAM, you will want to increase this value to match the available RAM on the system.
 
-NOTE: the `--ulimit` flags only work on Docker 1.6 or later.
+> Note:The --ulimit flags only work on Docker 1.6 or later.
 
-# Common Deployment Scenarios
+**Network Configuration and Ports :** Couchbase Server communicates on many different ports (see the [Couchbase Server documentation](http://docs.couchbase.com/admin/admin/Install/install-networkPorts.html)). Also, it is generally not supported that the cluster nodes be placed behind any NAT. For these reasons, Docker's default networking configuration is not ideally suited to Couchbase Server deployments. For production deployments it is recomended to use `--net=host` setting to avoid performance and reliability issues.
 
-## Single host, single container
+# Multi Node Couchbase Server Cluster Deployment Topologies
 
-```
-┌───────────────────────┐
-│   Host OS (Linux)     │
-│  ┌─────────────────┐  │
-│  │  Container OS   │  │
-│  │    (Ubuntu)     │  │
-│  │  ┌───────────┐  │  │
-│  │  │ Couchbase │  │  │
-│  │  │  Server   │  │  │
-│  │  └───────────┘  │  │
-│  └─────────────────┘  │
-└───────────────────────┘
-```
+With multi node Couchbase Server clusters, there are 2 popular topologies.
 
-This deployment scenario is a quick way to try out Couchbase Server on your own machine with no installation overhead - just *download and run*. In this case, any networking configuration will work; the only real requirement is that port 8091 be exposed so that you can access the Couchbase Web Console.
+## All Couchbase Server containers on one physical machine
 
-**Start the container**
+This model is commonly used for scale-minimized deployments simulating production deployments for development and test purposes. Placing all containers on a single physical machine means all containers will compete for the same resources. Placing all containers on a single physical machine also eliminates the built-in protection against Couchbase Server node failures with replication when the single physical machine fail, all containers experience unavailability at the same time loosing all replicas. These restrictions may be acceptable for test systems, however it isn’t recommended for applications in production.
 
-```
-docker run -d -v ~/couchbase:/opt/couchbase/var -p 8091-8093:8091-8093 -p 11210:11210 couchbase/server
-```
+You can find more details on setting up Couchbase Server in this topology in Couchbase Server [documentation](http://developer.couchbase.com/documentation/server/4.5/install/docker-deploy-multi-node-cluster.html).
 
-**Verify container start**
-
-The `docker run` command above will return a container ID, such as `1163fd8df`.  Use the container ID to view the logs:
-
-```
-$ docker logs 1163fd8df
-Starting Couchbase Server -- Web UI available at http://<ip>:8091
-```
-
-**Connect to the Admin Console**
-
-From the host, connect your browser to http://localhost:8091, and you should see the Couchbase Server welcome screen:
-
-![Welcome Screen](http://couchbase-mobile.s3.amazonaws.com/github-assets/couchbase_welcome_2.png)
-
-**Configure**
-
-* Click "Setup" button
-
-* For all Setup Wizard screens, leave all values as default and click "Next".
-
-After finishing the Setup Wizard, you should see:
-
-![Servers Screen](http://couchbase-mobile.s3.amazonaws.com/github-assets/couchbase_post_welcome.png)
-
-**Connect via SDK**
-
-At this point, you are ready to connect to your Couchbase Server node from one of the [Couchbase Client SDKs](http://docs.couchbase.com/couchbase-sdk-python-1.2/).
-
-You should run the SDK on the host and point it to `http://localhost:8091/pools`
+	┌──────────────────────────────────────────────────────────┐
+	│                     Host OS (Linux)                      │
+	│                                                          │
+	│  ┌───────────────┐ ┌───────────────┐  ┌───────────────┐  │
+	│  │ Container OS  │ │ Container OS  │  │ Container OS  │  │
+	│  │   (Ubuntu)    │ │   (Ubuntu)    │  │   (Ubuntu)    │  │
+	│  │ ┌───────────┐ │ │ ┌───────────┐ │  │ ┌───────────┐ │  │
+	│  │ │ Couchbase │ │ │ │ Couchbase │ │  │ │ Couchbase │ │  │
+	│  │ │  Server   │ │ │ │  Server   │ │  │ │  Server   │ │  │
+	│  │ └───────────┘ │ │ └───────────┘ │  │ └───────────┘ │  │
+	│  └───────────────┘ └───────────────┘  └───────────────┘  │
+	└──────────────────────────────────────────────────────────┘
 
 
-## Single host, multiple containers
+## Each Couchbase Server container on its own machine
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                     Host OS (Linux)                      │
-│                                                          │
-│  ┌───────────────┐ ┌───────────────┐  ┌───────────────┐  │
-│  │ Container OS  │ │ Container OS  │  │ Container OS  │  │
-│  │   (Ubuntu)    │ │   (Ubuntu)    │  │   (Ubuntu)    │  │
-│  │ ┌───────────┐ │ │ ┌───────────┐ │  │ ┌───────────┐ │  │
-│  │ │ Couchbase │ │ │ │ Couchbase │ │  │ │ Couchbase │ │  │
-│  │ │  Server   │ │ │ │  Server   │ │  │ │  Server   │ │  │
-│  │ └───────────┘ │ │ └───────────┘ │  │ └───────────┘ │  │
-│  └───────────────┘ └───────────────┘  └───────────────┘  │
-└──────────────────────────────────────────────────────────┘
-```
+This model is commonly used for production deployments. It prevents Couchbase Server nodes from stepping over each other and gives you better performance predictability. This is the supported topology in production with Couchbase Server 4.5 and higher.
 
-This deployment scenario is:
-* Useful for testing out a multi-node cluster on your local workstation.
-* Not recommended for production use.  (The norm for a production cluster is that each node runs on dedicated hardware.)
-* Allows you to experiment with cluster rebalancing and failover.
-* The networking is effectively the same as described in the Software-Defined Network section: Docker assigns an internal IP address to each container, and each of these IPs is visible to all other containers running on the same host.
-* Internal IPs should be used in the Admin Console when adding new nodes to the cluster.
-* For external access to the admin console, you should expose port 8091 of exactly one of the containers when you start it.
+You can find more details on setting up Couchbase Server in this topology in Couchbase Server [documentation](http://developer.couchbase.com/documentation/server/4.5/install/docker-deploy-multi-node-cluster.html).
 
-You can choose to mount `/opt/couchbase/var` from the host. However, you *must give each container a separate host directory*.
+	┌───────────────────────┐  ┌───────────────────────┐  ┌───────────────────────┐
+	│   Host OS (Linux)     │  │   Host OS (Linux)     │  │   Host OS (Linux)     │
+	│  ┌─────────────────┐  │  │  ┌─────────────────┐  │  │  ┌─────────────────┐  │
+	│  │  Container OS   │  │  │  │  Container OS   │  │  │  │  Container OS   │  │
+	│  │    (Ubuntu)     │  │  │  │    (Ubuntu)     │  │  │  │    (Ubuntu)     │  │
+	│  │  ┌───────────┐  │  │  │  │  ┌───────────┐  │  │  │  │  ┌───────────┐  │  │
+	│  │  │ Couchbase │  │  │  │  │  │ Couchbase │  │  │  │  │  │ Couchbase │  │  │
+	│  │  │  Server   │  │  │  │  │  │  Server   │  │  │  │  │  │  Server   │  │  │
+	│  │  └───────────┘  │  │  │  │  └───────────┘  │  │  │  │  └───────────┘  │  │
+	│  └─────────────────┘  │  │  └─────────────────┘  │  │  └─────────────────┘  │
+	└───────────────────────┘  └───────────────────────┘  └───────────────────────┘
 
-```
-docker run -d -v ~/couchbase/node1:/opt/couchbase/var couchbase/server
-docker run -d -v ~/couchbase/node2:/opt/couchbase/var couchbase/server
-docker run -d -v ~/couchbase/node3:/opt/couchbase/var -p 8091-8093:8091-8093 -p 11210:11210 couchbase/server
-```
+# Additional References
 
-**Setting up your Couchbase cluster**
-
-1. After running the last `docker run` command above, get the <container_id>.  Let's call that `<node_3_container_id>`.
-
-1. Get the IP address of the node 3 container by running `docker inspect --format '{{ .NetworkSettings.IPAddress }}' <node_3_container_id>`.  Let's call that `<node_3_ip_addr>`.
-
-1. From the host, connect to the Couchbase Web Console via http://localhost:8091 in your browser and click the "Setup" button.
-
-1. In the hostname field, enter `<node_3_ip_addr>`.
-
-1. Accept all default values in the setup wizard.  Choose a password that you will remember.
-
-1. Click the Server Nodes menu.
-
-1. Choose the Add Servers button in the Couchbase Web Console.
-
-1. For the two remaining containers:
-
-    1. Get the IP address of the container by running `docker inspect --format '{{ .NetworkSettings.IPAddress }}' <node_x_container_id>`.  Let's call that `<node_x_ip_addr>`.
-
-    1. In the Server IP Address field, use `<node_x_ip_addr>`.
-
-    1. In the password field, use the password created above.
-
-
-## Multiple hosts, single container on each host
-
-```
-┌───────────────────────┐  ┌───────────────────────┐  ┌───────────────────────┐
-│   Host OS (Linux)     │  │   Host OS (Linux)     │  │   Host OS (Linux)     │
-│  ┌─────────────────┐  │  │  ┌─────────────────┐  │  │  ┌─────────────────┐  │
-│  │  Container OS   │  │  │  │  Container OS   │  │  │  │  Container OS   │  │
-│  │    (Ubuntu)     │  │  │  │    (Ubuntu)     │  │  │  │    (Ubuntu)     │  │
-│  │  ┌───────────┐  │  │  │  │  ┌───────────┐  │  │  │  │  ┌───────────┐  │  │
-│  │  │ Couchbase │  │  │  │  │  │ Couchbase │  │  │  │  │  │ Couchbase │  │  │
-│  │  │  Server   │  │  │  │  │  │  Server   │  │  │  │  │  │  Server   │  │  │
-│  │  └───────────┘  │  │  │  │  └───────────┘  │  │  │  │  └───────────┘  │  │
-│  └─────────────────┘  │  │  └─────────────────┘  │  │  └─────────────────┘  │
-└───────────────────────┘  └───────────────────────┘  └───────────────────────┘
-```
-
-This deployment scenario represents a typical Couchbase Server cluster, where each node runs on a dedicated host. We assume that the nodes are located in the same datacenter with high-speed network links between them. We also assume that the datacenter LAN configuration allows each host in the cluster to see other hosts via the known IPs.
-
-Currently, the only supported approach for Couchbase Server on this deployment architecture is to use the `--net=host` flag.
-
-Using the `--net=host` flag will have the following effects:
-
-* The container will use the host's own networking stack, and bind directly to ports on the host.
-* Removes networking complications with Couchbase Server being behind a NAT.
-* From a networking perspective, it is effectively the same as running Couchbase Server directly on the host.
-* There is no need to use `-p` to "expose" any ports. Each container will use the IP address(es) of its host.
-* Increased efficiency, as there will be no Docker-imposed networking overhead.
-
-Start a container on *each host* via:
-
-```
-docker run -d -v ~/couchbase:/opt/couchbase/var --net=host couchbase/server
-```
-
-To configure Couchbase Server:
-
-* Access the Couchbase Server Web Console via port 8091 on any of the hosts.
-* Follow the same steps from the *Multiple containers on single host* section. However, use the use the host IP address itself rather than using `docker inspect` to discover the IP address.
-
-
-## Multiple hosts, multiple containers per host
-
-```
-┌─────────────────────────────────────────┐  ┌─────────────────────────────────────────┐
-│            Host OS (Linux)              │  │            Host OS (Linux)              │
-│ ┌─────────────────┐ ┌─────────────────┐ │  │ ┌─────────────────┐ ┌─────────────────┐ │
-│ │  Container OS   │ │  Container OS   │ │  │ │  Container OS   │ │  Container OS   │ │
-│ │    (Ubuntu)     │ │    (Ubuntu)     │ │  │ │    (Ubuntu)     │ │    (Ubuntu)     │ │
-│ │  ┌───────────┐  │ │  ┌───────────┐  │ │  │ │  ┌───────────┐  │ │  ┌───────────┐  │ │
-│ │  │ Couchbase │  │ │  │ Couchbase │  │ │  │ │  │ Couchbase │  │ │  │ Couchbase │  │ │
-│ │  │  Server   │  │ │  │  Server   │  │ │  │ │  │  Server   │  │ │  │  Server   │  │ │
-│ │  └───────────┘  │ │  └───────────┘  │ │  │ │  └───────────┘  │ │  └───────────┘  │ │
-│ └─────────────────┘ └─────────────────┘ │  │ └─────────────────┘ └─────────────────┘ │
-└─────────────────────────────────────────┘  └─────────────────────────────────────────┘
-```
-
-* This deployment scenario is difficult to achieve with plain vanilla Docker, as there is no native way to allow to each container unrestricted access to the internal IPs of containers running on other hosts.
-* There are software networking layers such as [Flannel](https://github.com/coreos/flannel "Flannel") and [Weave](https://github.com/weaveworks/weave "Weave"), but it is beyond the scope of this README to explain how those might be configured.
-* This deployment scenario is not particularly useful either for testing or production. You will be better off checking out the various available [cloud hosting scenarios](https://github.com/couchbase/docker/wiki#container-specific-cloud-hosting-platforms).
-
-## Cloud environments
-
-Although it is beyond the scope of this README, there is a [github wiki](https://github.com/couchbase/docker/wiki#container-specific-cloud-hosting-platforms) that contains guidance and instructions on how to run Couchbase Server Docker containers in various cloud environments.
-
+-	[Couchbase Server and Containers](http://www.couchbase.com/containers)
+-	[Getting Started with Couchbbase Server and Docker](http://developer.couchbase.com/documentation/server/4.5/install/getting-started-docker.html)
+-	Detailed Walk-through for [Deploying Couchbase Server on Docker Containers](http://developer.couchbase.com/documentation/server/4.5/install/deploy-with-docker-hub.html)
 
 # Licensing
 
-Couchbase Server comes in two editions:
+Couchbase Server comes in 2 Editions: Enterprise Edition and Community Edition. You can find details on the differences between the 2 and licensing details on the [Couchbase Server Editions](http://developer.couchbase.com/documentation/server/4.5/introduction/editions.html) page.
 
-* [Community Edition](http://www.couchbase.com/community) -- free for unrestricted use.
+-	Enterprise Edition -- free for development, testing and POCs. Requires a paid subscription for production deployment. Please refer to the [subscribe](http://www.couchbase.com/subscriptions-and-support) page for details on enterprise edition agreements.
 
-* [Enterprise Edition](http://www.couchbase.com/agreement/subscription) -- free for development, paid subscription required for production deployment.
+-	Community Edition -- free for unrestricted use for community users.
 
-By default, the `latest` Docker tag points to the latest Enterprise Edition.  If you want the Community Edition instead, you should add the appropriate tag:
+By default, the `latest` Docker tag points to the latest Enterprise Edition. If you want the Community Edition instead, you should add the appropriate tag, such as
 
-```
-docker run couchbase/server:community-3.0.1
+```console
+docker run couchbase:community-4.0.0
 ```
