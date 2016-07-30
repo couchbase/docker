@@ -2,46 +2,23 @@ FROM centos:centos7
 
 MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 
-ENV GOPATH /opt/go
-ENV SGROOT /opt/sync_gateway
-ENV GOROOT /usr/local/go
-ENV PATH $PATH:$GOPATH/bin:$GOROOT/bin
+ENV PATH $PATH:/opt/couchbase-sync-gateway/bin
 
-# Get dependencies
+# install wget
 RUN yum -y update && \
-    yum groupinstall -y development && \
-    yum install -y \
-    bc \
-    curl \
-    emacs-nox \
-    git \
-    mercurial \
-    wget 
+        yum install -y \
+	wget 
 
-# Download and install Go
-RUN wget http://golang.org/dl/go1.5.2.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.5.2.linux-amd64.tar.gz && \
-    rm go1.5.2.linux-amd64.tar.gz
+# wget sync gateway URL
+# eg: http://cbmobile-packages.s3.amazonaws.com/couchbase-sync-gateway-enterprise_1.3.0-274_x86_64.rpm
+RUN wget http://packages.couchbase.com/releases/couchbase-sync-gateway/1.2.0/couchbase-sync-gateway-community_1.2.0_x86_64.rpm  
 
-# install common go packages
-RUN go get github.com/tools/godep && \
-    go get github.com/nsf/gocode && \
-    go get golang.org/x/tools/cmd/goimports && \
-    go get github.com/golang/lint/golint && \
-    go get github.com/rogpeppe/godef
+# rpm install it
+# eg, couchbase-sync-gateway-enterprise_1.3.0-274_x86_64.rpm
+RUN rpm -i couchbase-sync-gateway-community_1.2.0_x86_64.rpm
 
-# Build Sync Gateway
-RUN mkdir -p $GOPATH && \
-    cd /opt && \ 
-    git clone https://github.com/couchbase/sync_gateway.git && \
-    cd $SGROOT && \
-    git checkout 1.2.0 && \	
-    git submodule update --init --recursive && \
-    ./build.sh && \
-    cp bin/sync_gateway /usr/local/bin && \
-    mkdir -p $SGROOT/data
-
-ENTRYPOINT ["/usr/local/bin/sync_gateway"]
+ENTRYPOINT ["/opt/couchbase-sync-gateway/bin/sync_gateway"]
 
 # Expose ports
 EXPOSE 4984 4985
+

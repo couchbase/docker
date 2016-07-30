@@ -144,21 +144,35 @@ func generateDockerfile(variant DockerfileVariant) error {
 		"Dockerfile.template",
 	)
 
-	// template parameters
-	params := struct {
-		CB_VERSION          string
-		CB_PACKAGE          string
-		CB_EXTRA_DEPS       string
-		CB_SHA256           string
-		GO_COMPILER_VERSION string
-		DOCKER_BASE_IMAGE   string
-	}{
-		CB_VERSION:          variant.VersionWithSubstitutions(),
-		CB_PACKAGE:          variant.debPackageName(),
-		CB_EXTRA_DEPS:       variant.extraDependencies(),
-		CB_SHA256:           variant.getSHA256(),
-		GO_COMPILER_VERSION: variant.goCompilerVersion(),
-		DOCKER_BASE_IMAGE:   variant.dockerBaseImage(),
+	var params interface{}
+
+	if variant.Product == ProductServer {
+		// template parameters
+		params = struct {
+			CB_VERSION        string
+			CB_PACKAGE        string
+			CB_EXTRA_DEPS     string
+			CB_SHA256         string
+			DOCKER_BASE_IMAGE string
+		}{
+			CB_VERSION:        variant.VersionWithSubstitutions(),
+			CB_PACKAGE:        variant.debPackageName(),
+			CB_EXTRA_DEPS:     variant.extraDependencies(),
+			CB_SHA256:         variant.getSHA256(),
+			DOCKER_BASE_IMAGE: variant.dockerBaseImage(),
+		}
+
+	} else if variant.Product == ProductSyncGw {
+		// template parameters
+		params = struct {
+			SYNC_GATEWAY_PACKAGE_URL      string
+			SYNC_GATEWAY_PACKAGE_FILENAME string
+			DOCKER_BASE_IMAGE             string
+		}{
+			SYNC_GATEWAY_PACKAGE_URL:      variant.sgPackageUrl(),
+			SYNC_GATEWAY_PACKAGE_FILENAME: variant.sgPackageFilename(),
+			DOCKER_BASE_IMAGE:             variant.dockerBaseImage(),
+		}
 	}
 
 	templateBytes, err := ioutil.ReadFile(sourceTemplate)
@@ -341,18 +355,6 @@ func (variant DockerfileVariant) getSHA256() string {
 	}
 }
 
-func (variant DockerfileVariant) goCompilerVersion() string {
-
-	if variant.Product == ProductSyncGw {
-		if strings.HasPrefix(variant.Version, "1.1") {
-			return "1.4.2"
-		}
-	}
-
-	return "1.5.2"
-
-}
-
 func (variant DockerfileVariant) dockerBaseImage() string {
 
 	switch variant.Product {
@@ -412,27 +414,6 @@ func extraStuffAfterVersion(version string) string {
 	return ""
 }
 
-// Generate the rpm package name for this variant:
-// eg: couchbase-server-enterprise-3.0.2-centos6.x86_64.rpm
-func (variant DockerfileVariant) rpmPackageName() string {
-	// for 2.x, leave centos out of the rpm name
-	if variant.isVersion2() {
-		return fmt.Sprintf(
-			"%v-%v_%v_x86_64.rpm",
-			variant.Product,
-			variant.Edition,
-			variant.Version,
-		)
-	} else {
-		return fmt.Sprintf(
-			"%v-%v-%v-centos6.x86_64.rpm",
-			variant.Product,
-			variant.Edition,
-			variant.Version,
-		)
-	}
-}
-
 // Generate the deb package name for this variant:
 // eg: couchbase-server-enterprise-3.0.2-ubuntu12.04_amd64.deb
 func (variant DockerfileVariant) debPackageName() string {
@@ -472,6 +453,45 @@ func (variant DockerfileVariant) versionDir() string {
 		string(variant.Version),
 	)
 	return versionDir
+}
+
+// Find the package URL for this Sync Gateway version
+// eg. http://packages.couchbase.com/releases/couchbase-sync-gateway/1.2.1/couchbase-sync-gateway-community_1.2.1-4_x86_64.rpm
+func (variant DockerfileVariant) sgPackageUrl() string {
+
+	packagesBaseUrl := "http://packages.couchbase.com/releases/couchbase-sync-gateway"
+
+	sgFileName := variant.sgPackageFilename()
+
+	return fmt.Sprintf(
+		"%s/%s/%s",
+		packagesBaseUrl,
+		variant.versionWithoutBuildNumber(),
+		sgFileName,
+	)
+
+}
+
+// Strip build number, eg 1.2.1-4 --> 1.2.1
+func (variant DockerfileVariant) versionWithoutBuildNumber() string {
+	re := regexp.MustCompile(`([0-9]*.[0-9]*.[0-9]*)`)
+	result := re.FindStringSubmatch(variant.Version)
+	if len(result) > 1 {
+		group1 := result[1]
+		return group1
+	}
+	return "error"
+
+}
+
+func (variant DockerfileVariant) sgPackageFilename() string {
+
+	return fmt.Sprintf(
+		"couchbase-sync-gateway-%s_%s_x86_64.rpm",
+		strings.ToLower(string(variant.Edition)),
+		variant.Version,
+	)
+
 }
 
 // exists returns whether the given file or directory exists or not
