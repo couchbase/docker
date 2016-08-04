@@ -11,9 +11,9 @@ RUN yum -y update && \
     wget 
 
 # Install Sync Gateway
-RUN wget http://packages.couchbase.com/releases/couchbase-sync-gateway/1.2.0/couchbase-sync-gateway-community_1.2.0_x86_64.rpm && \
-    rpm -i couchbase-sync-gateway-community_1.2.0_x86_64.rpm && \
-    rm couchbase-sync-gateway-community_1.2.0_x86_64.rpm
+RUN wget http://packages.couchbase.com/releases/couchbase-sync-gateway/1.3.0/couchbase-sync-gateway-enterprise_1.3.0-274_x86_64.rpm && \
+    rpm -i couchbase-sync-gateway-enterprise_1.3.0-274_x86_64.rpm && \
+    rm couchbase-sync-gateway-enterprise_1.3.0-274_x86_64.rpm
 
 # Create directory where the default config stores memory snapshots
 RUN mkdir /opt/couchbase-sync-gateway/data

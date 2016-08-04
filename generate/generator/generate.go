@@ -107,7 +107,11 @@ func generateVariant(variant DockerfileVariant) error {
 		return err
 	}
 
-	if err := deployResources(variant); err != nil {
+	if err := deployScriptResources(variant); err != nil {
+		return err
+	}
+
+	if err := deployConfigResources(variant); err != nil {
 		return err
 	}
 
@@ -193,14 +197,14 @@ func generateDockerfile(variant DockerfileVariant) error {
 
 }
 
-func deployResources(variant DockerfileVariant) error {
+func deployResourcesSubdir(variant DockerfileVariant, subdir string) error {
 
 	srcDir := path.Join(
 		processingRoot,
 		"generate",
 		"resources",
 		string(variant.Product),
-		"scripts",
+		subdir,
 	)
 
 	exists, err := exists(srcDir)
@@ -213,10 +217,20 @@ func deployResources(variant DockerfileVariant) error {
 
 	versionDir := variant.versionDir()
 
-	destDir := path.Join(versionDir, "scripts")
+	destDir := path.Join(versionDir, subdir)
 
 	return CopyDir(srcDir, destDir)
 
+}
+
+func deployScriptResources(variant DockerfileVariant) error {
+
+	return deployResourcesSubdir(variant, "scripts")
+}
+
+func deployConfigResources(variant DockerfileVariant) error {
+
+	return deployResourcesSubdir(variant, "config")
 }
 
 func deployReadme(variant DockerfileVariant) error {

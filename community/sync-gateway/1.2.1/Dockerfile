@@ -4,20 +4,28 @@ MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 
 ENV PATH $PATH:/opt/couchbase-sync-gateway/bin
 
-# install wget
+# Install dependencies:
+#  wget: for downloading Sync Gateway package installer
 RUN yum -y update && \
-        yum install -y \
-	wget 
+    yum install -y \
+    wget 
 
-# wget sync gateway URL
-# eg: http://cbmobile-packages.s3.amazonaws.com/couchbase-sync-gateway-enterprise_1.3.0-274_x86_64.rpm
-RUN wget http://packages.couchbase.com/releases/couchbase-sync-gateway/1.2.1/couchbase-sync-gateway-community_1.2.1_x86_64.rpm  
+# Install Sync Gateway
+RUN wget http://packages.couchbase.com/releases/couchbase-sync-gateway/1.2.1/couchbase-sync-gateway-community_1.2.1_x86_64.rpm && \
+    rpm -i couchbase-sync-gateway-community_1.2.1_x86_64.rpm && \
+    rm couchbase-sync-gateway-community_1.2.1_x86_64.rpm
 
-# rpm install it
-# eg, couchbase-sync-gateway-enterprise_1.3.0-274_x86_64.rpm
-RUN rpm -i couchbase-sync-gateway-community_1.2.1_x86_64.rpm
+# Create directory where the default config stores memory snapshots
+RUN mkdir /opt/couchbase-sync-gateway/data
 
-ENTRYPOINT ["/opt/couchbase-sync-gateway/bin/sync_gateway"]
+# copy the default config into the container
+COPY config/sync_gateway_config.json /etc/sync_gateway/config.json
+
+# Invoke the sync_gateway executable by default
+ENTRYPOINT ["sync_gateway"]
+
+# Use the default config
+CMD ["/etc/sync_gateway/config.json"]
 
 # Expose ports
 EXPOSE 4984 4985
