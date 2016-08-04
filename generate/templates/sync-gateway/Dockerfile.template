@@ -15,7 +15,7 @@ RUN wget {{ .SYNC_GATEWAY_PACKAGE_URL }} && \
     rpm -i {{ .SYNC_GATEWAY_PACKAGE_FILENAME }} && \
     rm {{ .SYNC_GATEWAY_PACKAGE_FILENAME }}
 
-# Create directory where the default config stores memory snapshots
+# Create directory where the default config stores memory snapshots to disk
 RUN mkdir /opt/couchbase-sync-gateway/data
 
 # copy the default config into the container
@@ -24,9 +24,10 @@ COPY config/sync_gateway_config.json /etc/sync_gateway/config.json
 # Invoke the sync_gateway executable by default
 ENTRYPOINT ["sync_gateway"]
 
-# Use the default config
+# If user doesn't specify any args, use the default config
 CMD ["/etc/sync_gateway/config.json"]
 
 # Expose ports
-EXPOSE 4984 4985
+#  port 4984: public port
+EXPOSE 4984
 

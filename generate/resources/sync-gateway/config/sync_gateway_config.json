@@ -1,7 +1,6 @@
 {
 	"log": ["HTTP+"],
-	"adminInterface": "0.0.0.0:4985",
-	"interface": "0.0.0.0:4984",
+	"interface": ":4984",
 	"databases": {
 		"db": {
 			"server": "walrus:/opt/couchbase-sync-gateway/data",

@@ -15,7 +15,7 @@ RUN wget http://packages.couchbase.com/releases/couchbase-sync-gateway/1.1.1/cou
     rpm -i couchbase-sync-gateway-community_1.1.1_x86_64.rpm && \
     rm couchbase-sync-gateway-community_1.1.1_x86_64.rpm
 
-# Create directory where the default config stores memory snapshots
+# Create directory where the default config stores memory snapshots to disk
 RUN mkdir /opt/couchbase-sync-gateway/data
 
 # copy the default config into the container
@@ -24,9 +24,10 @@ COPY config/sync_gateway_config.json /etc/sync_gateway/config.json
 # Invoke the sync_gateway executable by default
 ENTRYPOINT ["sync_gateway"]
 
-# Use the default config
+# If user doesn't specify any args, use the default config
 CMD ["/etc/sync_gateway/config.json"]
 
 # Expose ports
-EXPOSE 4984 4985
+#  port 4984: public port
+EXPOSE 4984
 
