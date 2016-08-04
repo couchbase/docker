@@ -2,46 +2,32 @@ FROM centos:centos7
 
 MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 
-ENV GOPATH /opt/go
-ENV SGROOT /opt/sync_gateway
-ENV GOROOT /usr/local/go
-ENV PATH $PATH:$GOPATH/bin:$GOROOT/bin
+ENV PATH $PATH:/opt/couchbase-sync-gateway/bin
 
-# Get dependencies
+# Install dependencies:
+#  wget: for downloading Sync Gateway package installer
 RUN yum -y update && \
-    yum groupinstall -y development && \
     yum install -y \
-    bc \
-    curl \
-    emacs-nox \
-    git \
-    mercurial \
     wget 
 
-# Download and install Go
-RUN wget http://golang.org/dl/go1.5.2.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.5.2.linux-amd64.tar.gz && \
-    rm go1.5.2.linux-amd64.tar.gz
+# Install Sync Gateway
+RUN wget http://packages.couchbase.com/releases/couchbase-sync-gateway/1.0.4/couchbase-sync-gateway-community_1.0.4_x86_64.rpm && \
+    rpm -i couchbase-sync-gateway-community_1.0.4_x86_64.rpm && \
+    rm couchbase-sync-gateway-community_1.0.4_x86_64.rpm
 
-# install common go packages
-RUN go get github.com/tools/godep && \
-    go get github.com/nsf/gocode && \
-    go get golang.org/x/tools/cmd/goimports && \
-    go get github.com/golang/lint/golint && \
-    go get github.com/rogpeppe/godef
+# Create directory where the default config stores memory snapshots to disk
+RUN mkdir /opt/couchbase-sync-gateway/data
 
-# Build Sync Gateway
-RUN mkdir -p $GOPATH && \
-    cd /opt && \ 
-    git clone https://github.com/couchbase/sync_gateway.git && \
-    cd $SGROOT && \
-    git checkout 1.0.4 && \	
-    git submodule update --init --recursive && \
-    ./build.sh && \
-    cp bin/sync_gateway /usr/local/bin && \
-    mkdir -p $SGROOT/data
+# copy the default config into the container
+COPY config/sync_gateway_config.json /etc/sync_gateway/config.json
 
-ENTRYPOINT ["/usr/local/bin/sync_gateway"]
+# Invoke the sync_gateway executable by default
+ENTRYPOINT ["sync_gateway"]
+
+# If user doesn't specify any args, use the default config
+CMD ["/etc/sync_gateway/config.json"]
 
 # Expose ports
-EXPOSE 4984 4985
+#  port 4984: public port
+EXPOSE 4984
+
