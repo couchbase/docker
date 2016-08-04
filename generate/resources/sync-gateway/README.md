@@ -1,5 +1,7 @@
 
-[Marketing description of what Sync Gateway is goes here]
+Sync Gateway is REST API server that allows Couchbase Lite mobile databases to synchronize data.  It can also be used as a standalone data storage system.
+
+For more information, see the [Couchbase Mobile Overview](http://developer.couchbase.com/mobile).
 
 ## Quickstart
 
@@ -79,16 +81,78 @@ NOTE: if you are running on OSX using docker-machine, you will need to use the I
 
 ### Using a Docker volume
 
+Prepare the Sync Gateway configuration file on your local machine:
+
+```
+$ cd /tmp
+$ wget https://raw.githubusercontent.com/couchbase/sync_gateway/master/examples/basic-walrus-bucket.json
+$ mv basic-walrus-bucket.json my-sg-config.json
+$ vi my-sg-config.json  # make edits
+```
+
+Run Sync Gateway and use that configuration file:
+
+```
+$ docker run -p 4984:4984 -d -v /tmp:/tmp/config couchbase-sync-gateway /tmp/config/my-sg-config.json
+```
+
+NOTE: if you are running on OSX using docker-machine, you will need to either use a directory under `/User` instead of `/tmp`, or run `docker-machine ssh` and run the commands from within the docker-machine Linux VM.
+
 ### Using a URL
+
+Sync Gateway can also load it's configuration directly from a URL.  
+
+First upload a configuration file to a publicly available hosting site of your choice (Amazon S3, Github, etc)
+
+Then start Sync Gateway and give it the URL to the raw JSON data, eg:
+
+```
+$ docker run -p 4984:4984 -d couchbase-sync-gateway https://raw.githubusercontent.com/couchbase/sync_gateway/master/examples/basic-walrus-bucket.json
+```
 
 ## Using a volume to persist data across container instances
 
+Sync Gateway uses an in-memory storage backend by default, called [Walrus](https://www.ihasabucket.com/), which has the ability to store snapshots of it's memory contents to disk.  *This should never be used in production*, and is included for development purposes.
+
+The default configuration file used by the Sync Gateway Docker container saves Walrus memory snaphots of it's data in the `/opt/couchbase-sync-gateway/data` directory inside the container.  If you want to persist this data *across container instances*, you just need to launch the container with a volume that mounts a local directory on your host, for example, your `/tmp` directory.
+
+```
+$ docker run -p 4984:4984 -d -v /tmp:/opt/couchbase-sync-gateway/data couchbase-sync-gateway 
+```
+
+You can verify it worked by looking in your `/tmp` directory on your host, and you will see a `.walrus` memory snapshot file.
+
+```
+$ ls /tmp/*.walrus
+
+db.walrus
+```
+
+NOTE: if you are running on OSX using docker-machine, you will need to either use a directory under `/User` instead of `/tmp`, or run `docker-machine ssh` and run the commands from within the docker-machine Linux VM.
+
+If you add data to a Sync Gateway in a container instance, then stop that container instance and start a new one and mount the volume where the memory snapshots were stored, you should see data from the earlier constainer instance.
+
+WARNING: if you have multiple container instances trying to write memory snapshots to the same files on the same volumes, it will corrupt the memory snapshots.
 
 ## Running with Couchbase Server
 
+TODO
 
 ## Running with Couchbase Server + App using Docker Compose
 
+TODO
+
 ## Using sgcollect_info
 
+## Support
+
+TODO
+
+## Licensing
+
+Sync Gateway comes in 2 Editions: Enterprise Edition and Community Edition. You can find details on the differences between the 2 and licensing details on the [Sync Gateway Editions](http://developer.couchbase.com/documentation/server/4.5/introduction/editions.html) page.
+
+-	Enterprise Edition -- free for development, testing and POCs. Requires a paid subscription for production deployment. Please refer to the [subscribe](http://www.couchbase.com/subscriptions-and-support) page for details on enterprise edition agreements.
+
+-	Community Edition -- free for unrestricted use for community users.
 
