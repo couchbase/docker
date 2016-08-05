@@ -177,61 +177,6 @@ Verify that Sync Gateway started by running `docker logs container-id` and tryin
 $ curl http://localhost:4984
 ```
 
-## Running with Couchbase Server + App using Docker Compose
-
-Create a `/tmp/my-sg-config.json` file on your host machine, with the following contents:
-
-```
-{
-  "log": ["*"],
-  "databases": {
-    "db": {
-      "server": "http://couchbase-server:8091",
-      "bucket": "default",
-      "users": { "GUEST": { "disabled": false, "admin_channels": ["*"] } }
-    }
-  }
-}
-```
-
-Add the following to `docker-compose.yml`:
-
-```
-couchbase-server:
-  image: couchbase
-  ports:
-    - "8091-8094:8091-8094"
-    - "11210:11210" 
-
-sync-gateway:
-  image: couchbase-sync-gateway
-  ports:
-    - "4984:4984"
-  volumes:
-    - /tmp:/tmp/config
-  command: "sync_gateway /tmp/config/my-sg-config.json"
-
-hello-sync-gateway:
-  image: busybox
-  command: "curl http://sync-gateway:4984; sleep 100000"
-  
-```
-
-Run it:
-
-```
-$ docker-compose up
-```
-
-Verify it worked:
-
-```
-$ docker logs hello-sync-gateway
-```
-
-and you should see a non-empty response.
-
-
 ## Using sgcollect_info
 
 If you need to run the `sgcollect_info` tool to collect Sync Gateway diagnostics for Sync Gateway running in a docker container, in order to collect the logs you will need to do the following workaround:
