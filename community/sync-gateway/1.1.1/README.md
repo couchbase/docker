@@ -136,17 +136,122 @@ WARNING: if you have multiple container instances trying to write memory snapsho
 
 ## Running with Couchbase Server
 
-TODO
+Create a docker network called `couchbase`.
+
+```
+$ docker network create --driver bridge couchbase 
+```
+
+Run Couchbase Server in a docker container, and put it in the `couchbase` network.
+
+```
+$ docker run --net=couchbase -d --name couchbase-server -p 8091-8094:8091-8094 -p 11210:11210 couchbase
+```
+
+Now go to the [Couchbase Server Admin UI](http://localhost:8091) and go through the Setup Wizard.  See [Couchbase Server on Dockerhub](https://hub.docker.com/r/couchbase/server/) for more info.
+
+Create a `/tmp/my-sg-config.json` file on your host machine, with the following contents:
+
+```
+{
+  "log": ["*"],
+  "databases": {
+    "db": {
+      "server": "http://couchbase-server:8091",
+      "bucket": "default",
+      "users": { "GUEST": { "disabled": false, "admin_channels": ["*"] } }
+    }
+  }
+}
+```
+
+Start a Sync Gateway container in the `couchbase` network and use the `/tmp/my-sg-config.json` file:
+
+```
+$ docker run --net=couchbase -p 4984:4984 -d -v /tmp:/tmp/config couchbase-sync-gateway /tmp/config/my-sg-config.json
+```
+
+Verify that Sync Gateway started by running `docker logs container-id` and trying to run a curl request against it:
+
+```
+$ curl http://localhost:4984
+```
 
 ## Running with Couchbase Server + App using Docker Compose
 
-TODO
+Create a `/tmp/my-sg-config.json` file on your host machine, with the following contents:
+
+```
+{
+  "log": ["*"],
+  "databases": {
+    "db": {
+      "server": "http://couchbase-server:8091",
+      "bucket": "default",
+      "users": { "GUEST": { "disabled": false, "admin_channels": ["*"] } }
+    }
+  }
+}
+```
+
+Add the following to `docker-compose.yml`:
+
+```
+couchbase-server:
+  image: couchbase
+  ports:
+    - "8091-8094:8091-8094"
+    - "11210:11210" 
+
+sync-gateway:
+  image: couchbase-sync-gateway
+  ports:
+    - "4984:4984"
+  volumes:
+    - /tmp:/tmp/config
+  command: "sync_gateway /tmp/config/my-sg-config.json"
+
+hello-sync-gateway:
+  image: busybox
+  command: "curl http://sync-gateway:4984; sleep 100000"
+  
+```
+
+Run it:
+
+```
+$ docker-compose up
+```
+
+Verify it worked:
+
+```
+$ docker logs hello-sync-gateway
+```
+
+and you should see a non-empty response.
+
 
 ## Using sgcollect_info
 
+If you need to run the `sgcollect_info` tool to collect Sync Gateway diagnostics for Sync Gateway running in a docker container, in order to collect the logs you will need to do the following workaround:
+
+```
+$ docker logs container-id > /tmp/sync_gateway.log 2>&1
+$ docker exec container-id mkdir -p /var/log/sync_gateway/
+$ docker cp /tmp/sync_gateway.log contaner-id:/var/log/sync_gateway/sync_gateway_error.log
+```
+
+Once that is done, you can run `sgcollect_info` via:
+
+```
+$ docker exec container-id /opt/couchbase-sync-gateway/tools/sgcollect_info --help
+```
+
+
 ## Support
 
-TODO
+[Couchbase Forums](https://forums.couchbase.com/)
 
 ## Licensing
 
