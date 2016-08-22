@@ -8,7 +8,8 @@ ENV PATH $PATH:/opt/couchbase-sync-gateway/bin
 #  wget: for downloading Sync Gateway package installer
 RUN yum -y update && \
     yum install -y \
-    wget 
+    wget && \
+    yum clean all
 
 # Install Sync Gateway
 RUN wget {{ .SYNC_GATEWAY_PACKAGE_URL }} && \
