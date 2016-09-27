@@ -19,11 +19,12 @@ RUN apt-get update && \
     apt-get autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-ENV CB_VERSION=3.1.3 \
-    CB_RELEASE_URL=http://packages.couchbase.com/releases \
-    CB_PACKAGE=couchbase-server-enterprise_3.1.3-ubuntu12.04_amd64.deb \
-    CB_SHA256=3c48f279c8ac1634a881fa75def771b6a7362ed811e5b44e3cc4b6f9597376c2 \
-    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
+ARG CB_VERSION=3.1.3
+ARG CB_RELEASE_URL=http://packages.couchbase.com/releases
+ARG CB_PACKAGE=couchbase-server-enterprise_3.1.3-ubuntu12.04_amd64.deb
+ARG CB_SHA256=3c48f279c8ac1634a881fa75def771b6a7362ed811e5b44e3cc4b6f9597376c2
+
+ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
 # Create Couchbase user with UID 1000 (necessary to match default
 # boot2docker UID)

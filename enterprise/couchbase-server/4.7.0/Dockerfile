@@ -1,4 +1,4 @@
-FROM ubuntu:12.04
+FROM ubuntu:14.04
 
 MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 
@@ -15,14 +15,14 @@ MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 #  numactl: numactl
 RUN apt-get update && \
     apt-get install -yq runit wget python-httplib2 chrpath \
-    lsof lshw sysstat net-tools numactl librtmp0 && \
+    lsof lshw sysstat net-tools numactl  && \
     apt-get autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-ARG CB_VERSION=2.2.0
+ARG CB_VERSION=4.7.0
 ARG CB_RELEASE_URL=http://packages.couchbase.com/releases
-ARG CB_PACKAGE=couchbase-server-community_2.2.0_x86_64.deb
-ARG CB_SHA256=051b0905e13241de19fbd9efb1e22a421f33429a1db3e4b5e3ae8756b9e4d6a2
+ARG CB_PACKAGE=couchbase-server-enterprise_4.7.0-ubuntu14.04_amd64.deb
+ARG CB_SHA256=<?xml
 
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
