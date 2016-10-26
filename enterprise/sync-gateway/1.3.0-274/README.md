@@ -119,7 +119,7 @@ Sync Gateway uses an in-memory storage backend by default, called [Walrus](https
 The default configuration file used by the Sync Gateway Docker container saves Walrus memory snapshots of it's data in the `/opt/couchbase-sync-gateway/data` directory inside the container.  If you want to persist this data *across container instances*, you just need to launch the container with a volume that mounts a local directory on your host, for example, your `/tmp` directory.
 
 ```
-$ docker run -p 4984:4984 -d -v /tmp:/opt/couchbase-sync-gateway/data couchbase-sync-gateway 
+$ docker run -p 4984:4984 -v /tmp:/opt/couchbase-sync-gateway/data -d couchbase-sync-gateway
 ```
 
 You can verify it worked by looking in your `/tmp` directory on your host, and you will see a `.walrus` memory snapshot file.
@@ -170,7 +170,7 @@ Create a `/tmp/my-sg-config.json` file on your host machine, with the following:
 Start a Sync Gateway container in the `couchbase` network and use the `/tmp/my-sg-config.json` file:
 
 ```
-$ docker run --net=couchbase -p 4984:4984 -d -v /tmp:/tmp/config couchbase-sync-gateway /tmp/my-sg-config.json
+$ docker run --net=couchbase -p 4984:4984 -v /tmp:/tmp/config -d couchbase-sync-gateway /tmp/config/my-sg-config.json
 ```
 
 Verify that Sync Gateway started by running `docker logs container-id` and trying to run a curl request against it:
