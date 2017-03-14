@@ -1,25 +1,28 @@
-set -m
-
-/entrypoint.sh couchbase-server &
+echo "Configuring Couchbase Server.  Please wait (~60 sec)..." &
 
 sleep 15
 
 # Setup index and memory quota
-curl -v -X POST http://127.0.0.1:8091/pools/default -d memoryQuota=300 -d indexMemoryQuota=300
+curl -sS http://127.0.0.1:8091/pools/default -d memoryQuota=300 -d indexMemoryQuota=300 > /dev/null
 
 # Setup services
-curl -v http://127.0.0.1:8091/node/controller/setupServices -d services=kv%2Cn1ql%2Cindex
+echo "Configuring Services..."
+curl -sS http://127.0.0.1:8091/node/controller/setupServices -d services=kv%2Cn1ql%2Cindex > /dev/null
 
 # Setup credentials
-curl -v http://127.0.0.1:8091/settings/web -d port=8091 -d username=Administrator -d password=password
+curl -sS http://127.0.0.1:8091/settings/web -d port=8091 -d username=Administrator -d password=password > /dev/null
 
 # Setup Memory Optimized Indexes
-curl -i -u Administrator:password -X POST http://127.0.0.1:8091/settings/indexes -d 'storageMode=memory_optimized'
+curl -sS -i -u Administrator:password -X POST http://127.0.0.1:8091/settings/indexes -d 'storageMode=memory_optimized' > /dev/null
 
 # Load travel-sample bucket
-curl -v -u Administrator:password -X POST http://127.0.0.1:8091/sampleBuckets/install -d '["travel-sample"]'
+#curl -sS -u Administrator:password -X POST http://127.0.0.1:8091/sampleBuckets/install -d '["travel-sample"]' > /dev/null
 
-echo "Type: $TYPE"
+# Create default bucket
+echo "Creating Default bucket..."
+curl -sS -u Administrator:password -X POST http://127.0.0.1:8091/pools/default/buckets -d name=default -d ramQuotaMB=100 -d authType=sasl -d bucketType=couchbase > /dev/null
+
+echo "Configuration completed - Couchbase Admin UI: http://localhost:8091"
 
 if [ "$TYPE" = "WORKER" ]; then
   sleep 15
