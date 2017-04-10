@@ -12,7 +12,7 @@ Tested on docker engine 17.03.1-ce and docker compose 1.12.0
 
 ### Launch containers
 
-1. `docker-compose up`
+1 .`docker-compose up`
 
 ### Configure Couchbase Server 
 
@@ -21,6 +21,7 @@ Tested on docker engine 17.03.1-ce and docker compose 1.12.0
 1. Configure Couchbase Server via Web Admin UI.
     * You will probably need to reduce the memory because it tries to take the entire memory of the Linux host machine, even though only a portion of it is available to the container.
     * Create a "default" bucket, since that is what the Sync Gateway configuration tries to connect to
+1. Restart the docker compose by running `Ctl-C` to stop it, followed by `docker-compose up` to restart it.  This required is to work around [Sync Gateway Issue 2465](https://github.com/couchbase/sync_gateway/issues/2465) 
 
 ### Verify Sync Gateway
 
