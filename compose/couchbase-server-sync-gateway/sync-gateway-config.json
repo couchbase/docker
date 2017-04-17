@@ -1,0 +1,14 @@
+{
+    "log": ["HTTP+"],
+    "adminInterface":":4985",
+    "interface": ":4984",
+    "databases": {
+	"db": {
+	    "server": "http://couchbase-server:8091",
+	    "bucket": "default",
+	    "users": {
+		"GUEST": {"disabled": false, "admin_channels": ["*"] }
+	    }
+	}
+    }
+}
