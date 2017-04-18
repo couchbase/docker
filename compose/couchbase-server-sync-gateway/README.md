@@ -43,3 +43,7 @@ sync-gateway_1      | 2017-04-10T21:14:29.162Z Starting server on :4984 ...
 1. Find the local high port that is mapped to Sync Gateway port 4984 by running `docker ps | grep -i sync-gateway` and looking for something that looks like `0.0.0.0:32772->4984/tcp`.
 1. Open a web browser and point to `localhost:32772`, replacing `32772` with the actual high port found in previous command.  You should see: `{"couchdb":"Welcome","vendor":{"name":"Couchbase Sync Gateway","version":1.4},"version":"Couchbase Sync Gateway/1.4.0(2;9e18d3e)"}`
 
+
+## Related work
+
+* [cb-sg-demo](https://github.com/ToddGreenstein/cb-sg-demo)
