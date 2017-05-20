@@ -1,6 +1,8 @@
-echo "Configuring Couchbase Server.  Please wait (~60 sec)..." &
+#!/bin/sh
 
+echo "Configuring Couchbase Server.  Please wait (~60 sec)..."
 sleep 15
+export PATH=/opt/couchbase/bin:${PATH}
 
 # Setup index and memory quota
 curl -sS http://127.0.0.1:8091/pools/default -d memoryQuota=300 -d indexMemoryQuota=300 > /dev/null
@@ -16,7 +18,7 @@ curl -sS http://127.0.0.1:8091/settings/web -d port=8091 -d username=Administrat
 curl -sS -i -u Administrator:password -X POST http://127.0.0.1:8091/settings/indexes -d 'storageMode=memory_optimized' > /dev/null
 
 # Load travel-sample bucket
-#curl -sS -u Administrator:password -X POST http://127.0.0.1:8091/sampleBuckets/install -d '["travel-sample"]' > /dev/null
+#curl -sS -u Administrator:password -X POST http://127.0.0.1:8091/sampleBuckets/install -d '["travel-sample"]' 
 
 # Create default bucket
 echo "Creating Default bucket..."
@@ -37,5 +39,4 @@ if [ "$TYPE" = "WORKER" ]; then
   fi;
 fi;
 
-fg 1
-
+sv stop /etc/service/config-couchbase > /dev/null

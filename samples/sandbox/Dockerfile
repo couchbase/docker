@@ -1,6 +1,3 @@
-FROM couchbase
+FROM couchbase/server:5.0.0-beta
 
-COPY configure-node.sh /opt/couchbase
-
-CMD ["/opt/couchbase/configure-node.sh"]
-
+COPY configure-node.sh /etc/service/config-couchbase/run
