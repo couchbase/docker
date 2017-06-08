@@ -150,6 +150,7 @@ function initializeCluster(){
         fi        
     done
 
+    # initialize cluster
     echo "try initialization"
     initOutput=$(couchbase-cli cluster-init -c $CLUSTER -u $USER -p $PASS \
             --cluster-username=$USER \
@@ -164,15 +165,15 @@ function initializeCluster(){
         echo $initOutput
         echo "failed to initialize cluster." >&2
         return 1
-    else
-        echo $initOutput
-        if [[ $(echo "$initOutput" | grep "cluster is already initialized") ]]; then
-            retry 5 "failed to add host to cluster" initializeAddHost
-            if [[ $? != 0 ]]; then 
-                echo "failed to add host to cluster." >&2
-                return 1
-            fi
-        fi
+    fi
+    echo $initOutput
+    
+    # add host to cluster
+    echo "try to add host (if not already added) to cluster"
+    retry 5 "failed to add host to cluster" initializeAddHost
+    if [[ $? != 0 ]]; then 
+        echo "failed to add host to cluster." >&2
+        return 1
     fi
 }
 
