@@ -6,12 +6,6 @@ For more information, see the [Couchbase Mobile Overview](http://developer.couch
 ## Quickstart
 
 ```
-$ docker run -p 4984:4984 -d couchbase-sync-gateway
-```
-
-NOTE: until the official docker image is approved, use the staging repository via:
-
-```
 $ docker run -p 4984:4984 -d couchbase/sync-gateway
 ```
 
