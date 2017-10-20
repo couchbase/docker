@@ -59,7 +59,7 @@ curl_check() {
 wait_for_uri http://127.0.0.1:8091/ui/index.html 200
 
 echo "Setting memory quotas with curl:"
-curl_check http://127.0.0.1:8091/pools/default -d memoryQuota=6000 -d indexMemoryQuota=2000 -d ftsMemoryQuota=2000
+curl_check http://127.0.0.1:8091/pools/default -d memoryQuota=512 -d indexMemoryQuota=512 -d ftsMemoryQuota=512
 echo
 
 echo "Configuring Services with curl:"
