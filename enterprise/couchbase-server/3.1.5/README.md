@@ -72,6 +72,8 @@ Official Couchbase Server containers on Docker Hub are based on Ubuntu 14.04.
 >
 > `mkdir ~/couchbase && chcon -Rt svirt_sandbox_file_t ~/couchbase`
 
+**Running the container as non-root user :** Some environments forbid running processes owned by "root". Normally Couchbase Server itself runs in the container as the user "couchbase", but some process-management tools run as "root". To avoid this you may pass the `--user couchbase` to your `docker run` command. Important: If you do this in addition to using `-v` to mount `/opt/couchbase/var` to a host directory, you must ensure that this directory exists first, and that it and all of its contents are owned and writable by user ID 1000 on the host. Failure to do so may cause Couchbase Server to fail to run in ways which are difficult to diagnose.
+
 **Increase ULIMIT in Production Deployments :** Couchbase Server normally expects the following changes to ulimits:
 
 ```console
