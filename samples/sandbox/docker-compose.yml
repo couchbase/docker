@@ -1,9 +1,20 @@
 version: "2"
 services:
   db:
-    image: arungupta/couchbase
+    image: couchbase-test
     ports:
       - 8091:8091
       - 8092:8092
       - 8093:8093
       - 11210:11210
+    environment:
+      - CLUSTER=localhost
+      - USER=admin
+      - PASS=secret
+      - PORT=8091
+      - RAMSIZEMB=2048
+      - RAMSIZEINDEXMB=512
+      - RAMSIZEFTSMB=512
+      - BUCKETS=vice-users vice-environments vice-images vice-deployments
+      - BUCKETSIZES=512 512 512 512
+      - AUTOREBALANCE=true
