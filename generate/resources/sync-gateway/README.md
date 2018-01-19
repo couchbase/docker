@@ -60,7 +60,7 @@ You may want to stop any currently running Sync Gateway containers with `docker 
 Start a container with these arguments:
 
 ```
-$ docker run -p 4984-4985:4984-4985 -d couchbase-sync-gateway -adminInterface :4985 /etc/sync_gateway/config.json
+$ docker run -p 4984-4985:4984-4985 -d couchbase/sync-gateway -adminInterface :4985 /etc/sync_gateway/config.json
 ```
 
 Now, from the *host* machine, you should be able to run a curl request against the admin port of 4985:
