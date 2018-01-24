@@ -70,5 +70,14 @@ Login to dockerhub (you need to be on the couchbase team for this step) and crea
 * **Docker Tag Name**: enterprise-3.1.3
 
 
-# Overriding package url
+# Overriding download url for a "devbuild" or "release candidate" version
 
+If the package binaries are not available on packages.couchbase.com, this is an alternative way of generating the dockerfile.
+
+1. Create the directory you want: eg `/enterprise/sync-gateway/2.0.0-devbuild`
+
+1. Update the `init()` function in `generate.go` to add a new version customization to the list, following suit w/ the existing one(s).
+
+1. Regenerate as usual
+
+1. Verify that the generated dockerfile has the customized package url.
