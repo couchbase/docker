@@ -76,7 +76,9 @@ If the package binaries are not available on packages.couchbase.com, this is an 
 
 1. Create the directory you want: eg `/enterprise/sync-gateway/2.0.0-devbuild`
 
-1. Update the `init()` function in `generate.go` to add a new version customization to the list, following suit w/ the existing one(s).
+1. Upload the binary package to a publicly available location.  (see existing entries)
+
+1. Update the `init()` function in `generate.go` to add a new version customization to the list, following suit w/ the existing one(s), and pointing to the binary package url from the previous step.
 
 1. Regenerate as usual
 
