@@ -46,8 +46,11 @@ At this point, you should push your changes to github.
 
 **Create directory**
 
+Suppose you want to create a docker image for the newly released Couchbase Server version 9.0.0:
+
 ```
 $ cd <project-dir>/enterprise/couchbase-server
+$ mkdir 9.0.0
 ```
 
 **Regerate from templates**
@@ -65,3 +68,7 @@ Login to dockerhub (you need to be on the couchbase team for this step) and crea
 * **Branch**: master
 * **Dockerfile Location**: /enterprise/couchbase-server/3.1.3
 * **Docker Tag Name**: enterprise-3.1.3
+
+
+# Overriding package url
+
