@@ -64,11 +64,14 @@ func init() {
 
 	// TODO: Read the version_customizations.json file into map
 	versionCustomizations = map[string]VersionCustomization{}
-	versionCustomization := VersionCustomization{
-		PackageUrl:      "http://cbmobile-packages.s3.amazonaws.com/couchbase-sync-gateway-community_2.0.0-762_x86_64.rpm",
-		PackageFilename: "couchbase-sync-gateway-community_2.0.0-762_x86_64.rpm",
+	versionCustomizations["sync-gateway_community_2.0.0-devbuild"] = VersionCustomization{
+		PackageUrl:      "http://cbmobile-packages.s3.amazonaws.com/couchbase-sync-gateway-community_2.0.0-775_x86_64.rpm",
+		PackageFilename: "couchbase-sync-gateway-community_2.0.0-775_x86_64.rpm",
 	}
-	versionCustomizations["sync-gateway_community_2.0.0-devbuild"] = versionCustomization
+	versionCustomizations["sync-gateway_enterprise_2.0.0-devbuild"] = VersionCustomization{
+		PackageUrl:      "http://cbmobile-packages.s3.amazonaws.com/couchbase-sync-gateway-enterprise_2.0.0-775_x86_64.rpm",
+		PackageFilename: "couchbase-sync-gateway-enterprise_2.0.0-775_x86_64.rpm",
+	}
 
 }
 
