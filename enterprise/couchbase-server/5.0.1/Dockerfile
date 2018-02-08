@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 
 MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 
@@ -21,8 +21,8 @@ RUN apt-get update && \
 
 ARG CB_VERSION=5.0.1
 ARG CB_RELEASE_URL=http://packages.couchbase.com/releases
-ARG CB_PACKAGE=couchbase-server-enterprise_5.0.1-ubuntu14.04_amd64.deb
-ARG CB_SHA256=0b89b9bb27d6b1bdaca272fab01b9d273b553b688b2bd7e525356d26fc175ed1
+ARG CB_PACKAGE=couchbase-server-enterprise_5.0.1-ubuntu16.04_amd64.deb
+ARG CB_SHA256=1b35827a9848a74b6b146f04c98b6ebf6cc84726beaccdf8870beb5ebd883623
 
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
