@@ -416,12 +416,19 @@ func (variant DockerfileVariant) isVersion3() bool {
 	return strings.HasPrefix(variant.Version, "3")
 }
 
+func (variant DockerfileVariant) isVersion4() bool {
+	return strings.HasPrefix(variant.Version, "4")
+}
+
 func (variant DockerfileVariant) ubuntuVersion() string {
 	// Intended for use by Couchbase Server only
 	if variant.isVersion2() || variant.isVersion3() {
 		return "12.04"
 	}
-	return "14.04"
+	if variant.isVersion4() {
+		return "14.04"
+	}
+	return "16.04"
 }
 
 // Get the version for this variant, possibly doing substitutions
