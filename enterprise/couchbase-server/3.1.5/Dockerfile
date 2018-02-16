@@ -31,7 +31,8 @@ ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/in
 RUN groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M
 
 # Install couchbase
-RUN wget -N $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \
+RUN export INSTALL_DONT_START_SERVER=1 && \
+    wget -N $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \
     echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - && \
     dpkg -i ./$CB_PACKAGE && rm -f ./$CB_PACKAGE
 
