@@ -31,12 +31,14 @@ ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/in
 RUN groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M
 
 # Install couchbase
-RUN wget -N $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \
+RUN export INSTALL_DONT_START_SERVER=1 && \
+    wget -N $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \
     echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - && \
     dpkg -i ./$CB_PACKAGE && rm -f ./$CB_PACKAGE
 
 # Add runit script for couchbase-server
 COPY scripts/run /etc/service/couchbase-server/run
+RUN chown -R couchbase:couchbase /etc/service
 
 # Add dummy script for commands invoked by cbcollect_info that
 # make no sense in a Docker container
@@ -64,6 +66,7 @@ CMD ["couchbase-server"]
 # 18091: Couchbase Web console, REST/HTTP interface (SSL)
 # 18092: Views, query, XDCR (SSL)
 # 18093: Query services (SSL) (4.0+)
-EXPOSE 8091 8092 8093 8094 11207 11210 11211 18091 18092 18093
+# 18094: Full-text Search (SSL) (4.5+)
+EXPOSE 8091 8092 8093 8094 11207 11210 11211 18091 18092 18093 18094
 VOLUME /opt/couchbase/var
 

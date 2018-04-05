@@ -31,10 +31,23 @@ const (
 	ProductSyncGw = Product("sync-gateway")
 )
 
+// A map of "overrides" which specify custom package download urls and package names
+// for unreleased or otherwise special version.
+// Key format: $product_$edition_$version (eg, sync-gateway_community_2.0.0-latestbuild)
+// Note: currently only implemented for sync gateway
+type VersionCustomizations map[string]VersionCustomization
+
+// Parameters that can be customized
+type VersionCustomization struct {
+	PackageUrl      string `json:"package_url"`
+	PackageFilename string `json:"package_filename"`
+}
+
 var (
-	editions       []Edition
-	products       []Product
-	processingRoot string
+	editions              []Edition
+	products              []Product
+	versionCustomizations VersionCustomizations
+	processingRoot        string
 )
 
 func init() {
@@ -47,6 +60,17 @@ func init() {
 	products = []Product{
 		ProductServer,
 		ProductSyncGw,
+	}
+
+	// TODO: Read the version_customizations.json file into map
+	versionCustomizations = map[string]VersionCustomization{}
+	versionCustomizations["sync-gateway_community_2.0.0-devbuild"] = VersionCustomization{
+		PackageUrl:      "http://cbmobile-packages.s3.amazonaws.com/couchbase-sync-gateway-community_2.0.0-827_x86_64.rpm",
+		PackageFilename: "couchbase-sync-gateway-community_2.0.0-827_x86_64.rpm",
+	}
+	versionCustomizations["sync-gateway_enterprise_2.0.0-devbuild"] = VersionCustomization{
+		PackageUrl:      "http://cbmobile-packages.s3.amazonaws.com/couchbase-sync-gateway-enterprise_2.0.0-827_x86_64.rpm",
+		PackageFilename: "couchbase-sync-gateway-enterprise_2.0.0-827_x86_64.rpm",
 	}
 
 }
@@ -392,12 +416,19 @@ func (variant DockerfileVariant) isVersion3() bool {
 	return strings.HasPrefix(variant.Version, "3")
 }
 
+func (variant DockerfileVariant) isVersion4() bool {
+	return strings.HasPrefix(variant.Version, "4")
+}
+
 func (variant DockerfileVariant) ubuntuVersion() string {
 	// Intended for use by Couchbase Server only
 	if variant.isVersion2() || variant.isVersion3() {
 		return "12.04"
 	}
-	return "14.04"
+	if variant.isVersion4() {
+		return "14.04"
+	}
+	return "16.04"
 }
 
 // Get the version for this variant, possibly doing substitutions
@@ -473,16 +504,24 @@ func (variant DockerfileVariant) versionDir() string {
 // eg. http://packages.couchbase.com/releases/couchbase-sync-gateway/1.2.1/couchbase-sync-gateway-community_1.2.1-4_x86_64.rpm
 func (variant DockerfileVariant) sgPackageUrl() string {
 
-	packagesBaseUrl := "http://packages.couchbase.com/releases/couchbase-sync-gateway"
+	versionCustomization, hasCustomization := variant.versionCustomization()
 
-	sgFileName := variant.sgPackageFilename()
+	switch hasCustomization {
+	case true:
+		return fmt.Sprintf("%s", versionCustomization.PackageUrl)
+	default:
+		packagesBaseUrl := "http://packages.couchbase.com/releases/couchbase-sync-gateway"
 
-	return fmt.Sprintf(
-		"%s/%s/%s",
-		packagesBaseUrl,
-		variant.versionWithoutBuildNumber(),
-		sgFileName,
-	)
+		sgFileName := variant.sgPackageFilename()
+
+		return fmt.Sprintf(
+			"%s/%s/%s",
+			packagesBaseUrl,
+			variant.versionWithoutBuildNumber(),
+			sgFileName,
+		)
+
+	}
 
 }
 
@@ -500,12 +539,32 @@ func (variant DockerfileVariant) versionWithoutBuildNumber() string {
 
 func (variant DockerfileVariant) sgPackageFilename() string {
 
-	return fmt.Sprintf(
-		"couchbase-sync-gateway-%s_%s_x86_64.rpm",
-		strings.ToLower(string(variant.Edition)),
-		variant.Version,
-	)
+	versionCustomization, hasCustomization := variant.versionCustomization()
+	switch hasCustomization {
+	case true:
+		return fmt.Sprintf("%s", versionCustomization.PackageFilename)
+	default:
+		return fmt.Sprintf(
+			"couchbase-sync-gateway-%s_%s_x86_64.rpm",
+			strings.ToLower(string(variant.Edition)),
+			variant.Version,
+		)
 
+	}
+
+}
+
+func (variant DockerfileVariant) versionCustomization() (v VersionCustomization, exists bool) {
+
+	// eg, "sync-gateway_community_2.0.0-build
+	key := variant.versionCustomizationKey()
+
+	v, exists = versionCustomizations[key]
+	return v, exists
+}
+
+func (variant DockerfileVariant) versionCustomizationKey() string {
+	return fmt.Sprintf("%s_%s_%s", variant.Product, variant.Edition, variant.Version)
 }
 
 // exists returns whether the given file or directory exists or not

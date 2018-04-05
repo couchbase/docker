@@ -60,7 +60,7 @@ You may want to stop any currently running Sync Gateway containers with `docker 
 Start a container with these arguments:
 
 ```
-$ docker run -p 4984-4985:4984-4985 -d couchbase-sync-gateway -adminInterface :4985 /etc/sync_gateway/config.json
+$ docker run -p 4984-4985:4984-4985 -d couchbase/sync-gateway -adminInterface :4985 /etc/sync_gateway/config.json
 ```
 
 Now, from the *host* machine, you should be able to run a curl request against the admin port of 4985:
@@ -89,21 +89,21 @@ $ vi my-sg-config.json  # make edits
 Run Sync Gateway and use that configuration file:
 
 ```
-$ docker run -p 4984:4984 -d -v /tmp:/tmp/config couchbase-sync-gateway /tmp/config/my-sg-config.json
+$ docker run -p 4984:4984 -d -v /tmp:/tmp/config couchbase/sync-gateway /tmp/config/my-sg-config.json
 ```
 
 > **Note:** If you are running on OSX using docker-machine, you will need to either use a directory under `/Users` instead of `/tmp`, or run `docker-machine ssh` and run the commands from within the docker-machine Linux VM.
 
 ### Using a URL
 
-Sync Gateway can also load it's configuration directly from a URL.  
+Sync Gateway can also load it's configuration directly from a URL.
 
 First upload a configuration file to a publicly available hosting site of your choice (Amazon S3, Github, etc)
 
 Then start Sync Gateway and give it the URL to the raw JSON data:
 
 ```
-$ docker run -p 4984:4984 -d couchbase-sync-gateway https://raw.githubusercontent.com/couchbase/sync_gateway/master/examples/basic-walrus-bucket.json
+$ docker run -p 4984:4984 -d couchbase/sync-gateway https://raw.githubusercontent.com/couchbase/sync_gateway/master/examples/basic-walrus-bucket.json
 ```
 
 ## Using a volume to persist data across container instances
@@ -113,7 +113,7 @@ Sync Gateway uses an in-memory storage backend by default, called [Walrus](https
 The default configuration file used by the Sync Gateway Docker container saves Walrus memory snapshots of it's data in the `/opt/couchbase-sync-gateway/data` directory inside the container.  If you want to persist this data *across container instances*, you just need to launch the container with a volume that mounts a local directory on your host, for example, your `/tmp` directory.
 
 ```
-$ docker run -p 4984:4984 -v /tmp:/opt/couchbase-sync-gateway/data -d couchbase-sync-gateway
+$ docker run -p 4984:4984 -v /tmp:/opt/couchbase-sync-gateway/data -d couchbase/sync-gateway
 ```
 
 You can verify it worked by looking in your `/tmp` directory on your host, and you will see a `.walrus` memory snapshot file.
@@ -135,7 +135,7 @@ If you add data to a Sync Gateway in a container instance, then stop that contai
 Create a docker network called `couchbase`.
 
 ```
-$ docker network create --driver bridge couchbase 
+$ docker network create --driver bridge couchbase
 ```
 
 Run Couchbase Server in a docker container, and put it in the `couchbase` network.
@@ -164,7 +164,7 @@ Create a `/tmp/my-sg-config.json` file on your host machine, with the following:
 Start a Sync Gateway container in the `couchbase` network and use the `/tmp/my-sg-config.json` file:
 
 ```
-$ docker run --net=couchbase -p 4984:4984 -v /tmp:/tmp/config -d couchbase-sync-gateway /tmp/config/my-sg-config.json
+$ docker run --net=couchbase -p 4984:4984 -v /tmp:/tmp/config -d couchbase/sync-gateway /tmp/config/my-sg-config.json
 ```
 
 Verify that Sync Gateway started by running `docker logs container-id` and trying to run a curl request against it:
