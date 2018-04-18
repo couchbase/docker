@@ -74,12 +74,12 @@ func init() {
 	}
 	// TODO: Update build numbers from SGW PR #3469 in these package filenames before merging!!
 	versionCustomizations["sync-gateway_community_2.1.0-devbuild"] = VersionCustomization{
-		PackageUrl:      "http://cbmobile-packages.s3.amazonaws.com/couchbase-sync-gateway-community_2.1.999_x86_64.rpm",
-		PackageFilename: "couchbase-sync-gateway-community_2.1.0-999_x86_64.rpm",
+		PackageUrl:      "https://s3.amazonaws.com/cbmobile-packages/couchbase-sync-gateway-community_2.1.0-35_x86_64.rpm",
+		PackageFilename: "couchbase-sync-gateway-community_2.1.0-35_x86_64.rpm",
 	}
 	versionCustomizations["sync-gateway_enterprise_2.1.0-devbuild"] = VersionCustomization{
-		PackageUrl:      "http://cbmobile-packages.s3.amazonaws.com/couchbase-sync-gateway-enterprise_2.1.0-999_x86_64.rpm",
-		PackageFilename: "couchbase-sync-gateway-enterprise_2.1.0-999_x86_64.rpm",
+		PackageUrl:      "https://s3.amazonaws.com/cbmobile-packages/couchbase-sync-gateway-enterprise_2.1.0-35_x86_64.rpm",
+		PackageFilename: "couchbase-sync-gateway-enterprise_2.1.0-35_x86_64.rpm",
 	}
 
 }

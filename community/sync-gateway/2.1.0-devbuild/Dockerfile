@@ -12,9 +12,9 @@ RUN yum -y update && \
     yum clean all
 
 # Install Sync Gateway
-RUN wget http://cbmobile-packages.s3.amazonaws.com/couchbase-sync-gateway-community_2.1.999_x86_64.rpm && \
-    rpm -i couchbase-sync-gateway-community_2.1.0-999_x86_64.rpm && \
-    rm couchbase-sync-gateway-community_2.1.0-999_x86_64.rpm
+RUN wget https://s3.amazonaws.com/cbmobile-packages/couchbase-sync-gateway-community_2.1.0-35_x86_64.rpm && \
+    rpm -i couchbase-sync-gateway-community_2.1.0-35_x86_64.rpm && \
+    rm couchbase-sync-gateway-community_2.1.0-35_x86_64.rpm
 
 # Create directory where the default config stores memory snapshots to disk
 RUN mkdir /opt/couchbase-sync-gateway/data
