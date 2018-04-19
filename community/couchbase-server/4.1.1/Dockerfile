@@ -20,7 +20,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ARG CB_VERSION=4.1.1
-ARG CB_RELEASE_URL=http://packages.couchbase.com/releases
+ARG CB_RELEASE_URL=https://packages.couchbase.com/releases
 ARG CB_PACKAGE=couchbase-server-community_4.1.1-ubuntu14.04_amd64.deb
 ARG CB_SHA256=237b530643bb6c7bc2fd36363a235957b4f6ac9558e50ba5b1dad094b8a50883
 

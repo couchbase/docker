@@ -112,7 +112,8 @@ func generateVersions(edition Edition, product Product) error {
 		variant := DockerfileVariant{
 			Edition: edition,
 			Product: product,
-			Version: version,
+			Version: strings.TrimSuffix(version, "-staging"),
+			IsStaging: strings.HasSuffix(version, "-staging"),
 		}
 
 		if err := generateVariant(variant); err != nil {
@@ -181,12 +182,14 @@ func generateDockerfile(variant DockerfileVariant) error {
 			CB_PACKAGE        string
 			CB_EXTRA_DEPS     string
 			CB_SHA256         string
+			CB_RELEASE_URL    string
 			DOCKER_BASE_IMAGE string
 		}{
 			CB_VERSION:        variant.VersionWithSubstitutions(),
 			CB_PACKAGE:        variant.debPackageName(),
 			CB_EXTRA_DEPS:     variant.extraDependencies(),
 			CB_SHA256:         variant.getSHA256(),
+			CB_RELEASE_URL:    variant.releaseURL(),
 			DOCKER_BASE_IMAGE: variant.dockerBaseImage(),
 		}
 
@@ -371,13 +374,13 @@ type DockerfileVariant struct {
 	Edition Edition
 	Product Product
 	Version string
-	SHA256  string
+	IsStaging bool
 }
 
 func (variant DockerfileVariant) getSHA256() string {
-	resp, err := http.Get("http://packages.couchbase.com/releases/" +
+	resp, err := http.Get(variant.releaseURL() + "/" +
 		variant.Version + "/" + variant.debPackageName() + ".sha256")
-	log.Printf("http://packages.couchbase.com/releases/" +
+	log.Printf(variant.releaseURL() + "/" +
 		variant.Version + "/" + variant.debPackageName() + ".sha256")
 	if err != nil {
 		log.Printf("Error downloading SHA256 file")
@@ -491,13 +494,25 @@ func (variant DockerfileVariant) extraDependencies() string {
 }
 
 func (variant DockerfileVariant) versionDir() string {
+	suffix := ""
+	if variant.IsStaging {
+		suffix = "-staging"
+	}
 	versionDir := path.Join(
 		processingRoot,
 		string(variant.Edition),
 		string(variant.Product),
-		string(variant.Version),
+		string(variant.Version) + suffix,
 	)
 	return versionDir
+}
+
+func (variant DockerfileVariant) releaseURL() string {
+	if variant.IsStaging {
+		return "http://packages-staging.couchbase.com/releases"
+	} else {
+		return "https://packages.couchbase.com/releases"
+	}
 }
 
 // Find the package URL for this Sync Gateway version
