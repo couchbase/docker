@@ -494,15 +494,15 @@ func (variant DockerfileVariant) extraDependencies() string {
 }
 
 func (variant DockerfileVariant) versionDir() string {
-	suffix := ""
+	version := string(variant.Version)
 	if variant.IsStaging {
-		suffix = "-staging"
+		version = fmt.Sprintf("%s-staging", version)
 	}
 	versionDir := path.Join(
 		processingRoot,
 		string(variant.Edition),
 		string(variant.Product),
-		string(variant.Version) + suffix,
+		version,
 	)
 	return versionDir
 }
