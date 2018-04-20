@@ -20,7 +20,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ARG CB_VERSION=3.1.3
-ARG CB_RELEASE_URL=http://packages.couchbase.com/releases
+ARG CB_RELEASE_URL=https://packages.couchbase.com/releases
 ARG CB_PACKAGE=couchbase-server-enterprise_3.1.3-ubuntu12.04_amd64.deb
 ARG CB_SHA256=3c48f279c8ac1634a881fa75def771b6a7362ed811e5b44e3cc4b6f9597376c2
 

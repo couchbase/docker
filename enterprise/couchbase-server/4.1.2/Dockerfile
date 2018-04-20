@@ -20,7 +20,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ARG CB_VERSION=4.1.2
-ARG CB_RELEASE_URL=http://packages.couchbase.com/releases
+ARG CB_RELEASE_URL=https://packages.couchbase.com/releases
 ARG CB_PACKAGE=couchbase-server-enterprise_4.1.2-ubuntu14.04_amd64.deb
 ARG CB_SHA256=a9fa03e40700e77f0ee447cc8507c5ad80a767fc0f2796e0e506e32064e86e8f
 
