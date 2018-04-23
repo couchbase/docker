@@ -38,7 +38,6 @@ RUN export INSTALL_DONT_START_SERVER=1 && \
 
 # Add runit script for couchbase-server
 COPY scripts/run /etc/service/couchbase-server/run
-RUN chown -R couchbase:couchbase /etc/service
 
 # Add dummy script for commands invoked by cbcollect_info that
 # make no sense in a Docker container
@@ -50,6 +49,12 @@ RUN ln -s dummy.sh /usr/local/bin/iptables-save && \
 
 # Fix curl RPATH
 RUN chrpath -r '$ORIGIN/../lib' /opt/couchbase/bin/curl
+
+# Allow container to run as arbitrary uid
+RUN chgrp -R 0 /opt/couchbase /etc/service && \
+		chmod -R g+rwX /opt/couchbase /etc/service && \
+    chmod -R g=u /etc/passwd
+USER 10001
 
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
