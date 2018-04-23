@@ -40,8 +40,12 @@ overridePort "ssl_proxy_upstream_port"
 
 
 [[ "$1" == "couchbase-server" ]] && {
-
-    if [ $(whoami) = "couchbase" ]; then
+    if ! whoami &> /dev/null; then
+        # Ensure that unknown uid's are added to passwd
+        if [ -w /etc/passwd ]; then
+            echo "${USER_NAME:-couchbase}:x:$(id -u):0:${USER_NAME:-couchbase} user:${HOME}:/sbin/nologin" >> /etc/passwd
+        fi
+    elif [ $(whoami) = "couchbase" ]; then
         # Ensure that /opt/couchbase/var is owned by user 'couchbase' and
         # is writable
         if [ ! -w /opt/couchbase/var -o \
