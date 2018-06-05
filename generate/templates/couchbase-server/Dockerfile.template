@@ -7,6 +7,7 @@ MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 #  wget: for downloading .deb
 #  python-httplib2: used by CLI tools
 #  chrpath: for fixing curl, below
+#  tzdata: timezone info used by some N1QL functions
 # Additional dependencies for system commands used by cbcollect_info:
 #  lsof: lsof
 #  lshw: lshw
@@ -14,7 +15,7 @@ MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 #  net-tools: ifconfig, arp, netstat
 #  numactl: numactl
 RUN apt-get update && \
-    apt-get install -yq runit wget python-httplib2 chrpath \
+    apt-get install -yq runit wget python-httplib2 chrpath tzdata \
     lsof lshw sysstat net-tools numactl {{ .CB_EXTRA_DEPS }} && \
     apt-get autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
