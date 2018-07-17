@@ -27,7 +27,7 @@ function overridePort() {
         fi
     fi
 
-    if [ "$portNameUpper" == "CAPI_PORT" ]; then
+    if [ "$portValue" != "" ] && [ "$portNameUpper" == "CAPI_PORT" ]; then
         if grep -Fq "{${portValue}," ${capiConfigFile}
         then
             echo "Don't override port ${portName} because already available in $staticConfigFile"
