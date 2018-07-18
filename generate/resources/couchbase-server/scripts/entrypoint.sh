@@ -50,6 +50,7 @@ overridePort "ssl_proxy_downstream_port"
 overridePort "ssl_proxy_upstream_port"
 overridePort "capi_port"
 
+
 [[ "$1" == "couchbase-server" ]] && {
 
     if [ $(whoami) = "couchbase" ]; then

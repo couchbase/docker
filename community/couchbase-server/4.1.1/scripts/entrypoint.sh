@@ -2,9 +2,7 @@
 set -e
 
 staticConfigFile=/opt/couchbase/etc/couchbase/static_config
-capiConfigFile=/opt/couchbase/etc/couchdb/default.d/capi.ini
 restPortValue=8091
-capiPortValue=8092
 
 # see https://developer.couchbase.com/documentation/server/current/install/install-ports.html
 function overridePort() {
@@ -26,15 +24,6 @@ function overridePort() {
             fi
         fi
     fi
-
-    if [ "$portNameUpper" == "CAPI_PORT" ]; then
-        if grep -Fq "{${portValue}," ${capiConfigFile}
-        then
-            echo "Don't override port ${portName} because already available in $staticConfigFile"
-        else
-            sed -i -e "s/${capiPortValue}/${portValue}/g" ${capiConfigFile}
-        fi
-    fi
 }
 
 overridePort "rest_port"
@@ -48,7 +37,7 @@ overridePort "ssl_rest_port"
 overridePort "ssl_capi_port"
 overridePort "ssl_proxy_downstream_port"
 overridePort "ssl_proxy_upstream_port"
-overridePort "capi_port"
+
 
 [[ "$1" == "couchbase-server" ]] && {
 
