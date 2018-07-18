@@ -25,16 +25,16 @@ function overridePort() {
                 restPortValue=${portValue}
             fi
         fi
-    fi
-
-    if [ "$portNameUpper" == "CAPI_PORT" ]; then
-        if grep -Fq "port = {${portValue}" ${capiConfigFile}
-        then
-            echo "Don't override port ${portName} because already available in $staticConfigFile"
-        else
-            sed -i -e "s/port = ${capiPortValue}/port = ${portValue}/g" ${capiConfigFile}
+        
+        if [ "$portNameUpper" == "CAPI_PORT" ]; then
+            if grep -Fq "port = {${portValue}" ${capiConfigFile}
+            then
+                echo "Don't override port ${portName} because already available in $staticConfigFile"
+            else
+                sed -i -e "s/port = ${capiPortValue}/port = ${portValue}/g" ${capiConfigFile}
+            fi   
         fi
-    fi
+    fi    
 }
 
 overridePort "rest_port"
