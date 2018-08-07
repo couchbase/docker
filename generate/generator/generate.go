@@ -64,13 +64,13 @@ func init() {
 
 	// TODO: Read the version_customizations.json file into map
 	versionCustomizations = map[string]VersionCustomization{}
-	versionCustomizations["sync-gateway_community_2.0.0-devbuild"] = VersionCustomization{
-		PackageUrl:      "http://cbmobile-packages.s3.amazonaws.com/couchbase-sync-gateway-community_2.0.0-827_x86_64.rpm",
-		PackageFilename: "couchbase-sync-gateway-community_2.0.0-827_x86_64.rpm",
+	versionCustomizations["sync-gateway_community_2.1.0-devbuild"] = VersionCustomization{
+		PackageUrl:      "http://cbmobile-packages.s3.amazonaws.com/couchbase-sync-gateway-community_2.1.0-121_x86_64.rpm",
+		PackageFilename: "couchbase-sync-gateway-community_2.1.0-121_x86_64.rpm",
 	}
-	versionCustomizations["sync-gateway_enterprise_2.0.0-devbuild"] = VersionCustomization{
-		PackageUrl:      "http://cbmobile-packages.s3.amazonaws.com/couchbase-sync-gateway-enterprise_2.0.0-827_x86_64.rpm",
-		PackageFilename: "couchbase-sync-gateway-enterprise_2.0.0-827_x86_64.rpm",
+	versionCustomizations["sync-gateway_enterprise_2.1.0-devbuild"] = VersionCustomization{
+		PackageUrl:      "http://cbmobile-packages.s3.amazonaws.com/couchbase-sync-gateway-enterprise_2.1.0-121_x86_64.rpm",
+		PackageFilename: "couchbase-sync-gateway-enterprise_2.1.0-121_x86_64.rpm",
 	}
 
 }
@@ -110,9 +110,9 @@ func generateVersions(edition Edition, product Product) error {
 	for _, version := range versions {
 
 		variant := DockerfileVariant{
-			Edition: edition,
-			Product: product,
-			Version: strings.TrimSuffix(version, "-staging"),
+			Edition:   edition,
+			Product:   product,
+			Version:   strings.TrimSuffix(version, "-staging"),
 			IsStaging: strings.HasSuffix(version, "-staging"),
 		}
 
@@ -371,9 +371,9 @@ func CopyDir(source string, dest string) (err error) {
 }
 
 type DockerfileVariant struct {
-	Edition Edition
-	Product Product
-	Version string
+	Edition   Edition
+	Product   Product
+	Version   string
 	IsStaging bool
 }
 
