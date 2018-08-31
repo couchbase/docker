@@ -27,8 +27,9 @@ const (
 type Product string
 
 const (
-	ProductServer = Product("couchbase-server")
-	ProductSyncGw = Product("sync-gateway")
+	ProductServer   = Product("couchbase-server")
+	ProductSyncGw   = Product("sync-gateway")
+	ProductOperator = Product("couchbase-operator")
 )
 
 // A map of "overrides" which specify custom package download urls and package names
@@ -60,6 +61,7 @@ func init() {
 	products = []Product{
 		ProductServer,
 		ProductSyncGw,
+		ProductOperator,
 	}
 
 	// TODO: Read the version_customizations.json file into map
@@ -110,9 +112,9 @@ func generateVersions(edition Edition, product Product) error {
 	for _, version := range versions {
 
 		variant := DockerfileVariant{
-			Edition: edition,
-			Product: product,
-			Version: strings.TrimSuffix(version, "-staging"),
+			Edition:   edition,
+			Product:   product,
+			Version:   strings.TrimSuffix(version, "-staging"),
 			IsStaging: strings.HasSuffix(version, "-staging"),
 		}
 
@@ -203,6 +205,19 @@ func generateDockerfile(variant DockerfileVariant) error {
 			SYNC_GATEWAY_PACKAGE_URL:      variant.sgPackageUrl(),
 			SYNC_GATEWAY_PACKAGE_FILENAME: variant.sgPackageFilename(),
 			DOCKER_BASE_IMAGE:             variant.dockerBaseImage(),
+		}
+	} else if variant.Product == ProductOperator {
+		// template parameters
+		params = struct {
+			CO_VERSION     string
+			CO_RELEASE_URL string
+			CO_PACKAGE     string
+			CO_SHA256      string
+		}{
+			CO_VERSION:     variant.VersionWithSubstitutions(),
+			CO_RELEASE_URL: variant.releaseURL(),
+			CO_PACKAGE:     variant.operatorPackageName(),
+			CO_SHA256:      variant.getSHA256(),
 		}
 	}
 
@@ -371,17 +386,25 @@ func CopyDir(source string, dest string) (err error) {
 }
 
 type DockerfileVariant struct {
-	Edition Edition
-	Product Product
-	Version string
+	Edition   Edition
+	Product   Product
+	Version   string
 	IsStaging bool
 }
 
 func (variant DockerfileVariant) getSHA256() string {
-	resp, err := http.Get(variant.releaseURL() + "/" +
-		variant.Version + "/" + variant.debPackageName() + ".sha256")
-	log.Printf(variant.releaseURL() + "/" +
-		variant.Version + "/" + variant.debPackageName() + ".sha256")
+	var sha256url string
+	if variant.Product == "couchbase-server" {
+		sha256url = variant.releaseURL() + "/" +
+			variant.Version + "/" + variant.debPackageName() + ".sha256"
+	} else if variant.Product == "couchbase-operator" {
+		sha256url = variant.releaseURL() + "/" +
+			variant.Version + "/" + variant.operatorPackageName() + ".sha256"
+	}
+
+	resp, err := http.Get(sha256url)
+	log.Printf(sha256url)
+
 	if err != nil {
 		log.Printf("Error downloading SHA256 file")
 		return "MISSING SHA256 ERROR"
@@ -484,6 +507,14 @@ func (variant DockerfileVariant) debPackageName() string {
 	}
 }
 
+// Generate the bits package name for this couchbase-operator variant
+func (variant DockerfileVariant) operatorPackageName() string {
+	return fmt.Sprintf(
+		"couchbase-autonomous-operator-dist_%v.tar.gz",
+		variant.Version,
+	)
+}
+
 // Specify any extra dependencies, based on variant
 func (variant DockerfileVariant) extraDependencies() string {
 	if variant.Product == "couchbase-server" &&
@@ -508,6 +539,9 @@ func (variant DockerfileVariant) versionDir() string {
 }
 
 func (variant DockerfileVariant) releaseURL() string {
+	if variant.Product == "couchbase-operator" {
+		return "https://packages.couchbase.com/kubernetes"
+	}
 	if variant.IsStaging {
 		return "http://packages-staging.couchbase.com/releases"
 	} else {
