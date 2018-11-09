@@ -51,7 +51,7 @@ From the container shell (indicated by the `#` prompt), you can use `curl` to ma
 {"ADMIN":true,"couchdb":"Welcome","vendor":{"name":"Couchbase Sync Gateway","version":1.3},"version":"Couchbase Sync Gateway/1.3.0(274;8c3ee28)"}
 ```
 
-## Exposing accessing to the SyncGateway Admin port to the host
+## Exposing accessing to the Sync Gateway Admin port to the host
 
 If you need to expose port 4985 to the host machine, you can do so with the following steps.
 
@@ -73,38 +73,6 @@ $ curl http://localhost:4985
 
 > **Note:** if you are running on OSX using docker-machine, you will need to use the IP address of the running docker machine rather than localhost (eg, http://192.168.99.100)
 
-## Customizing Sync Gateway configuration
-
-### Using a Docker volume
-
-Prepare the Sync Gateway configuration file on your local machine:
-
-```
-$ cd /tmp
-$ wget https://raw.githubusercontent.com/couchbase/sync_gateway/master/examples/basic-walrus-bucket.json
-$ mv basic-walrus-bucket.json my-sg-config.json
-$ vi my-sg-config.json  # make edits
-```
-
-Run Sync Gateway and use that configuration file:
-
-```
-$ docker run -p 4984:4984 -d -v /tmp:/tmp/config couchbase/sync-gateway /tmp/config/my-sg-config.json
-```
-
-> **Note:** If you are running on OSX using docker-machine, you will need to either use a directory under `/Users` instead of `/tmp`, or run `docker-machine ssh` and run the commands from within the docker-machine Linux VM.
-
-### Using a URL
-
-Sync Gateway can also load it's configuration directly from a URL.
-
-First upload a configuration file to a publicly available hosting site of your choice (Amazon S3, Github, etc)
-
-Then start Sync Gateway and give it the URL to the raw JSON data:
-
-```
-$ docker run -p 4984:4984 -d couchbase/sync-gateway https://raw.githubusercontent.com/couchbase/sync_gateway/master/examples/basic-walrus-bucket.json
-```
 
 ## Using a volume to persist data across container instances
 
@@ -146,11 +114,111 @@ $ docker run --net=couchbase -d --name couchbase-server -p 8091-8094:8091-8094 -
 
 Now go to the Couchbase Server Admin UI on [http://localhost:8091](http://localhost:8091) (on OSX, replace localhost with the docker machine host IP) and go through the Setup Wizard.  See [Couchbase Server on Dockerhub](https://hub.docker.com/r/couchbase/server/) for more info.
 
-Create a `/tmp/my-sg-config.json` file on your host machine, with the following:
+In Couchbase Server, create a RBAC user for Sync Gateway, in the "Security" section.
+
+There are 3 alternative options to create the JSON config file for Sync Gateway, all described below in the configuration sections.
+
+## Customizing Sync Gateway configuration
+
+### Configure with environment variables
+
+You can use environment variables for 2 purposers: 
+
+* To generate a `config.json` file.
+* To make Sync Gateway wait for Couchbase server to be ready before connecting (instead of crashing).
+
+Start the Sync Gateway using the following environment variables, some have defaults already:
+
+* `COUCHBASE_HOST`: set it to the name of your Couchbase server container, e.g. `couchbase-server`.
+* `COUCHBASE_PORT`: the Couchbase port if you use a different one. The default value is: `8091`.
+* `COUCHBASE_BUCKET_NAME`: the bucket name you want to use Sync Gateway with. The default value is: `app`.
+* `COUCHBASE_SYNC_GATEWAY_USER`: set it to the RBAC user you created for Sync Gateway.
+* `COUCHBASE_SYNC_GATEWAY_PASSWORD`: set it to the RBAC user password you created for Sync Gateway.
+* `COUCHBASE_SYNC_GATEWAY_DATABASE`: the database JSON config field. The default value is: `db`.
+* `COUCHBASE_SYNC_GATEWAY_CORS_ORIGINS`: the origins that you want to allow for CORS (cross origin resource sharing). Use it if you are connecting pure browser, web based, frontend applications directly. Set it to a list of origins separated by commas. E.g.: `http://localhost,https://example.com,https://web.example.com`
+* `COUCHBASE_SYNC_GATEWAY_DISABLE_GUEST_USER`: set it to `true` or `1` to disable the guest user.
+* `COUCHBASE_SYNC_GATEWAY_NUM_INDEX_REPLICAS`: the number of replicas for the Sync Gateway indexes. If you are connecting it to a single Couchbase node, you have to leave it at `0`, you can increase it only with a multi-node cluster. The default value is `0`.
+* `COUCHBASE_SYNC_GATEWAY_LOG`: set the type of log for the config. The default value is: `HTTP+`.
+* `COUCHBASE_SYNC_GATEWAY_ADMIN_INTERFACE`: to enable the admin interface (only for local development) set it to `:4985`. By default it is disabled.
+
+For example, you can have:
+
+* a Couchbase Server container named `couchbase-server` in the network `couchbase`
+* a RBAC user in Couchbase Server for the Sync Gateway named `sync`
+* a RBAC user password `secret`
+
+Then you can start the container with:
+
+```bash
+docker run --net=couchbase -p 4984:4984 -d -e COUCHBASE_HOST=couchbase-server -e COUCHBASE_SYNC_GATEWAY_USER=sync -e COUCHBASE_SYNC_GATEWAY_PASSWORD=secret couchbase/sync-gateway
+```
+
+Verify that Sync Gateway started by running `docker logs container-id` and trying to run a curl request against it:
 
 ```
+$ curl http://localhost:4984
+```
+
+#### Custom JS sync function
+
+If you create a file inside the container in `/sync/sync-function.js` with the pure JavaScript function code, it will be copied within the generated `config.json` file. This allows you to write the custom Sync function in pure JavaScript, with editor support, etc, and have it integrated at Docker runtime.
+
+You could have a `sync-function.js` file with:
+
+```JavaScript
+function (doc, oldDoc) {
+    requireAdmin();
+    channel(doc.channels);
+}
+```
+
+And then a `Dockerfile` that copies that file to `/sync/` with:
+
+```Dockerfile
+FROM couchbase/sync-gateway
+
+COPY ./sync-function.js /sync/
+```
+
+And when you run the container, that JavaScript function will be integrated into the generated `config.json` file.
+
+**Note**: the `/sync/sync-function.js` file will be integrated in the `config.json` only when it is generated from environment variables. If you provide an existing `config.json` file with any of the other options it will not be integrated.
+
+
+### Configure by copying a file to /sync/config.json
+
+If you put a JSON config file in `/sync/config.json` it will be used instead of a generated file.
+
+One option to do that would be with a custom file `config.json`, like:
+
+```JSON
 {
-  "log": ["*"],
+  "logging": {"console": {"log_keys": ["*"]}},
+  "databases": {
+    "db": {
+      "server": "http://couchbase-server:8091",
+      "bucket": "default",
+      "users": { "GUEST": { "disabled": false, "admin_channels": ["*"] } }
+    }
+  }
+}
+```
+
+And then a `Dockefile` based on this image that copies it:
+
+```Dockerfile
+FROM couchbase/sync-gateway
+
+COPY ./config.json /sync/
+```
+
+### Configure with mounted config file volume
+
+Create a `/tmp/my-sg-config.json` file on your host machine, with the following:
+
+```JSON
+{
+  "logging": {"console": {"log_keys": ["*"]}},
   "databases": {
     "db": {
       "server": "http://couchbase-server:8091",
@@ -167,10 +235,43 @@ Start a Sync Gateway container in the `couchbase` network and use the `/tmp/my-s
 $ docker run --net=couchbase -p 4984:4984 -v /tmp:/tmp/config -d couchbase/sync-gateway /tmp/config/my-sg-config.json
 ```
 
+If you pass a config file as part of the command, it will take precedence over the previous options.
+
 Verify that Sync Gateway started by running `docker logs container-id` and trying to run a curl request against it:
 
 ```
 $ curl http://localhost:4984
+```
+
+### Configure with mounted config file volume, without Couchbase
+
+Prepare the Sync Gateway configuration file on your local machine:
+
+```
+$ cd /tmp
+$ wget https://raw.githubusercontent.com/couchbase/sync_gateway/master/examples/basic-walrus-bucket.json
+$ mv basic-walrus-bucket.json my-sg-config.json
+$ vi my-sg-config.json  # make edits
+```
+
+Run Sync Gateway and use that configuration file:
+
+```
+$ docker run -p 4984:4984 -d -v /tmp:/tmp/config couchbase/sync-gateway /tmp/config/my-sg-config.json
+```
+
+> **Note:** If you are running on OSX using docker-machine, you will need to either use a directory under `/Users` instead of `/tmp`, or run `docker-machine ssh` and run the commands from within the docker-machine Linux VM.
+
+### Configure using a URL
+
+Sync Gateway can also load it's configuration directly from a URL.
+
+First upload a configuration file to a publicly available hosting site of your choice (Amazon S3, Github, etc)
+
+Then start Sync Gateway and give it the URL to the raw JSON data:
+
+```
+$ docker run -p 4984:4984 -d couchbase/sync-gateway https://raw.githubusercontent.com/couchbase/sync_gateway/master/examples/basic-walrus-bucket.json
 ```
 
 ## Using sgcollect_info
