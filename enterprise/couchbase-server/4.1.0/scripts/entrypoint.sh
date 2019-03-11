@@ -41,7 +41,7 @@ overridePort "ssl_proxy_upstream_port"
 
 [[ "$1" == "couchbase-server" ]] && {
 
-    if [ $(whoami) = "couchbase" ]; then
+    if [ "$(whoami)"" = "couchbase" ]; then
         # Ensure that /opt/couchbase/var is owned by user 'couchbase' and
         # is writable
         if [ ! -w /opt/couchbase/var -o \
