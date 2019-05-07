@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 )
@@ -188,7 +189,7 @@ func generateDockerfile(variant DockerfileVariant) error {
 			DOCKER_BASE_IMAGE string
 		}{
 			CB_VERSION:        variant.VersionWithSubstitutions(),
-			CB_PACKAGE:        variant.debPackageName(),
+			CB_PACKAGE:        variant.serverPackageName(),
 			CB_EXTRA_DEPS:     variant.extraDependencies(),
 			CB_SHA256:         variant.getSHA256(),
 			CB_RELEASE_URL:    variant.releaseURL(),
@@ -396,7 +397,7 @@ func (variant DockerfileVariant) getSHA256() string {
 	var sha256url string
 	if variant.Product == "couchbase-server" {
 		sha256url = variant.releaseURL() + "/" +
-			variant.Version + "/" + variant.debPackageName() + ".sha256"
+			variant.Version + "/" + variant.serverPackageName() + ".sha256"
 	} else if variant.Product == "couchbase-operator" {
 		sha256url = variant.releaseURL() + "/" +
 			variant.Version + "/" + variant.operatorPackageName() + ".sha256"
@@ -434,24 +435,26 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 	}
 }
 
-func (variant DockerfileVariant) isVersion2() bool {
-	return strings.HasPrefix(variant.Version, "2")
+func intVer(v string) (int64, error) {
+	sections := strings.Split(v, ".")
+	intVerSection := func(n int) string {
+		return fmt.Sprintf("%02s", sections[n])
+	}
+	s := ""
+	for i := 0; i < 3; i++ {
+		s += intVerSection(i)
+	}
+	return strconv.ParseInt(s, 10, 64)
 }
 
-func (variant DockerfileVariant) isVersion3() bool {
-	return strings.HasPrefix(variant.Version, "3")
-}
-
-func (variant DockerfileVariant) isVersion4() bool {
-	return strings.HasPrefix(variant.Version, "4")
+func (variant DockerfileVariant) isMadHatterOrNewer() bool {
+	ver, _ := intVer(variant.Version)
+	return ver >= 60500
 }
 
 func (variant DockerfileVariant) ubuntuVersion() string {
 	// Intended for use by Couchbase Server only
-	if variant.isVersion2() || variant.isVersion3() {
-		return "12.04"
-	}
-	if variant.isVersion4() {
+	if strings.HasPrefix(variant.Version, "4") {
 		return "14.04"
 	}
 	return "16.04"
@@ -487,24 +490,14 @@ func extraStuffAfterVersion(version string) string {
 
 // Generate the deb package name for this variant:
 // eg: couchbase-server-enterprise-3.0.2-ubuntu12.04_amd64.deb
-func (variant DockerfileVariant) debPackageName() string {
-	// for 2.x, leave ubuntu12.04 out of the deb name
-	if variant.isVersion2() {
-		return fmt.Sprintf(
-			"%v-%v_%v_x86_64.deb",
-			variant.Product,
-			variant.Edition,
-			variant.Version,
-		)
-	} else {
-		return fmt.Sprintf(
-			"%v-%v_%v-ubuntu%v_amd64.deb",
-			variant.Product,
-			variant.Edition,
-			variant.Version,
-			variant.ubuntuVersion(),
-		)
-	}
+func (variant DockerfileVariant) serverPackageName() string {
+	return fmt.Sprintf(
+		"%v-%v_%v-ubuntu%v_amd64.deb",
+		variant.Product,
+		variant.Edition,
+		variant.Version,
+		variant.ubuntuVersion(),
+	)
 }
 
 // Generate the bits package name for this couchbase-operator variant
@@ -517,9 +510,12 @@ func (variant DockerfileVariant) operatorPackageName() string {
 
 // Specify any extra dependencies, based on variant
 func (variant DockerfileVariant) extraDependencies() string {
-	if variant.Product == "couchbase-server" &&
-		variant.isVersion2() {
-		return "librtmp0"
+	if variant.Product == "couchbase-server" {
+		if variant.isMadHatterOrNewer() {
+			return "bzip2"
+		} else {
+			return "python-httplib2"
+		}
 	}
 	return ""
 }
