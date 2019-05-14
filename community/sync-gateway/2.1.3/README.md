@@ -3,7 +3,7 @@ This README will guide you through running Couchbase Sync Gateway with Docker Co
 
 [Sync Gateway](https://www.couchbase.com/products/sync-gateway) is a horizontally scalable web server that securely manages the access control and synchronization of data between [Couchbase Lite](https://www.couchbase.com/products/lite) and [Couchbase Server](https://www.couchbase.com/products/server).
 
-For configuration references, or additional information about anything described below, visit the [Sync Gateway documentation site](https://docs.couchbase.com/sync-gateway/2.5/index.html).
+For configuration references, or additional information about anything described below, visit the [Sync Gateway documentation site](https://docs.couchbase.com/sync-gateway/current/index.html).
 
 For additional questions and feedback, please visit the [Couchbase Forums](https://forums.couchbase.com/c/mobile/sync-gateway) or [Stack Overflow](https://stackoverflow.com/questions/tagged/couchbase+couchbase-sync-gateway).
 
@@ -138,7 +138,7 @@ See [Couchbase Server on Dockerhub](https://hub.docker.com/r/couchbase/server/) 
 }
 ```
 
-**Step - 3 :** Start a Sync Gateway container in the `couchbase` network and use the configuration file you just wrote:
+**Step - 4 :** Start a Sync Gateway container in the `couchbase` network and use the configuration file you just wrote:
 
 `$ docker run --net=couchbase -p 4984:4984 -v /tmp:/tmp/config -d couchbase/sync-gateway /tmp/config/my-sg-config.json`
 
@@ -156,7 +156,7 @@ You can find more information about the parameters used in this request in the [
 
 # Licensing
 
-Sync Gateway comes in 2 Editions: Enterprise Edition and Community Edition. You can find details on the differences between the 2 and licensing details on the [Sync Gateway Editions](http://developer.couchbase.com/documentation/server/4.5/introduction/editions.html) page.
+Sync Gateway comes in 2 Editions: Enterprise Edition and Community Edition. You can find details on the differences between the 2 and licensing details on the [Product Editions](https://www.couchbase.com/products/editions) page.
 
 - **Enterprise Edition** -- free for development, testing and POCs. Requires a paid subscription for production deployment. Please refer to the [subscribe](https://www.couchbase.com/subscriptions-and-support) page for details on enterprise edition agreements.
 - **Community Edition** -- free for unrestricted use for community users.
