@@ -60,7 +60,7 @@ Although not recommended for security reasons, if you need to expose the admin p
 
 **Step - 1 :** Stop any currently running Sync Gateway containers:
 
-`docker stop sgw`.
+`docker stop sgw`
 
 **Step - 2 :** Start a Sync Gateway container with these arguments:
 
@@ -158,7 +158,7 @@ You can find more information about the parameters used in this request in the [
 
 Sync Gateway comes in 2 Editions: Enterprise Edition and Community Edition. You can find details on the differences between the 2 and licensing details on the [Product Editions](https://www.couchbase.com/products/editions) page.
 
-- **Enterprise Edition** -- free for development, testing and POCs. Requires a paid subscription for production deployment. Please refer to the [subscribe](https://www.couchbase.com/subscriptions-and-support) page for details on enterprise edition agreements.
+- **Enterprise Edition** -- free for development, testing and POCs. Requires a paid subscription for production deployment. Please refer to the [subscriptions](https://www.couchbase.com/subscriptions-and-support) page for details on enterprise edition agreements.
 - **Community Edition** -- free for unrestricted use for community users.
 
 By default, the `latest` Docker tag points to the latest Enterprise Edition. If you want the Community Edition instead, you should add the appropriate tag, such as
