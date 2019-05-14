@@ -16,7 +16,7 @@ For additional questions and feedback, please visit the [Couchbase Forums](https
 $ docker run -d --name sgw -p 4984:4984 couchbase/sync-gateway
 ```
 
-At this point you should be able to send a HTTP request against Sync Gateway public port `4984` using curl:
+At this point you should be able to send a HTTP request to the Sync Gateway public port `4984` using curl:
 
 ```
 $ curl http://localhost:4984
@@ -93,7 +93,7 @@ $ vi my-sg-config.json  # make edits
 
 ## Using a URL
 
-Sync Gateway can also load it's configuration directly from a public URL.
+Sync Gateway can also load its configuration directly from a public URL.
 
 **Step - 1 :** Upload a configuration file to a publicly available hosting site of your choice (Amazon S3, Github, etc)
 
@@ -115,7 +115,7 @@ Now go to the Couchbase Server Admin UI on [http://localhost:8091](http://localh
 
 See [Couchbase Server on Dockerhub](https://hub.docker.com/r/couchbase/server/) for more info on this process.
 
-**Step - 3 :** Create a configuration file as described in the above config section, and customise the server property::
+**Step - 3 :** Create a configuration file as described in the above config section, and customise the server property:
 
 ```
 {
@@ -149,9 +149,7 @@ This section only applies if you need to run the `sgcollect_info` tool to collec
 
 **Step - 1 :** Run the following curl command against the admin port of Sync Gateway to run sgcollect_info and put the zip in your log file path.
 
-`# curl -X POST http://localhost:4985/_sgcollect_info -H 'Content-Type: application/json' -d '{"upload": false, "customer": "your-company-name"}'`
-
-Set upload to `true` along with a customer name if you wish to automatically upload the collection to Couchbase Support.
+`# curl -X POST http://localhost:4985/_sgcollect_info -H 'Content-Type: application/json' -d '{}'`
 
 You can find more information about the parameters used in this request in the [sgcollect_info documentation](https://docs.couchbase.com/sync-gateway/current/admin-rest-api.html#/server/post__sgcollect_info).
 
