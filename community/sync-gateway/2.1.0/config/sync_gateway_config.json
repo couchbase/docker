@@ -1,5 +1,11 @@
 {
-	"log": ["HTTP+"],
+	"logging": {
+		"console": {
+			"enabled": true,
+			"log_level": "info",
+			"log_keys": ["HTTP"]
+		}
+	},
 	"interface": ":4984",
 	"databases": {
 		"db": {
