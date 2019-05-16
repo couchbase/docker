@@ -5,7 +5,6 @@ MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 # Install dependencies:
 #  runit: for container process management
 #  wget: for downloading .deb
-#  python-httplib2: used by CLI tools
 #  chrpath: for fixing curl, below
 #  tzdata: timezone info used by some N1QL functions
 # Additional dependencies for system commands used by cbcollect_info:
@@ -15,13 +14,13 @@ MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 #  net-tools: ifconfig, arp, netstat
 #  numactl: numactl
 RUN apt-get update && \
-    apt-get install -yq runit wget python-httplib2 chrpath tzdata \
-    lsof lshw sysstat net-tools numactl  && \
+    apt-get install -yq runit wget chrpath tzdata \
+    lsof lshw sysstat net-tools numactl python-httplib2 && \
     apt-get autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ARG CB_VERSION=6.0.1
-ARG CB_RELEASE_URL=https://packages.couchbase.com/releases
+ARG CB_RELEASE_URL=https://packages.couchbase.com/releases/6.0.1
 ARG CB_PACKAGE=couchbase-server-enterprise_6.0.1-ubuntu16.04_amd64.deb
 ARG CB_SHA256=7a3e474386a670c648517228fce6e465339933e27ea02760bd741abc08b4df55
 
@@ -33,7 +32,7 @@ RUN groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M
 
 # Install couchbase
 RUN export INSTALL_DONT_START_SERVER=1 && \
-    wget -N $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \
+    wget -N --no-verbose $CB_RELEASE_URL/$CB_PACKAGE && \
     echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - && \
     dpkg -i ./$CB_PACKAGE && rm -f ./$CB_PACKAGE
 
