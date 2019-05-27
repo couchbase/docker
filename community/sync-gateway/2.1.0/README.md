@@ -1,83 +1,84 @@
 
-Sync Gateway is REST API server that allows Couchbase Lite mobile databases to synchronize data. It can also be used as a standalone data storage system.
+This README will guide you through running Couchbase Sync Gateway with Docker Containers.
 
-For more information, see the [Couchbase Mobile Overview](http://developer.couchbase.com/mobile).
+[Sync Gateway](https://www.couchbase.com/products/sync-gateway) is a horizontally scalable web server that securely manages the access control and synchronization of data between [Couchbase Lite](https://www.couchbase.com/products/lite) and [Couchbase Server](https://www.couchbase.com/products/server).
 
-## Quickstart
+For configuration references, or additional information about anything described below, visit the [Sync Gateway documentation site](https://docs.couchbase.com/sync-gateway/current/index.html).
+
+For additional questions and feedback, please visit the [Couchbase Forums](https://forums.couchbase.com/c/mobile/sync-gateway) or [Stack Overflow](https://stackoverflow.com/questions/tagged/couchbase+couchbase-sync-gateway).
+
+
+# QuickStart with Sync Gateway and Docker
+
+## Running Sync Gateway with Docker
 
 ```
-$ docker run -p 4984:4984 -d couchbase/sync-gateway
+$ docker run -d --name sgw -p 4984:4984 couchbase/sync-gateway
 ```
 
-At this point you should be able to run a curl request against the running Sync Gateway on the port 4984 public port:
+At this point you should be able to send a HTTP request to the Sync Gateway public port `4984` using curl:
 
 ```
 $ curl http://localhost:4984
-
-{"couchdb":"Welcome","vendor":{"name":"Couchbase Sync Gateway","version":1.3},"version":"Couchbase Sync Gateway/1.3.0(274;8c3ee28)"}
+{"couchdb":"Welcome","vendor":{"name":"Couchbase Sync Gateway","version":"2.5"},"version":"Couchbase Sync Gateway/2.5.0(271;bf3ddf6) EE"}
 ```
 
-> **Note:** if you are running on OSX using docker-machine, you will need to use the IP address of the running docker machine rather than localhost (eg, http://192.168.99.100)
-
+## Viewing Logs
 You can view the Sync Gateway logs via the `docker logs` command:
 
 ```
-$ docker logs container-id
-2016-08-04T17:53:44.513Z Enabling logging: [HTTP+]
-2016-08-04T17:53:44.513Z ==== Couchbase Sync Gateway/1.3.0(274;8c3ee28) ====
-2016-08-04T17:53:44.513Z requestedSoftFDLimit < currentSoftFdLimit (5000 < 1048576) no action needed
+$ docker logs sgw
+2019-05-14T12:59:22.418Z ==== Couchbase Sync Gateway/2.5.0(271;bf3ddf6) EE ====
+2019-05-14T12:59:22.418Z [INF] Logging: Console to stderr
+2019-05-14T12:59:22.418Z [INF] Logging: Files to /var/log/sync_gateway
+2019-05-14T12:59:22.418Z [INF] Logging: Console level: info
+2019-05-14T12:59:22.418Z [INF] Logging: Console keys: [HTTP]
 etc ...
 ```
 
-> **Note:** replace `container-id` above with the actual running container id (ie, `9d004a24a4d1`), which you can find by running `docker ps | grep sync_gateway`.
 
-## Accessing the Sync Gateway Admin port from the container
+# Admin Port
 
-By default, the port 4985, which is the Sync Gateway Admin port, is only accessible via localhost. This means that it's only accessible *from within the container*.
+By default, port `4985`, which is the Sync Gateway Admin port, is only accessible via localhost for security purposes. This means that it's only accessible *from within the container*.
 
 To access it from within the container, you can get a bash shell on the running container and then use curl to connect to the admin port as follows:
 
-```
-$ docker exec -ti container-id bash
-```
+**Step - 1 :** Get access to a shell inside the container running Sync Gateway:
 
-> **Note:** replace `container-id` above with the actual running container id (ie, `9d004a24a4d1`), which you can find by running `docker ps | grep sync_gateway`.
+`$ docker exec -ti sgw bash`
 
-From the container shell (indicated by the `#` prompt), you can use `curl` to make requests against the running Sync Gateway by running:
+**Step - 2 :** Run curl from container shell (indicated by `#` prompt):
 
 ```
 # curl http://localhost:4985
-
-{"ADMIN":true,"couchdb":"Welcome","vendor":{"name":"Couchbase Sync Gateway","version":1.3},"version":"Couchbase Sync Gateway/1.3.0(274;8c3ee28)"}
+{"ADMIN":true,"couchdb":"Welcome","vendor":{"name":"Couchbase Sync Gateway","version":"2.5"},"version":"Couchbase Sync Gateway/2.5.0(271;bf3ddf6) EE"}
 ```
 
-## Exposing accessing to the SyncGateway Admin port to the host
+## Exposing admin port to host
 
-If you need to expose port 4985 to the host machine, you can do so with the following steps.
+Although not recommended for security reasons, if you need to expose the admin port to the host machine, you can do so with the following steps.
 
-You may want to stop any currently running Sync Gateway containers with `docker stop container-id`.
+**Step - 1 :** Stop any currently running Sync Gateway containers:
 
-Start a container with these arguments:
+`docker stop sgw`
 
-```
-$ docker run -p 4984-4985:4984-4985 -d couchbase/sync-gateway -adminInterface :4985 /etc/sync_gateway/config.json
-```
+**Step - 2 :** Start a Sync Gateway container with these arguments:
 
-Now, from the *host* machine, you should be able to run a curl request against the admin port of 4985:
+`$ docker run -p 4984-4985:4984-4985 -d couchbase/sync-gateway -adminInterface :4985`
+
+**Step - 3 :** From the *host* machine, you should be able to run a curl request against the admin port of 4985:
 
 ```
 $ curl http://localhost:4985
-
-{"ADMIN":true,"couchdb":"Welcome","vendor":{"name":"Couchbase Sync Gateway","version":1.3},"version":"Couchbase Sync Gateway/1.3.0(274;8c3ee28)"}
+{"ADMIN":true,"couchdb":"Welcome","vendor":{"name":"Couchbase Sync Gateway","version":"2.5"},"version":"Couchbase Sync Gateway/2.5.0(271;bf3ddf6) EE"}
 ```
 
-> **Note:** if you are running on OSX using docker-machine, you will need to use the IP address of the running docker machine rather than localhost (eg, http://192.168.99.100)
 
-## Customizing Sync Gateway configuration
+# Customizing Sync Gateway configuration
 
-### Using a Docker volume
+## Using a Docker volume
 
-Prepare the Sync Gateway configuration file on your local machine:
+**Step - 1 :** Prepare the Sync Gateway configuration file on your local machine:
 
 ```
 $ cd /tmp
@@ -86,117 +87,80 @@ $ mv basic-walrus-bucket.json my-sg-config.json
 $ vi my-sg-config.json  # make edits
 ```
 
-Run Sync Gateway and use that configuration file:
+**Step - 2 :** Run Sync Gateway and use that configuration file:
 
-```
-$ docker run -p 4984:4984 -d -v /tmp:/tmp/config couchbase/sync-gateway /tmp/config/my-sg-config.json
-```
+`$ docker run -p 4984:4984 -d -v /tmp:/tmp/config couchbase/sync-gateway /tmp/config/my-sg-config.json`
 
-> **Note:** If you are running on OSX using docker-machine, you will need to either use a directory under `/Users` instead of `/tmp`, or run `docker-machine ssh` and run the commands from within the docker-machine Linux VM.
+## Using a URL
 
-### Using a URL
+Sync Gateway can also load its configuration directly from a public URL.
 
-Sync Gateway can also load it's configuration directly from a URL.
+**Step - 1 :** Upload a configuration file to a publicly available hosting site of your choice (Amazon S3, Github, etc)
 
-First upload a configuration file to a publicly available hosting site of your choice (Amazon S3, Github, etc)
+**Step - 2 :** Then start Sync Gateway and give it the URL to the raw JSON data:
 
-Then start Sync Gateway and give it the URL to the raw JSON data:
+`$ docker run -p 4984:4984 -d couchbase/sync-gateway https://raw.githubusercontent.com/couchbase/sync_gateway/master/examples/basic-walrus-bucket.json`
 
-```
-$ docker run -p 4984:4984 -d couchbase/sync-gateway https://raw.githubusercontent.com/couchbase/sync_gateway/master/examples/basic-walrus-bucket.json
-```
+# Running with a Couchbase Server container
 
-## Using a volume to persist data across container instances
+**Step - 1 :** Create a docker network called `couchbase`:
 
-Sync Gateway uses an in-memory storage backend by default, called [Walrus](https://www.ihasabucket.com/), which has the ability to store snapshots of it's memory contents to disk. *This should never be used in production*, and is included for development purposes.
+`$ docker network create --driver bridge couchbase`
 
-The default configuration file used by the Sync Gateway Docker container saves Walrus memory snapshots of it's data in the `/opt/couchbase-sync-gateway/data` directory inside the container.  If you want to persist this data *across container instances*, you just need to launch the container with a volume that mounts a local directory on your host, for example, your `/tmp` directory.
+**Step - 2 :** Run Couchbase Server in a docker container, and put it in the `couchbase` network.
 
-```
-$ docker run -p 4984:4984 -v /tmp:/opt/couchbase-sync-gateway/data -d couchbase/sync-gateway
-```
+`$ docker run --net=couchbase -d --name couchbase-server -p 8091-8094:8091-8094 -p 11210:11210 couchbase`
 
-You can verify it worked by looking in your `/tmp` directory on your host, and you will see a `.walrus` memory snapshot file.
+Now go to the Couchbase Server Admin UI on [http://localhost:8091](http://localhost:8091) and go through the Setup Wizard.
 
-```
-$ ls /tmp/*.walrus
+See [Couchbase Server on Dockerhub](https://hub.docker.com/r/couchbase/server/) for more info on this process.
 
-db.walrus
-```
-
-> **Note:** if you are running on OSX using docker-machine, you will need to either use a directory under `/User` instead of `/tmp`, or run `docker-machine ssh` and run the commands from within the docker-machine Linux VM.
-
-If you add data to a Sync Gateway in a container instance, then stop that container instance and start a new one and mount the volume where the memory snapshots were stored, you should see data from the earlier container instance.
-
-> **WARNING:** if you have multiple container instances trying to write memory snapshots to the same files on the same volumes, it will corrupt the memory snapshots.
-
-## Running with Couchbase Server
-
-Create a docker network called `couchbase`.
-
-```
-$ docker network create --driver bridge couchbase
-```
-
-Run Couchbase Server in a docker container, and put it in the `couchbase` network.
-
-```
-$ docker run --net=couchbase -d --name couchbase-server -p 8091-8094:8091-8094 -p 11210:11210 couchbase
-```
-
-Now go to the Couchbase Server Admin UI on [http://localhost:8091](http://localhost:8091) (on OSX, replace localhost with the docker machine host IP) and go through the Setup Wizard.  See [Couchbase Server on Dockerhub](https://hub.docker.com/r/couchbase/server/) for more info.
-
-Create a `/tmp/my-sg-config.json` file on your host machine, with the following:
+**Step - 3 :** Create a configuration file as described in the above config section, and customise the server property:
 
 ```
 {
-  "log": ["*"],
+  "logging": {
+    "console": {
+        "enabled": true,
+        "log_level": "info",
+        "log_keys": ["HTTP"]
+    }
+  },
   "databases": {
     "db": {
       "server": "http://couchbase-server:8091",
       "bucket": "default",
+      "username": "Administrator",
+      "password": "password",
       "users": { "GUEST": { "disabled": false, "admin_channels": ["*"] } }
     }
   }
 }
 ```
 
-Start a Sync Gateway container in the `couchbase` network and use the `/tmp/my-sg-config.json` file:
+**Step - 4 :** Start a Sync Gateway container in the `couchbase` network and use the configuration file you just wrote:
 
-```
-$ docker run --net=couchbase -p 4984:4984 -v /tmp:/tmp/config -d couchbase/sync-gateway /tmp/config/my-sg-config.json
-```
+`$ docker run --net=couchbase -p 4984:4984 -v /tmp:/tmp/config -d couchbase/sync-gateway /tmp/config/my-sg-config.json`
 
-Verify that Sync Gateway started by running `docker logs container-id` and trying to run a curl request against it:
 
-```
-$ curl http://localhost:4984
-```
+# Collecting logs via sgcollect_info
 
-## Using sgcollect_info
+This section only applies if you need to run the `sgcollect_info` tool to collect Sync Gateway diagnostics for support.
 
-This section only applies if you need to run the `sgcollect_info` tool to collect Sync Gateway diagnostics for Sync Gateway running in a docker container. In order to collect the logs you will need to do the following workaround:
+**Step - 1 :** Run the following curl command against the admin port of Sync Gateway to run sgcollect_info and put the zip in your log file path.
 
-```
-$ docker logs container-id > /tmp/sync_gateway.log 2>&1
-$ docker exec container-id mkdir -p /var/log/sync_gateway/
-$ docker cp /tmp/sync_gateway.log contaner-id:/var/log/sync_gateway/sync_gateway_error.log
-```
+`# curl -X POST http://localhost:4985/_sgcollect_info -H 'Content-Type: application/json' -d '{}'`
 
-Once that is done, you can run `sgcollect_info` via:
+You can find more information about the parameters used in this request in the [sgcollect_info documentation](https://docs.couchbase.com/sync-gateway/current/admin-rest-api.html#/server/post__sgcollect_info).
 
-```
-$ docker exec container-id /opt/couchbase-sync-gateway/tools/sgcollect_info --help
-```
 
-## Support
+# Licensing
 
-[Couchbase Forums](https://forums.couchbase.com/)
+Sync Gateway comes in 2 Editions: Enterprise Edition and Community Edition. You can find details on the differences between the 2 and licensing details on the [Product Editions](https://www.couchbase.com/products/editions) page.
 
-## Licensing
+- **Enterprise Edition** -- free for development, testing and POCs. Requires a paid subscription for production deployment. Please refer to the [subscriptions](https://www.couchbase.com/subscriptions-and-support) page for details on enterprise edition agreements.
+- **Community Edition** -- free for unrestricted use for community users.
 
-Sync Gateway comes in 2 Editions: Enterprise Edition and Community Edition. You can find details on the differences between the 2 and licensing details on the [Sync Gateway Editions](http://developer.couchbase.com/documentation/server/4.5/introduction/editions.html) page.
+By default, the `latest` Docker tag points to the latest Enterprise Edition. If you want the Community Edition instead, you should add the appropriate tag, such as
 
--	Enterprise Edition -- free for development, testing and POCs. Requires a paid subscription for production deployment. Please refer to the [subscribe](http://www.couchbase.com/subscriptions-and-support) page for details on enterprise edition agreements.
-
--	Community Edition -- free for unrestricted use for community users.
+`$ docker run sync-gateway:community-2.5.0`

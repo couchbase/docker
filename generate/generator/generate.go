@@ -45,11 +45,25 @@ type VersionCustomization struct {
 	PackageFilename string `json:"package_filename"`
 }
 
+// ProductVersionFilter is a map of Product to a regular expression that should match versions
+// This can be used to exclude older versions from being updated.
+// For an example of usage, see the Sync Gateway entries in init()
+type ProductVersionFilter map[Product]*regexp.Regexp
+
+// Matches returns true if the given product/version matched by the given filter
+func (filter ProductVersionFilter) Matches(product Product, version string) bool {
+	if r := filter[product]; r != nil && r.MatchString(version) {
+		return true
+	}
+	return false
+}
+
 var (
 	editions              []Edition
 	products              []Product
 	versionCustomizations VersionCustomizations
 	processingRoot        string
+	skipGeneration        ProductVersionFilter
 )
 
 func init() {
@@ -74,6 +88,10 @@ func init() {
 	versionCustomizations["sync-gateway_enterprise_2.0.0-devbuild"] = VersionCustomization{
 		PackageUrl:      "http://cbmobile-packages.s3.amazonaws.com/couchbase-sync-gateway-enterprise_2.0.0-827_x86_64.rpm",
 		PackageFilename: "couchbase-sync-gateway-enterprise_2.0.0-827_x86_64.rpm",
+	}
+
+	skipGeneration = ProductVersionFilter{
+		ProductSyncGw: regexp.MustCompile(`^(1\.|2\.0\.).+$`), // 1.x and 2.0.x
 	}
 
 }
@@ -111,6 +129,11 @@ func generateVersions(edition Edition, product Product) error {
 
 	// for each version
 	for _, version := range versions {
+
+		if skipGeneration.Matches(product, version) {
+			log.Printf("Skipping generation for %v %v %v", product, edition, version)
+			continue
+		}
 
 		variant := DockerfileVariant{
 			Edition:   edition,
