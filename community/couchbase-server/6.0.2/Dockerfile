@@ -22,7 +22,7 @@ RUN apt-get update && \
 ARG CB_VERSION=6.0.2
 ARG CB_RELEASE_URL=https://packages.couchbase.com/releases/6.0.2
 ARG CB_PACKAGE=couchbase-server-community_6.0.2-ubuntu16.04_amd64.deb
-ARG CB_SHA256=<?xml
+ARG CB_SHA256=f924cf99a6fdeccb1c2b3c297e83b937dcb590374ea029db3fd09bce1249dfb9
 
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
