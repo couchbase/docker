@@ -459,7 +459,8 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 }
 
 func intVer(v string) (int64, error) {
-	sections := strings.Split(v, ".")
+	baseVer := strings.Split(v, "-")[0]
+	sections := strings.Split(baseVer, ".")
 	intVerSection := func(n int) string {
 		return fmt.Sprintf("%02s", sections[n])
 	}
