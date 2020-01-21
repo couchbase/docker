@@ -1,3 +1,5 @@
+//go:generate go run generate.go "../.."
+
 package main
 
 import (
@@ -129,6 +131,13 @@ func generateVersions(edition Edition, product Product) error {
 
 	// for each version
 	for _, version := range versions {
+
+		dockerfile := path.Join(dir, version, "Dockerfile")
+
+		if _, err := os.Stat(dockerfile); !os.IsNotExist(err) {
+			log.Printf("%s exists, skipping...", dockerfile)
+			continue
+		}
 
 		if skipGeneration.Matches(product, version) {
 			log.Printf("Skipping generation for %v %v %v", product, edition, version)
