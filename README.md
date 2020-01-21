@@ -24,20 +24,21 @@ After you change anything under the `generate` directory, you should regenerate 
 
 ```
 $ cd <project-dir>/generate/generator
-$ go run generate.go <project-dir>
+$ go generate
 ```
-
-Where `<project-dir>` is the absolute path to the directory where you checked out this repo, for example: `/Users/tleyden/Development/couchbase-docker`
 
 Expected output:
 
 ```
-2015/04/24 15:41:40 generateDockerfile called with: {community couchbase-server 2.2.0}
-2015/04/24 15:41:41 generateDockerfile called with: {community couchbase-server 3.0.1}
-2015/04/24 15:41:41 generateDockerfile called with: {community sync-gateway 1.0.4}
-2015/04/24 15:41:41 generateDockerfile called with: {enterprise couchbase-server 2.5.2}
-2015/04/24 15:41:41 generateDockerfile called with: {enterprise couchbase-server 3.0.2}
-2015/04/24 15:41:41 Successfully finished!
+2020/01/20 16:15:23 ../../community/couchbase-server/5.0.1/Dockerfile exists, skipping...
+2020/01/20 16:15:23 ../../community/couchbase-server/5.1.1/Dockerfile exists, skipping...
+2020/01/20 16:15:23 ../../community/couchbase-server/6.0.0/Dockerfile exists, skipping...
+2020/01/20 16:15:23 ../../community/couchbase-server/6.0.2/Dockerfile exists, skipping...
+2020/01/20 16:15:23 generateDockerfile called with: {community couchbase-server 6.5.0 false}
+2020/01/20 16:15:25 https://packages.couchbase.com/releases/6.5.0/couchbase-server-community_6.5.0-ubuntu16.04_amd64.deb.sha256
+2020/01/20 16:15:25 ../../community/sync-gateway/1.0.4/Dockerfile exists, skipping...
+2020/01/20 16:15:25 ../../community/sync-gateway/1.1.0/Dockerfile exists, skipping...
+2020/01/20 16:15:25 Successfully finished!
 ```
 
 At this point, you should push your changes to github.
@@ -66,8 +67,8 @@ Commit and push to github
 Login to dockerhub (you need to be on the couchbase team for this step) and create a new build that corresponds to that directory, and enter a matching tag, eg:
 
 * **Branch**: master
-* **Dockerfile Location**: /enterprise/couchbase-server/3.1.3
-* **Docker Tag Name**: enterprise-3.1.3
+* **Dockerfile Location**: /enterprise/couchbase-server/9.0.0
+* **Docker Tag Name**: enterprise-9.0.0
 
 
 # Overriding download url for a "devbuild" or "release candidate" version
