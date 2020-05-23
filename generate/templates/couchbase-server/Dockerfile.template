@@ -36,6 +36,9 @@ RUN export INSTALL_DONT_START_SERVER=1 && \
     echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - && \
     dpkg -i ./$CB_PACKAGE && rm -f ./$CB_PACKAGE
 
+# Update VARIANT.txt to indicate we're running in our Docker image
+RUN sed -i -e '1 s/$/\/docker/' /opt/couchbase/VARIANT.txt
+
 # Add runit script for couchbase-server
 COPY scripts/run /etc/service/couchbase-server/run
 RUN chown -R couchbase:couchbase /etc/service
