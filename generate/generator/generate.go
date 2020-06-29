@@ -489,8 +489,11 @@ func (variant DockerfileVariant) ubuntuVersion() string {
 	// Intended for use by Couchbase Server only
 	if strings.HasPrefix(variant.Version, "4") {
 		return "14.04"
+	} else if strings.HasPrefix(variant.Version, "5") ||
+		strings.HasPrefix(variant.Version, "6") {
+		return "16.04"
 	}
-	return "16.04"
+	return "20.04"
 }
 
 // Get the version for this variant, possibly doing substitutions
