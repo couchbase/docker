@@ -585,25 +585,29 @@ func (variant DockerfileVariant) releaseURL() string {
 // eg. http://packages.couchbase.com/releases/couchbase-sync-gateway/1.2.1/couchbase-sync-gateway-community_1.2.1-4_x86_64.rpm
 func (variant DockerfileVariant) sgPackageUrl() string {
 
-	versionCustomization, hasCustomization := variant.versionCustomization()
-
-	switch hasCustomization {
-	case true:
-		return fmt.Sprintf("%s", versionCustomization.PackageUrl)
-	default:
-		packagesBaseUrl := "http://packages.couchbase.com/releases/couchbase-sync-gateway"
-
-		sgFileName := variant.sgPackageFilename()
-
-		return fmt.Sprintf(
-			"%s/%s/%s",
-			packagesBaseUrl,
-			variant.versionWithoutBuildNumber(),
-			sgFileName,
-		)
-
+	var packagesBaseUrl string
+	if variant.IsStaging {
+		packagesBaseUrl = "http://packages-staging.couchbase.com/releases/couchbase-sync-gateway"
+	} else {
+		packagesBaseUrl = "http://packages.couchbase.com/releases/couchbase-sync-gateway"
 	}
 
+        versionCustomization, hasCustomization := variant.versionCustomization()
+
+        switch hasCustomization {
+        case true:
+                return fmt.Sprintf("%s", versionCustomization.PackageUrl)
+        default:
+                sgFileName := variant.sgPackageFilename()
+
+                return fmt.Sprintf(
+                        "%s/%s/%s",
+                        packagesBaseUrl,
+                        variant.versionWithoutBuildNumber(),
+                        sgFileName,
+                )
+
+        }
 }
 
 // Strip build number, eg 1.2.1-4 --> 1.2.1
