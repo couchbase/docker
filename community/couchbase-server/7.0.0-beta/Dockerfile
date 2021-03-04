@@ -30,7 +30,7 @@ RUN if [ ! -x /usr/sbin/runsvdir-start ]; then \
 ARG CB_VERSION=7.0.0-beta
 ARG CB_RELEASE_URL=https://packages.couchbase.com/releases/7.0.0-beta
 ARG CB_PACKAGE=couchbase-server-community_7.0.0-beta-ubuntu20.04_amd64.deb
-ARG CB_SHA256=5ea728ef6c8ba24a63cfd04cd459a3dccc5ae5dcdabf352ac9ee5c1f9526f991
+ARG CB_SHA256=51e843e9d2b5ef746353d79c044f17e4f9be0866673bd6fda01da27a0edf9fc9
 
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
