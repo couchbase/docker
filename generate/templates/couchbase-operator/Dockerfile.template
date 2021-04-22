@@ -1,6 +1,6 @@
 FROM alpine:3.8
 
-MAINTAINER Couchbase Docker Team <docker@couchbase.com>
+LABEL maintainer="docker@couchbase.com"
 
 ARG CO_SHA256={{ .CO_SHA256 }}
 ARG CO_VERSION={{ .CO_VERSION }}
