@@ -1,6 +1,6 @@
 FROM {{ .DOCKER_BASE_IMAGE }}
 
-MAINTAINER Couchbase Docker Team <docker@couchbase.com>
+LABEL maintainer="docker@couchbase.com"
 
 ENV PATH $PATH:/opt/couchbase-sync-gateway/bin
 
