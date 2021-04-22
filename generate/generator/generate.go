@@ -192,13 +192,6 @@ func generateDockerfile(variant DockerfileVariant) error {
 	// figure out output filename
 	targetDockerfile := path.Join(versionDir, "Dockerfile")
 
-	// open a file at destPath
-	out, err := os.Create(targetDockerfile)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
 	// find the path to the source template
 	sourceTemplate := path.Join(
 		processingRoot,
@@ -253,6 +246,13 @@ func generateDockerfile(variant DockerfileVariant) error {
 			CO_SHA256:      variant.getSHA256(),
 		}
 	}
+
+	// open a file at destPath
+	out, err := os.Create(targetDockerfile)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
 
 	templateBytes, err := ioutil.ReadFile(sourceTemplate)
 	if err != nil {
@@ -438,14 +438,16 @@ func (variant DockerfileVariant) getSHA256() string {
 	resp, err := http.Get(sha256url)
 	log.Printf(sha256url)
 
-	if err != nil {
+	if err != nil || resp.StatusCode != 200 {
 		log.Printf("Error downloading SHA256 file")
+		os.Exit(1)
 		return "MISSING SHA256 ERROR"
 	} else {
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.Printf("Error download content of SHA256 file")
+			os.Exit(1)
 			return "HTTP ERROR"
 		}
 		return strings.Fields(fmt.Sprintf("%s", body))[0]
@@ -489,10 +491,16 @@ func (variant DockerfileVariant) ubuntuVersion() string {
 	// Intended for use by Couchbase Server only
 	if strings.HasPrefix(variant.Version, "4") {
 		return "14.04"
-	} else if strings.HasPrefix(variant.Version, "5") ||
-		strings.HasPrefix(variant.Version, "6") {
+	} else if strings.HasPrefix(variant.Version, "5") {
 		return "16.04"
+	} else if strings.HasPrefix(variant.Version, "6") {
+		if variant.Version == "6.0.0" {
+			return "16.04"
+		} else if strings.HasPrefix(variant.Version, "6.0") || strings.HasPrefix(variant.Version, "6.5") || variant.Version == "6.6.0" || variant.Version == "6.6.1" {
+			return "18.04"
+		}
 	}
+	// Value for 7.x and 6.6.2+
 	return "20.04"
 }
 
@@ -592,22 +600,22 @@ func (variant DockerfileVariant) sgPackageUrl() string {
 		packagesBaseUrl = "http://packages.couchbase.com/releases/couchbase-sync-gateway"
 	}
 
-        versionCustomization, hasCustomization := variant.versionCustomization()
+	versionCustomization, hasCustomization := variant.versionCustomization()
 
-        switch hasCustomization {
-        case true:
-                return fmt.Sprintf("%s", versionCustomization.PackageUrl)
-        default:
-                sgFileName := variant.sgPackageFilename()
+	switch hasCustomization {
+	case true:
+		return fmt.Sprintf("%s", versionCustomization.PackageUrl)
+	default:
+		sgFileName := variant.sgPackageFilename()
 
-                return fmt.Sprintf(
-                        "%s/%s/%s",
-                        packagesBaseUrl,
-                        variant.versionWithoutBuildNumber(),
-                        sgFileName,
-                )
+		return fmt.Sprintf(
+			"%s/%s/%s",
+			packagesBaseUrl,
+			variant.versionWithoutBuildNumber(),
+			sgFileName,
+		)
 
-        }
+	}
 }
 
 // Strip build number, eg 1.2.1-4 --> 1.2.1

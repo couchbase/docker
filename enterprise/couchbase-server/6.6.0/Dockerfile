@@ -1,12 +1,13 @@
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
-MAINTAINER Couchbase Docker Team <docker@couchbase.com>
+LABEL maintainer="docker@couchbase.com"
 
 # Install dependencies:
 #  runit: for container process management
 #  wget: for downloading .deb
 #  chrpath: for fixing curl, below
 #  tzdata: timezone info used by some N1QL functions
+#  man: so couchbase-cli help works
 # Additional dependencies for system commands used by cbcollect_info:
 #  lsof: lsof
 #  lshw: lshw
@@ -14,7 +15,7 @@ MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 #  net-tools: ifconfig, arp, netstat
 #  numactl: numactl
 RUN apt-get update && \
-    apt-get install -yq runit wget chrpath tzdata \
+    apt-get install -yq runit wget chrpath tzdata man \
     lsof lshw sysstat net-tools numactl bzip2 && \
     apt-get autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -29,8 +30,8 @@ RUN if [ ! -x /usr/sbin/runsvdir-start ]; then \
 
 ARG CB_VERSION=6.6.0
 ARG CB_RELEASE_URL=https://packages.couchbase.com/releases/6.6.0
-ARG CB_PACKAGE=couchbase-server-enterprise_6.6.0-ubuntu16.04_amd64.deb
-ARG CB_SHA256=9f666b2e39c11b17a9cc74c00967d97efeab08e23b93e8bbdec582ce009c65c9
+ARG CB_PACKAGE=couchbase-server-enterprise_6.6.0-ubuntu18.04_amd64.deb
+ARG CB_SHA256=8e7fd5434537094be2fbdfedf3ab5005f0f7d5b9d0578f59ce540b424215b728
 
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
@@ -84,4 +85,3 @@ CMD ["couchbase-server"]
 # 18096: Eventing (SSL) (5.5+)
 EXPOSE 8091 8092 8093 8094 8095 8096 11207 11210 11211 18091 18092 18093 18094 18095 18096
 VOLUME /opt/couchbase/var
-

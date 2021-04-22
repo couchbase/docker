@@ -1,12 +1,13 @@
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
-MAINTAINER Couchbase Docker Team <docker@couchbase.com>
+LABEL maintainer="docker@couchbase.com"
 
 # Install dependencies:
 #  runit: for container process management
 #  wget: for downloading .deb
 #  chrpath: for fixing curl, below
 #  tzdata: timezone info used by some N1QL functions
+#  man: so couchbase-cli help works
 # Additional dependencies for system commands used by cbcollect_info:
 #  lsof: lsof
 #  lshw: lshw
@@ -14,15 +15,23 @@ MAINTAINER Couchbase Docker Team <docker@couchbase.com>
 #  net-tools: ifconfig, arp, netstat
 #  numactl: numactl
 RUN apt-get update && \
-    apt-get install -yq runit wget chrpath tzdata \
+    apt-get install -yq runit wget chrpath tzdata man \
     lsof lshw sysstat net-tools numactl python-httplib2 && \
     apt-get autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# http://smarden.org/runit/useinit.html#sysv - at some point the script
+# runsvdir-start was moved/renamed to this odd name, so we put it back
+# somewhere sensible. This appears to be necessary for Ubuntu 20 but
+# not Ubuntu 16.
+RUN if [ ! -x /usr/sbin/runsvdir-start ]; then \
+        cp -a /etc/runit/2 /usr/sbin/runsvdir-start; \
+    fi
+
 ARG CB_VERSION=6.0.3
 ARG CB_RELEASE_URL=https://packages.couchbase.com/releases/6.0.3
-ARG CB_PACKAGE=couchbase-server-enterprise_6.0.3-ubuntu16.04_amd64.deb
-ARG CB_SHA256=bb8fe58b25d721833426ca5eeccc3bec41e793e7d961f1edac7f099f98345be8
+ARG CB_PACKAGE=couchbase-server-enterprise_6.0.3-ubuntu18.04_amd64.deb
+ARG CB_SHA256=8ee814ea8d99141de5493a6a24423c6a5dc4e01b8393dce87ca1639630315382
 
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
@@ -35,6 +44,9 @@ RUN export INSTALL_DONT_START_SERVER=1 && \
     wget -N --no-verbose $CB_RELEASE_URL/$CB_PACKAGE && \
     echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - && \
     dpkg -i ./$CB_PACKAGE && rm -f ./$CB_PACKAGE
+
+# Update VARIANT.txt to indicate we're running in our Docker image
+RUN sed -i -e '1 s/$/\/docker/' /opt/couchbase/VARIANT.txt
 
 # Add runit script for couchbase-server
 COPY scripts/run /etc/service/couchbase-server/run
@@ -73,4 +85,3 @@ CMD ["couchbase-server"]
 # 18096: Eventing (SSL) (5.5+)
 EXPOSE 8091 8092 8093 8094 8095 8096 11207 11210 11211 18091 18092 18093 18094 18095 18096
 VOLUME /opt/couchbase/var
-
