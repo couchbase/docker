@@ -56,7 +56,10 @@ RUN sed -i -e '1 s/$/\/docker/' /opt/couchbase/VARIANT.txt
 
 # Add runit script for couchbase-server
 COPY scripts/run /etc/service/couchbase-server/run
-RUN chown -R couchbase:couchbase /etc/service
+RUN mkdir -p /etc/runit/runsvdir/default/couchbase-server/supervise \
+    && chown -R couchbase:couchbase \
+                /etc/service \
+                /etc/runit/runsvdir/default/couchbase-server/supervise
 
 # Add dummy script for commands invoked by cbcollect_info that
 # make no sense in a Docker container
