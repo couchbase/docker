@@ -436,19 +436,17 @@ func (variant DockerfileVariant) getSHA256() string {
 	}
 
 	resp, err := http.Get(sha256url)
-	log.Printf(sha256url)
+	log.Print(sha256url)
 
 	if err != nil || resp.StatusCode != 200 {
 		log.Printf("Error downloading SHA256 file")
-		os.Exit(1)
-		return "MISSING SHA256 ERROR"
+		return "MISSING_SHA256_ERROR"
 	} else {
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.Printf("Error download content of SHA256 file")
-			os.Exit(1)
-			return "HTTP ERROR"
+			return "HTTP_ERROR"
 		}
 		return strings.Fields(fmt.Sprintf("%s", body))[0]
 	}
