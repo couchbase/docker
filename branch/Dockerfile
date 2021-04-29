@@ -1,20 +1,22 @@
 FROM ubuntu:20.04
 
-MAINTAINER Couchbase Docker Team <docker@couchbase.com>
+LABEL maintainer="docker@couchbase.com"
 
 # Install dependencies:
 #  runit: for container process management
 #  wget: for downloading .deb
 #  chrpath: for fixing curl, below
 #  tzdata: timezone info used by some N1QL functions
+#  man: so couchbase-cli help works
 # Additional dependencies for system commands used by cbcollect_info:
 #  lsof: lsof
 #  lshw: lshw
 #  sysstat: iostat, sar, mpstat
 #  net-tools: ifconfig, arp, netstat
 #  numactl: numactl
-RUN apt-get update && \
-    apt-get install -yq runit wget chrpath tzdata \
+RUN set -x && \
+    apt-get update && \
+    apt-get install -yq runit wget chrpath tzdata man \
     lsof lshw sysstat net-tools numactl bzip2 && \
     apt-get autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -39,17 +41,25 @@ ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/in
 RUN groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M
 
 # Install couchbase
-RUN export INSTALL_DONT_START_SERVER=1 && \
+RUN set -x && \
+    export INSTALL_DONT_START_SERVER=1 && \
     wget -N --no-verbose $CB_RELEASE_URL/$CB_PACKAGE && \
     echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - && \
-    dpkg -i ./$CB_PACKAGE && rm -f ./$CB_PACKAGE
+    apt-get update && \
+    apt-get install -y ./$CB_PACKAGE && \
+    rm -f ./$CB_PACKAGE && \
+    apt-get autoremove && apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Update VARIANT.txt to indicate we're running in our Docker image
 RUN sed -i -e '1 s/$/\/docker/' /opt/couchbase/VARIANT.txt
 
 # Add runit script for couchbase-server
 COPY scripts/run /etc/service/couchbase-server/run
-RUN chown -R couchbase:couchbase /etc/service
+RUN mkdir -p /etc/runit/runsvdir/default/couchbase-server/supervise \
+    && chown -R couchbase:couchbase \
+                /etc/service \
+                /etc/runit/runsvdir/default/couchbase-server/supervise
 
 # Add dummy script for commands invoked by cbcollect_info that
 # make no sense in a Docker container
@@ -84,4 +94,3 @@ CMD ["couchbase-server"]
 # 18096: Eventing (SSL) (5.5+)
 EXPOSE 8091 8092 8093 8094 8095 8096 11207 11210 11211 18091 18092 18093 18094 18095 18096
 VOLUME /opt/couchbase/var
-
