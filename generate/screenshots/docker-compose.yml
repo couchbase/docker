@@ -5,7 +5,9 @@ services:
     image: couchbase/server:${TAG}
   robot:
     build: robot
+    environment:
+      - TAG=\${TAG}
     volumes:
-    - ../../screenshots:/output
+    - ./output/${TAG}:/output
     depends_on:
     - couchbase

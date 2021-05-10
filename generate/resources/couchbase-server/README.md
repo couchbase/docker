@@ -1,110 +1,212 @@
+# Introduction to Couchbase Server
 
-[Couchbase Server](https://www.couchbase.com/products/server) is a NoSQL document database with a distributed architecture for performance, scalability, and availability. It enables developers to build applications easier and faster by leveraging the power of SQL with the flexibility of JSON.
+Built on the most powerful NoSQL technology, Couchbase Server delivers
+unparalleled performance at scale, in any cloud. With features like
+memory-first architecture, geo-distributed deployments, and workload
+isolation, Couchbase Server excels at supporting mission-critical
+applications at scale while maintaining sub-millisecond latencies and
+99.999% availability. Plus, with the most comprehensive SQL-compatible
+query language (N1QL), migrating from RDBMS to Couchbase Server is easy
+with ANSI join.
 
-For additional questions and feedback, please visit the [Couchbase Forums](https://forums.couchbase.com/) or [Stack Overflow](http://stackoverflow.com/questions/tagged/couchbase).
+## Unmatched agility and flexibility
 
-# QuickStart with Couchbase Server and Docker
+Support rapidly changing business requirements with the flexibility of
+JSON and the power of a comprehensive query language (N1QL). Develop
+engaging applications with multiple access methods from a single
+platform: key-value, query, and search. Event-driven workloads allow you
+to execute data-driven business logic from a centralized platform.\
 
-Here is how to get a single node Couchbase Server cluster running on Docker:
+## Unparalleled performance at any scale
 
-**Step - 1 :** Run Couchbase Server docker container
+Deliver consistent, fast experiences at scale, powered by a memory-first
+architecture. High-performance indexes and index partitioning provides
+unparalleled query performance with complex joins, predicates, and
+aggregate evaluations. And, with end-to-end data compression, Couchbase
+significantly reduces the cost of network, memory, and storage required
+for your existing workloads.
 
-`docker run -d --name db -p 8091-8094:8091-8094 -p 11210:11210 couchbase`
+## Easiest platform to manage
 
-**Step - 2 :** Visit `http://localhost:8091` on the host machine to see the Web Console and start Couchbase Server setup.
+Deploy Couchbase Server in any cloud, at any scale. Reduce operational
+overhead with cloud integrations like Kubernetes, and support
+multi-cloud deployments globally with built-in support for active-active
+cross datacenter replication (XDCR).
 
-![setup splash screen](https://github.com/couchbase/docker/blob/master/generate/resources/couchbase-server/images/6.5.0/setup-initial.jpg?raw=true)
+## QuickStart with Couchbase Server and Docker
 
-Walk through the Setup wizard and choose "Finish With Defaults."
+Here is how to get a single node Couchbase Server cluster running on
+Docker containers:
 
-![finishing the wizard](https://github.com/couchbase/docker/blob/master/generate/resources/couchbase-server/images/6.5.0/finish-wizard.jpg?raw=true)
+**Step - 1 :** Run Couchbase Server docker container
 
--	Note: You may need to choose "Configure Disk, Memory, Services" and lower the RAM allocated to various services to fit within resource contraints.
+docker run -d \--name db -p 8091-8094:8091-8094 -p 11210:11210 couchbase
 
-**Step - 3 :** Enable the beer-sample bucket to load some sample data.
+**Step - 2 :** Next, visit http://localhost:8091 on the host machine to
+see the Web Console to start Couchbase Server setup.
 
-![load sample data](https://github.com/couchbase/docker/blob/master/generate/resources/couchbase-server/images/6.5.0/load-sample-data.jpg?raw=true)
+![](media/setup-initial.jpg)
 
+Walk through the Setup wizard and accept the default values.
 
-**Note :** For detailed information on configuring the Server, see [Initial Couchbase Server Setup](https://docs.couchbase.com/server/current/install/init-setup.html).
+-   Note: You may need to lower the RAM allocated to various services to
+    fit within the bounds of the resource of the containers.
 
-## Running A N1QL Query on the Couchbase Server Cluster
+-   Enable the beer-sample bucket to load some sample data.
 
-N1QL is the SQL based query language for Couchbase Server. Simply switch to the Query tab on the Web Console at `http://localhost:8091` and run the following N1QL Query in the query window:
+![](media/cluster-creation.jpg)
 
-```SELECT name FROM `beer-sample` WHERE brewery_id ="mishawaka_brewing";```
+![](media/finish-wizard.jpg)
 
-You can also execute N1QL queries from the commandline. To run a query from command line query tool, run the interactive shell on the container:
+![](media/ui-home.jpg)
 
-`docker exec -it db bash`
+![](media/load-sample-data.jpg)
 
-Then, run the cbq command line tool, authenticate using the credentials you provided to the wizard, and execute the N1QL Query on the `beer-sample` bucket
+**Note :** For detailed information on configuring the Server,
+see [Deployment Guidelines](https://docs.couchbase.com/server/current/install/install-production-deployment.html).
 
-`$ cbq -e http://localhost:8091 -u=Administrator`
+### Running A N1QL Query on the Couchbase Server Cluster
 
-```cbq> SELECT name FROM `beer-sample` WHERE brewery_id ="mishawaka_brewing";```
+N1QL is the SQL based query language for Couchbase Server. Simply switch
+to the Query tab on the Web Console at http://localhost:8091 and run the
+following N1QL Query in the query window:
 
-For more query samples, refer to the [Running your first N1QL query](https://docs.couchbase.com/server/current/getting-started/try-a-query.html) guide.
+SELECT name FROM \`beer-sample\` WHERE brewery_id
+=\"mishawaka_brewing\";
 
-## Connect to the Couchbase Server Cluster via Applications and SDKs
-Couchbase Server SDKs comes in many languages: C SDK 2.4/2.5 Go, Java, .NET, Node.js, PHP, Python. Simply run your application through the Couchbase Server SDK of your choice on the host, and point it to http://localhost:8091/pools to connect to the container.
+You can also execute N1QL queries from the command line. To run a query
+from command line query tool, run the cbq command line tool, authenticating
+using the credentials you provided to the wizard, and execute the N1QL
+Query on the beer-sample bucket
 
-For running a sample application, refer to the [Running a sample Web app](https://docs.couchbase.com/nodejs-sdk/2.6/sample-application.html) guide.
+$ docker exec -it db cbq --user Administrator
 
-# Requirements and Best Practices
+cbq> SELECT name FROM `beer-sample` WHERE brewery_id ="mishawaka_brewing";
 
-## Container Requirements
+For more query samples, refer to [Run your first N1QL query](https://docs.couchbase.com/server/current/getting-started/try-a-query.html).
 
-Official Couchbase Server containers on Docker Hub are based on Ubuntu 16.04.
+### Connect to the Couchbase Server Cluster via Applications and SDKs
 
-**Docker Container Resource Requirements :** For minimum container requirements, you can follow [Couchbase Server minimum HW recommendations](https://docs.couchbase.com/server/current/install/pre-install.html) for development, test and production environments.
+Couchbase Server SDKs comes in many languages: C, Go, Java, .NET,
+Node.js, PHP, Python. Simply run your application through the Couchbase
+Server SDK of your choice on the host, and point it
+to [[http://localhost:8091/pools]{.ul}](http://localhost:8091/pools) to
+connect to the container.
 
-## Best Practices
+For running a sample application, refer to the [Sample Application](https://docs.couchbase.com/java-sdk/current/hello-world/sample-application.html
+) guide.
+## Requirements and Best Practices
 
-**Avoid a Single Point of Failure :** Couchbase Server's resilience and high-availability are achieved through creating a cluster of independent nodes and replicating data between them so that any individual node failure doesn't lead to loss of access to your data. In a containerized environment, if you were to run multiple nodes on the same piece of physical hardware, you can inadvertently re-introduce a single point of failure. In environments where you control VM placement, we advise ensuring each Couchbase Server node runs on a different piece of physical hardware.
+### Container Requirements
 
-**Sizing your containers :** Physical hardware performance characteristics are well understood. Even though containers insert a lightweight layer between Couchbase Server and the underlying OS, there is still a small overhead in running Couchbase Server in containers. For stability and better performance predictability, It is recommended to have at least 2 cores dedicated to the container in development environments and 4 cores dedicated to the container rather than shared across multiple containers for Couchbase Server instances running in production. With an over-committed environment you can end up with containers competing with each other causing unpredictable performance and sometimes stability issues.
+Official Couchbase Server images on Docker Hub are based on the latest supported version
+of Ubuntu.
 
-**Map Couchbase Node Specific Data to a Local Folder :** A Couchbase Server Docker container will write all persistent and node-specific data under the directory /opt/couchbase/var by default. It is recommended to map this directory to a directory on the host file system using the `-v` option to `docker run` to get persistence and performance.
+**Docker Container Resource Requirements :** For minimum container
+requirements, you can follow [System Resource Requirements](https://docs.couchbase.com/server/current/install/pre-install.html) for
+development, test and production environments.
 
--	Persistence: Storing `/opt/couchbase/var` outside the container with the `-v` option allows you to delete the container and recreate it later without losing the data in Couchbase Server. You can even update to a container running a later release/version of Couchbase Server without losing your data.
--	Performance: In a standard Docker environment using a union file system, leaving /opt/couchbase/var inside the container results in some amount of performance degradation.
+### Best Practices
 
-> NOTE for SELinux : If you have SELinux enabled, mounting the host volumes in a container requires an extra step. Assuming you are mounting the `~/couchbase` directory on the host file system, you need to run the following command once before running your first container on that host:
->
-> `mkdir ~/couchbase && chcon -Rt svirt_sandbox_file_t ~/couchbase`
+**Avoid a Single Point of Failure :** Couchbase Server\'s resilience and
+high-availability are achieved through creating a cluster of independent
+nodes and replicating data between them so that any individual node
+failure doesn\'t lead to loss of access to your data. In a containerized
+environment, if you were to run multiple nodes on the same piece of
+physical hardware, you can inadvertently re-introduce a single point of
+failure. In environments where you control VM placement, we advise
+ensuring each Couchbase Server node runs on a different piece of
+physical hardware.
 
-**Running the container as non-root user :** Some environments forbid running processes owned by "root". Normally Couchbase Server itself runs in the container as the user "couchbase", but some process-management tools run as "root". To avoid this you may pass the `--user couchbase` to your `docker run` command. Important: If you do this in addition to using `-v` to mount `/opt/couchbase/var` to a host directory, you must ensure that this directory exists first, and that it and all of its contents are owned and writable by user ID 1000 on the host. Failure to do so may cause Couchbase Server to fail to run in ways which are difficult to diagnose.
+**Sizing your containers :** Physical hardware performance
+characteristics are well understood. Even though containers insert a
+lightweight layer between Couchbase Server and the underlying OS, there
+is still a small overhead in running Couchbase Server in containers. For
+stability and better performance predictability, It is recommended to
+have at least 2 cores dedicated to the container in development
+environments and 4 cores dedicated to the container rather than shared
+across multiple containers for Couchbase Server instances running in
+production. With an over-committed environment you can end up with
+containers competing with each other causing unpredictable performance
+and sometimes stability issues.
 
-**Increase ULIMIT in Production Deployments :** Couchbase Server normally expects the following changes to ulimits:
+**Map Couchbase Node Specific Data to a Local Folder :** A Couchbase
+Server Docker container will write all persistent and node-specific data
+under the directory /opt/couchbase/var by default. It is recommended to
+map this directory to a directory on the host file system using
+the -v option to docker run to get persistence and performance.
 
-```console
-ulimit -n 40960        # nofile: max number of open files
-ulimit -c unlimited    # core: max core file size
-ulimit -l unlimited    # memlock: maximum locked-in-memory address space
-```
+-   Persistence: Storing /opt/couchbase/var outside the container with
+    the -v option allows you to delete the container and recreate it
+    later without losing the data in Couchbase Server. You can even
+    update to a container running a later release/version of Couchbase
+    Server without losing your data.
 
-These ulimit settings are necessary when running under heavy load. If you are just doing light testing and development, you can omit these settings, and everything will still work.
+-   Performance: In a standard Docker environment using a union file
+    system, leaving /opt/couchbase/var inside the container results in
+    some amount of performance degradation.
 
-To set the ulimits in your container, you will need to run Couchbase Docker containers with the following additional --ulimit flags:
+NOTE for SELinux : If you have SELinux enabled, mounting the host
+volumes in a container requires an extra step. Assuming you are mounting
+the \~/couchbase directory on the host file system, you need to run the
+following command once before running your first container on that host:
 
-`docker run -d --ulimit nofile=40960:40960 --ulimit core=100000000:100000000 --ulimit memlock=100000000:100000000 --name db -p 8091-8094:8091-8094 -p 11210:11210 couchbase`
+mkdir \~/couchbase && chcon -Rt svirt_sandbox_file_t \~/couchbase
 
-Since "unlimited" is not supported as a value, it sets the core and memlock values to 100 GB. If your system has more than 100 GB RAM, you will want to increase this value to match the available RAM on the system.
+**Increase ULIMIT in Production Deployments :** Couchbase Server
+normally expects the following changes to ulimits:
 
-> Note:The --ulimit flags only work on Docker 1.6 or later.
+ulimit -n 200000 \# nofile: max number of open files
 
-**Network Configuration and Ports :** Couchbase Server communicates on many different ports (see the [Couchbase Server documentation](https://docs.couchbase.com/server/current/install/install-ports.html)). Also, it is generally not supported that the cluster nodes be placed behind any NAT. For these reasons, Docker's default networking configuration is not ideally suited to Couchbase Server deployments. For production deployments it is recomended to use `--net=host` setting to avoid performance and reliability issues.
+ulimit -l unlimited \# memlock: maximum locked-in-memory address space
 
-# Multi Node Couchbase Server Cluster Deployment Topologies
+These ulimit settings are necessary when running under heavy load. If
+you are just doing light testing and development, you can omit these
+settings, and everything will still work.
 
-With multi node Couchbase Server clusters, there are 2 popular topologies.
+To set the ulimits in your container, you will need to run Couchbase
+Docker containers with the following additional \--ulimit flags:
 
-## All Couchbase Server containers on one physical machine
+docker run -d \--ulimit nofile=40960:40960 \--ulimit
+core=100000000:100000000 \--ulimit memlock=100000000:100000000 \--name
+db -p 8091-8094:8091-8094 -p 11210:11210 couchbase
 
-This model is commonly used for scale-minimized deployments simulating production deployments for development and test purposes. Placing all containers on a single physical machine means all containers will compete for the same resources. Placing all containers on a single physical machine also eliminates the built-in protection against Couchbase Server node failures with replication when the single physical machine fails, all containers experience unavailability at the same time losing all replicas. These restrictions may be acceptable for test systems, however it isn’t recommended for applications in production.
+Since \"unlimited\" is not supported as a value, it sets the core and
+memlock values to 100 GB. If your system has more than 100 GB RAM, you
+will want to increase this value to match the available RAM on the
+system.
 
-You can find more details on setting up Couchbase Server in this topology in Couchbase Server [documentation](https://docs.couchbase.com/server/current/install/getting-started-docker.html#section_msh_fbl_42b).
+Note:The \--ulimit flags only work on Docker 1.6 or later.
+
+**Network Configuration and Ports :** Couchbase Server communicates on
+many different ports (see the [Couchbase Server
+documentation](https://docs.couchbase.com/server/current/install/install-ports.html#ports-listed-by-communication-path)).
+Also, it is generally not supported that the cluster nodes be placed
+behind any NAT. For these reasons, Docker\'s default networking
+configuration is not ideally suited to Couchbase Server deployments. For
+production deployments it is recommended to use \--net=host setting to
+avoid performance and reliability issues.
+
+## Multi Node Couchbase Server Cluster Deployment Topologies
+
+With multi node Couchbase Server clusters, there are 2 popular
+topologies.
+
+### All Couchbase Server containers on one physical machine
+
+This model is commonly used for scale-minimized deployments simulating
+production deployments for development and test purposes. Placing all
+containers on a single physical machine means all containers will
+compete for the same resources. Placing all containers on a single
+physical machine also eliminates the built-in protection against
+Couchbase Server node failures afforded by replication. When the single
+physical machine fails, all containers experience unavailability at the
+same time, losing all replicas. These restrictions may be acceptable for
+test systems, however it isn't recommended for applications in production.
+
+You can find more details on setting up Couchbase Server in this
+topology in Couchbase
+Server [documentation](https://docs.couchbase.com/server/current/install/getting-started-docker.html#multi-node-cluster-one-host).
 
 	┌──────────────────────────────────────────────────────────┐
 	│                     Host OS (Linux)                      │
@@ -119,12 +221,16 @@ You can find more details on setting up Couchbase Server in this topology in Cou
 	│  └───────────────┘ └───────────────┘  └───────────────┘  │
 	└──────────────────────────────────────────────────────────┘
 
+### Each Couchbase Server container on its own machine
 
-## Each Couchbase Server container on its own machine
+This model is commonly used for production deployments. It prevents
+Couchbase Server nodes from stepping over each other and gives you
+better performance predictability. This is the supported topology in
+production with Couchbase Server 5.5 and higher.
 
-This model is commonly used for production deployments. It prevents Couchbase Server nodes from stepping over each other and gives you better performance predictability. This is the supported topology in production with Couchbase Server 4.5 and higher.
-
-You can find more details on setting up Couchbase Server in this topology in Couchbase Server [documentation](https://docs.couchbase.com/server/current/install/getting-started-docker.html#section_msh_fbl_42b).
+You can find more details on setting up Couchbase Server in this
+topology in Couchbase
+Server [documentation](https://docs.couchbase.com/server/current/install/getting-started-docker.html#multi-node-cluster-many-hosts).
 
 	┌───────────────────────┐  ┌───────────────────────┐  ┌───────────────────────┐
 	│   Host OS (Linux)     │  │   Host OS (Linux)     │  │   Host OS (Linux)     │
@@ -138,21 +244,52 @@ You can find more details on setting up Couchbase Server in this topology in Cou
 	│  └─────────────────┘  │  │  └─────────────────┘  │  │  └─────────────────┘  │
 	└───────────────────────┘  └───────────────────────┘  └───────────────────────┘
 
+## Try Couchbase Cloud Free
+
+Couchbase Cloud is a fully managed NoSQL Database-as-a-Service (DBaaS)
+for mission-critical applications. We deploy Couchbase Cloud in your AWS
+VPC and manage the workload. You'll enjoy incredible price-performance
+and operational transparency.
+
+Start Free Trial - <https://cloud.couchbase.com/sign-up>
+
 # Additional References
 
--	[Getting Started with Couchbase Server and Docker](https://docs.couchbase.com/server/current/install/getting-started-docker.html)
--	[Couchbase Autonomous Operator](https://www.couchbase.com/products/cloud/kubernetes)
+-   [Couchbase Server and
+    Containers](https://docs.couchbase.com/server/current/cloud/couchbase-cloud-deployment.html)
 
-# Licensing
+-   [Getting Started with Couchbase Server and
+    Docker](https://docs.couchbase.com/server/current/install/getting-started-docker.html)
 
-Couchbase Server comes in 2 Editions: Enterprise Edition and Community Edition. You can find details on the differences between the 2 and licensing details on the [Couchbase Server Editions](https://docs.couchbase.com/server/current/introduction/editions.html) page.
+# License
 
--	Enterprise Edition -- free for development, testing and POCs. Requires a paid subscription for production deployment. Please refer to the [pricing](https://www.couchbase.com/pricing) page to connect with our sales team.
+Couchbase Server comes in 2 Editions: Enterprise Edition and Community
+Edition. You can find details on the differences between the 2 and
+licensing details on the [Couchbase Server
+Editions](https://docs.couchbase.com/server/current/introduction/editions.html) page.
 
--	Community Edition -- free for unrestricted use for community users.
+-   Enterprise Edition -- free for development, testing and POCs. Requires
+    a paid subscription for production deployment. Please refer to the
+    [pricing](https://www.couchbase.com/pricing) page for details on
+    enterprise edition agreements.
 
-By default, the `latest` Docker tag points to the latest Enterprise Edition. If you want the Community Edition instead, you should add the appropriate tag, such as
+-   Community Edition \-- free for unrestricted use for community users.
 
-```console
-docker run couchbase:community-6.5.0
-```
+By default, the latest Docker tag points to the latest Enterprise
+Edition. If you want the Community Edition instead, you should add the
+appropriate tag, such as
+
+docker run couchbase:community-6.6.0
+
+As with all Docker images, these likely also contain other software
+which may be under other licenses (such as Bash, etc. from the base
+distribution, along with any direct or indirect dependencies of the
+primary software being contained).
+
+Some additional license information which was able to be auto-detected
+might be found
+in [the repo-info repository\'s couchbase/ directory](https://github.com/docker-library/repo-info/tree/master/repos/couchbase).
+
+As for any pre-built image usage, it is the image user\'s responsibility
+to ensure that any use of this image complies with any relevant licenses
+for all software contained within.
