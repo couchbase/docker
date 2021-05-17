@@ -7,7 +7,6 @@ LABEL maintainer="docker@couchbase.com"
 #  wget: for downloading .deb
 #  chrpath: for fixing curl, below
 #  tzdata: timezone info used by some N1QL functions
-#  man: so couchbase-cli help works
 # Additional dependencies for system commands used by cbcollect_info:
 #  lsof: lsof
 #  lshw: lshw
@@ -16,7 +15,7 @@ LABEL maintainer="docker@couchbase.com"
 #  numactl: numactl
 RUN set -x && \
     apt-get update && \
-    apt-get install -yq runit wget chrpath tzdata man \
+    apt-get install -yq runit wget chrpath tzdata \
     lsof lshw sysstat net-tools numactl bzip2 && \
     apt-get autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -32,7 +31,7 @@ RUN if [ ! -x /usr/sbin/runsvdir-start ]; then \
 ARG CB_VERSION=6.6.2
 ARG CB_RELEASE_URL=https://packages.couchbase.com/releases/6.6.2
 ARG CB_PACKAGE=couchbase-server-enterprise_6.6.2-ubuntu20.04_amd64.deb
-ARG CB_SHA256=d5296bcda6e4f7e13c7b2ae55d072207b46ca2ed52ff8325eecfe5bfc9b635f5
+ARG CB_SHA256=9d414bbfeeed999ee9a8c512b3360315abacb35e214c0d2665ead25438edb324
 
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
