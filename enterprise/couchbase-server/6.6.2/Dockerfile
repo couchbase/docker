@@ -31,7 +31,7 @@ RUN if [ ! -x /usr/sbin/runsvdir-start ]; then \
 ARG CB_VERSION=6.6.2
 ARG CB_RELEASE_URL=https://packages.couchbase.com/releases/6.6.2
 ARG CB_PACKAGE=couchbase-server-enterprise_6.6.2-ubuntu20.04_amd64.deb
-ARG CB_SHA256=9d414bbfeeed999ee9a8c512b3360315abacb35e214c0d2665ead25438edb324
+ARG CB_SHA256=41c033e6c1e98b0844a5cb5768e3769e7012d8374a6bd235c86e10db33b17afc
 
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
