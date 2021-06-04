@@ -7,7 +7,6 @@ LABEL maintainer="docker@couchbase.com"
 #  wget: for downloading .deb
 #  chrpath: for fixing curl, below
 #  tzdata: timezone info used by some N1QL functions
-#  man: so couchbase-cli help works
 # Additional dependencies for system commands used by cbcollect_info:
 #  lsof: lsof
 #  lshw: lshw
@@ -16,7 +15,7 @@ LABEL maintainer="docker@couchbase.com"
 #  numactl: numactl
 RUN set -x && \
     apt-get update && \
-    apt-get install -yq runit wget chrpath tzdata man \
+    apt-get install -yq runit wget chrpath tzdata \
     lsof lshw sysstat net-tools numactl bzip2 && \
     apt-get autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
