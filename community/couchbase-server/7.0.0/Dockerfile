@@ -31,7 +31,7 @@ RUN if [ ! -x /usr/sbin/runsvdir-start ]; then \
 ARG CB_VERSION=7.0.0
 ARG CB_RELEASE_URL=https://packages.couchbase.com/releases/7.0.0
 ARG CB_PACKAGE=couchbase-server-community_7.0.0-ubuntu20.04_amd64.deb
-ARG CB_SHA256=MISSING_SHA256_ERROR
+ARG CB_SHA256=dd70ca6e45fa40aff5b168aef89509f97eaad5dc2c74c9df7966d28bdc56d917
 
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
