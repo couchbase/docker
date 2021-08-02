@@ -134,21 +134,17 @@ func generateVersions(edition Edition, product Product) error {
 
 		dockerfile := path.Join(dir, version, "Dockerfile")
 
-		if _, err := os.Stat(dockerfile); !os.IsNotExist(err) {
-			log.Printf("%s exists, skipping...", dockerfile)
-			continue
-		}
-
 		if skipGeneration.Matches(product, version) {
 			log.Printf("Skipping generation for %v %v %v", product, edition, version)
 			continue
 		}
 
 		variant := DockerfileVariant{
-			Edition:   edition,
-			Product:   product,
-			Version:   strings.TrimSuffix(version, "-staging"),
-			IsStaging: strings.HasSuffix(version, "-staging"),
+			Dockerfile: dockerfile,
+			Edition:    edition,
+			Product:    product,
+			Version:    strings.TrimSuffix(version, "-staging"),
+			IsStaging:  strings.HasSuffix(version, "-staging"),
 		}
 
 		if err := generateVariant(variant); err != nil {
@@ -163,18 +159,24 @@ func generateVersions(edition Edition, product Product) error {
 
 func generateVariant(variant DockerfileVariant) error {
 
-	if err := generateDockerfile(variant); err != nil {
-		return err
+	if _, err := os.Stat(variant.Dockerfile); !os.IsNotExist(err) {
+		log.Printf("%s exists, not regenerating...", variant.Dockerfile)
+	} else {
+		if err := generateDockerfile(variant); err != nil {
+			return err
+		}
+
+		if err := deployScriptResources(variant); err != nil {
+			return err
+		}
+
+		if err := deployConfigResources(variant); err != nil {
+			return err
+		}
 	}
 
-	if err := deployScriptResources(variant); err != nil {
-		return err
-	}
-
-	if err := deployConfigResources(variant); err != nil {
-		return err
-	}
-
+	// We always want to ensure the readme is updated, to avoid the current
+	// description on docker hub being overwritten by legacy documentation.
 	if err := deployReadme(variant); err != nil {
 		return err
 	}
@@ -419,10 +421,11 @@ func CopyDir(source string, dest string) (err error) {
 }
 
 type DockerfileVariant struct {
-	Edition   Edition
-	Product   Product
-	Version   string
-	IsStaging bool
+	Dockerfile string
+	Edition    Edition
+	Product    Product
+	Version    string
+	IsStaging  bool
 }
 
 func (variant DockerfileVariant) getSHA256() string {
