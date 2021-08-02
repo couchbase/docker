@@ -145,14 +145,8 @@ You can find more details on setting up Couchbase Server in this topology in Cou
 
 # Licensing
 
-Couchbase Server comes in 2 Editions: Enterprise Edition and Community Edition. You can find details on the differences between the 2 and licensing details on the [Couchbase Server Editions](https://docs.couchbase.com/server/current/introduction/editions.html) page.
+Couchbase Server comes in two editions: Enterprise Edition and Community Edition. You can find details on the differences between the two and licensing information on the [Couchbase Server Editions](https://docs.couchbase.com/server/current/introduction/editions.html) page.
 
--	Enterprise Edition -- free for development, testing and POCs. Requires a paid subscription for production deployment. Please refer to the [pricing](https://www.couchbase.com/pricing) page to connect with our sales team.
+-	**Enterprise Edition** -- The Enterprise Edition license provides for free for development and testing for Couchbase Enterprise Edition. A paid subscription for production deployment is required. Please refer to the [pricing](https://www.couchbase.com/pricing) page for details on Couchbase’s Enterprise Edition.
 
--	Community Edition -- free for unrestricted use for community users.
-
-By default, the `latest` Docker tag points to the latest Enterprise Edition. If you want the Community Edition instead, you should add the appropriate tag, such as
-
-```console
-docker run couchbase:community-6.5.0
-```
+-	**Community Edition** -- The Community Edition license provides for free deployment of Couchbase Community Edition for departmental-scale deployments of up to five node clusters. It has recently been changed to disallow use of XDCR, which is now an exclusive Enterprise Edition feature.
