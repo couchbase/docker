@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  couchbase:
+    image: couchbase/server:${TAG}
+  robot:
+    build: robot
+    environment:
+      - TAG=\${TAG}
+    volumes:
+      - ./output/${TAG}:/output
+    depends_on:
+      - couchbase
