@@ -591,7 +591,6 @@ func (variant DockerfileVariant) releaseURL() string {
 }
 
 // Find the package URL for this Sync Gateway version
-// eg. http://packages.couchbase.com/releases/couchbase-sync-gateway/1.2.1/couchbase-sync-gateway-community_1.2.1-4_x86_64.rpm
 func (variant DockerfileVariant) sgPackageUrl() string {
 
 	var packagesBaseUrl string
@@ -612,23 +611,11 @@ func (variant DockerfileVariant) sgPackageUrl() string {
 		return fmt.Sprintf(
 			"%s/%s/%s",
 			packagesBaseUrl,
-			variant.versionWithoutBuildNumber(),
+			variant.Version,
 			sgFileName,
 		)
 
 	}
-}
-
-// Strip build number, eg 1.2.1-4 --> 1.2.1
-func (variant DockerfileVariant) versionWithoutBuildNumber() string {
-	re := regexp.MustCompile(`([0-9]*.[0-9]*.[0-9]*)`)
-	result := re.FindStringSubmatch(variant.Version)
-	if len(result) > 1 {
-		group1 := result[1]
-		return group1
-	}
-	return "error"
-
 }
 
 func (variant DockerfileVariant) sgPackageFilename() string {
