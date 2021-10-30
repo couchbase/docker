@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# If HOME is set, Erlang requires that it be a writable directory.
+# We can't guarantee that as it depends on which UID the container
+# is started as. The couchbase-server script will handle it being
+# unset, though, so do that for safety.
+unset HOME
+
 exec 2>&1
 
 # Create directories where couchbase stores its data
