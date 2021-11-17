@@ -59,11 +59,11 @@ RUN ln -s dummy.sh /usr/local/bin/iptables-save && \
     ln -s dummy.sh /usr/local/bin/vgdisplay && \
     ln -s dummy.sh /usr/local/bin/pvdisplay
 
-# Fix curl RPATH if necessary - if curl.bin exists, it's a new
+# Fix curl RPATH if necessary - if curl.real exists, it's a new
 # enough package that we don't need to do anything. If not, it
 # may be OK, but just fix it
 RUN set -ex \
-    &&  if [ ! -e /opt/couchbase/bin/curl.bin ]; then \
+    &&  if [ ! -e /opt/couchbase/bin/curl.real ]; then \
             apt-get update; \
             apt-get install -y chrpath; \
             chrpath -r '$ORIGIN/../lib' /opt/couchbase/bin/curl; \
