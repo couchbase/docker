@@ -1,6 +1,39 @@
+# Stage 0: compile runit.
+# This is ONLY used for amzonlinux which doesn't come with runit
+FROM amazonlinux:2 as runit_build
+
+ARG RUNIT_VER=2.1.2
+USER root
+RUN yum update -y -q && \
+    yum install -y -q gcc glibc-static gzip make tar && \
+    yum clean all
+
+RUN set -x \
+    && mkdir /tmp/runit \
+    && cd /tmp/runit \
+    && curl -O http://smarden.org/runit/runit-${RUNIT_VER}.tar.gz \
+    && tar xf runit-${RUNIT_VER}.tar.gz \
+    && cd admin/runit-${RUNIT_VER} \
+    && package/install
+
+
 FROM {{ .DOCKER_BASE_IMAGE }}
 
 LABEL maintainer="docker@couchbase.com"
+
+ARG ARCH={{ .ARCH}}
+ARG RUNIT_VER=2.1.2
+
+COPY --from=runit_build /tmp/runit/admin/ /tmp/
+
+# copy runit onto system
+RUN set -x && \
+    if [ $ARCH == "aarch64" ]; then \
+        cp /tmp/runit-${RUNIT_VER}/command/* /sbin/; \
+        cp /tmp/runit-${RUNIT_VER}/etc/2 /sbin/runsvdir-start; \
+    fi
+
+RUN rm -rf /tmp/runit*
 
 # Install dependencies:
 #  runit: for container process management
@@ -13,11 +46,10 @@ LABEL maintainer="docker@couchbase.com"
 #  net-tools: ifconfig, arp, netstat
 #  numactl: numactl
 RUN set -x && \
-    apt-get update && \
-    apt-get install -yq runit wget tzdata \
+    {{ .PKG_COMMAND }} update -y -q && \
+    {{ .PKG_COMMAND }} install -y -q wget tzdata \
     lsof lshw sysstat net-tools numactl {{ .CB_EXTRA_DEPS }} && \
-    apt-get autoremove && apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    {{ .PKG_COMMAND }} autoremove -y && {{ .PKG_COMMAND }} clean all
 
 ARG CB_VERSION={{ .CB_VERSION }}
 ARG CB_RELEASE_URL={{ .CB_RELEASE_URL }}/{{ .CB_VERSION }}
@@ -35,10 +67,10 @@ RUN set -x && \
     export INSTALL_DONT_START_SERVER=1 && \
     wget -N --no-verbose $CB_RELEASE_URL/$CB_PACKAGE && \
     echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - && \
-    apt-get update && \
-    apt-get install -y ./$CB_PACKAGE && \
+    {{ .PKG_COMMAND }} update -y -q && \
+    {{ .PKG_COMMAND }} install -y ./$CB_PACKAGE && \
     rm -f ./$CB_PACKAGE && \
-    apt-get autoremove && apt-get clean && \
+    {{ .PKG_COMMAND }} autoremove -y && {{ .PKG_COMMAND }} clean all && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Update VARIANT.txt to indicate we're running in our Docker image
@@ -64,13 +96,16 @@ RUN ln -s dummy.sh /usr/local/bin/iptables-save && \
 # may be OK, but just fix it
 RUN set -ex \
     &&  if [ ! -e /opt/couchbase/bin/curl.real ]; then \
-            apt-get update; \
-            apt-get install -y chrpath; \
+            {{ .PKG_COMMAND }} update -y -q; \
+            {{ .PKG_COMMAND }} install -y chrpath; \
             chrpath -r '$ORIGIN/../lib' /opt/couchbase/bin/curl; \
-            apt-get purge -y chrpath; \
-            apt-get autoremove; \
-            apt-get clean; \
+            {{ .PKG_COMMAND }} remove -y chrpath; \
+            {{ .PKG_COMMAND }} autoremove -y; \
+            {{ .PKG_COMMAND }} clean all; \
         fi
+
+RUN set -x \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* rm -rf /var/cache/yum
 
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
