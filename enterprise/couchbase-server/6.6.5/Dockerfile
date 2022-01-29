@@ -1,39 +1,12 @@
-# Stage 0: compile runit.
-# This is ONLY used for amzonlinux which doesn't come with runit
-FROM amazonlinux:2 as runit_build
-
-ARG RUNIT_VER=2.1.2
-USER root
-RUN yum update -y -q && \
-    yum install -y -q gcc glibc-static gzip make tar && \
-    yum clean all
-
-RUN set -x \
-    && mkdir /tmp/runit \
-    && cd /tmp/runit \
-    && curl -O http://smarden.org/runit/runit-${RUNIT_VER}.tar.gz \
-    && tar xf runit-${RUNIT_VER}.tar.gz \
-    && cd admin/runit-${RUNIT_VER} \
-    && package/install
 
 
 FROM ubuntu:20.04
 
 LABEL maintainer="docker@couchbase.com"
 
-ARG ARCH=x86_64
-ARG RUNIT_VER=2.1.2
 
-COPY --from=runit_build /tmp/runit/admin/ /tmp/
-
-# copy runit onto system
-RUN set -x && \
-    if [ $ARCH == "aarch64" ]; then \
-        cp /tmp/runit-${RUNIT_VER}/command/* /sbin/; \
-        cp /tmp/runit-${RUNIT_VER}/etc/2 /sbin/runsvdir-start; \
-    fi
-
-RUN rm -rf /tmp/runit*
+ARG UPDATE_COMMAND="apt-get update -y -q"
+ARG CLEANUP_COMMAND=true
 
 # Install dependencies:
 #  runit: for container process management
@@ -45,11 +18,11 @@ RUN rm -rf /tmp/runit*
 #  sysstat: iostat, sar, mpstat
 #  net-tools: ifconfig, arp, netstat
 #  numactl: numactl
-RUN set -x && \
-    apt-get update -y -q && \
-    apt-get install -y -q wget tzdata \
-    lsof lshw sysstat net-tools numactl bzip2 runit && \
-    apt-get autoremove -y && apt-get clean all
+RUN set -x \
+    && ${UPDATE_COMMAND} \
+    && apt-get install -y -q wget tzdata \
+      lsof lshw sysstat net-tools numactl bzip2 runit \
+    && ${CLEANUP_COMMAND}
 
 ARG CB_VERSION=6.6.5
 ARG CB_RELEASE_URL=https://packages.couchbase.com/releases/6.6.5
@@ -63,22 +36,23 @@ ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/in
 RUN groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M
 
 # Install couchbase
-RUN set -x && \
-    export INSTALL_DONT_START_SERVER=1 && \
-    wget -N --no-verbose $CB_RELEASE_URL/$CB_PACKAGE && \
-    echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - && \
-    apt-get update -y -q && \
-    apt-get install -y ./$CB_PACKAGE && \
-    rm -f ./$CB_PACKAGE && \
-    apt-get autoremove -y && apt-get clean all && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN set -x \
+    && export INSTALL_DONT_START_SERVER=1 \
+    && wget -N --no-verbose $CB_RELEASE_URL/$CB_PACKAGE \
+    && echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - \
+    && ${UPDATE_COMMAND} \
+    && apt-get install -y ./$CB_PACKAGE \
+    && rm -f ./$CB_PACKAGE \
+    && ${CLEANUP_COMMAND} \
+    && rm -rf /tmp/* /var/tmp/*
 
 # Update VARIANT.txt to indicate we're running in our Docker image
 RUN sed -i -e '1 s/$/\/docker/' /opt/couchbase/VARIANT.txt
 
 # Add runit script for couchbase-server
 COPY scripts/run /etc/service/couchbase-server/run
-RUN mkdir -p /etc/runit/runsvdir/default/couchbase-server/supervise \
+RUN set -x \
+    && mkdir -p /etc/runit/runsvdir/default/couchbase-server/supervise \
     && chown -R couchbase:couchbase \
                 /etc/service \
                 /etc/runit/runsvdir/default/couchbase-server/supervise
@@ -86,26 +60,26 @@ RUN mkdir -p /etc/runit/runsvdir/default/couchbase-server/supervise \
 # Add dummy script for commands invoked by cbcollect_info that
 # make no sense in a Docker container
 COPY scripts/dummy.sh /usr/local/bin/
-RUN ln -s dummy.sh /usr/local/bin/iptables-save && \
-    ln -s dummy.sh /usr/local/bin/lvdisplay && \
-    ln -s dummy.sh /usr/local/bin/vgdisplay && \
-    ln -s dummy.sh /usr/local/bin/pvdisplay
+RUN set -x \
+    && ln -s dummy.sh /usr/local/bin/iptables-save \
+    && ln -s dummy.sh /usr/local/bin/lvdisplay \
+    && ln -s dummy.sh /usr/local/bin/vgdisplay \
+    && ln -s dummy.sh /usr/local/bin/pvdisplay
 
 # Fix curl RPATH if necessary - if curl.real exists, it's a new
 # enough package that we don't need to do anything. If not, it
 # may be OK, but just fix it
 RUN set -ex \
     &&  if [ ! -e /opt/couchbase/bin/curl.real ]; then \
-            apt-get update -y -q; \
+            ${UPDATE_COMMAND}; \
             apt-get install -y chrpath; \
             chrpath -r '$ORIGIN/../lib' /opt/couchbase/bin/curl; \
             apt-get remove -y chrpath; \
             apt-get autoremove -y; \
-            apt-get clean all; \
+            ${CLEANUP_COMMAND}; \
         fi
 
-RUN set -x \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* rm -rf /var/cache/yum
+RUN rm -rf /tmp/* /var/tmp/*
 
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
