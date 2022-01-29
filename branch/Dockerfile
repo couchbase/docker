@@ -79,8 +79,6 @@ RUN set -ex \
             ${CLEANUP_COMMAND}; \
         fi
 
-RUN rm -rf /tmp/* /var/tmp/*
-
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
