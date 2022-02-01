@@ -41,7 +41,7 @@ ARG UPDATE_COMMAND=true
 ARG CLEANUP_COMMAND="yum clean -q all"
 {{ else -}}
 ARG UPDATE_COMMAND="apt-get update -y -q"
-ARG CLEANUP_COMMAND=true
+ARG CLEANUP_COMMAND="rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
 {{- end }}
 
 # Install dependencies:
