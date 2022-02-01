@@ -6,7 +6,7 @@ LABEL maintainer="docker@couchbase.com"
 
 
 ARG UPDATE_COMMAND="apt-get update -y -q"
-ARG CLEANUP_COMMAND=true
+ARG CLEANUP_COMMAND="rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
 
 # Install dependencies:
 #  runit: for container process management
