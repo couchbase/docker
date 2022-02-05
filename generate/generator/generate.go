@@ -4,9 +4,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/hashicorp/go-version"
 	"io"
 	"io/ioutil"
-        "github.com/hashicorp/go-version"
 	"log"
 	"net/http"
 	"os"
@@ -39,9 +39,8 @@ const (
 type Arch string
 
 const (
-        Archamd64    = Arch("x86_64")
-        Archaarch64  = Arch("aarch64")
-
+	Archamd64   = Arch("x86_64")
+	Archaarch64 = Arch("aarch64")
 )
 
 // A map of "overrides" which specify custom package download urls and package names
@@ -74,7 +73,7 @@ var (
 	products              []Product
 	versionCustomizations VersionCustomizations
 	processingRoot        string
-        archs                 []Arch
+	archs                 []Arch
 	skipGeneration        ProductVersionFilter
 )
 
@@ -91,10 +90,10 @@ func init() {
 		ProductOperator,
 	}
 
-        archs = []Arch{
-                Archamd64,
-                Archaarch64,
-        }
+	archs = []Arch{
+		Archamd64,
+		Archaarch64,
+	}
 
 	// TODO: Read the version_customizations.json file into map
 	versionCustomizations = map[string]VersionCustomization{}
@@ -147,49 +146,49 @@ func generateVersions(edition Edition, product Product) error {
 	// for each version
 	for _, ver := range versions {
 
-                if skipGeneration.Matches(product, ver) {
-                        log.Printf("Skipping generation for %v %v %v", product, edition, ver)
-                        continue
-                }
+		if skipGeneration.Matches(product, ver) {
+			log.Printf("Skipping generation for %v %v %v", product, edition, ver)
+			continue
+		}
 
-                //versions such as 1.1.0-forestdb_bucket is not comparable.
-                //hence strip these when checking against the constraint.
-                v1, err := version.NewVersion(strings.Split(ver, "-")[0])
-                constraints, err := version.NewConstraint(">= 7.1.0")
-                if constraints.Check(v1) && product == ProductServer {
-                        for _, arch := range archs {
-                                dockerfile := path.Join(dir, ver, string(arch), "Dockerfile")
-                                variant     := DockerfileVariant{
-                                        Dockerfile:       dockerfile,
-                                        Edition:          edition,
-                                        Arch:             arch,
-                                        Product:          product,
-                                        Multiplatform:    true,
-                                        Version:          strings.TrimSuffix(ver, "-staging"),
-                                        IsStaging:        strings.HasSuffix(ver, "-staging"),
-                                }
-                                if err := generateVariant(variant); err != nil {
-                                        return err
-                                }
-                        }
-                } else {
-                        dockerfile := path.Join(dir, ver, "Dockerfile")
-                        variant    := DockerfileVariant{
-                                Dockerfile:       dockerfile,
-                                Edition:          edition,
-                                Arch:             Archamd64,
-                                Product:          product,
-                                Multiplatform:    false,
-                                Version:          strings.TrimSuffix(ver, "-staging"),
-                                IsStaging:        strings.HasSuffix(ver, "-staging"),
-                        }
-                        if err := generateVariant(variant); err != nil {
-                                return err
-                        }
-                }
-                if err != nil {
-                        panic("error: version compare failed")
-                }
+		//versions such as 1.1.0-forestdb_bucket is not comparable.
+		//hence strip these when checking against the constraint.
+		v1, err := version.NewVersion(strings.Split(ver, "-")[0])
+		constraints, err := version.NewConstraint(">= 7.1.0")
+		if constraints.Check(v1) && product == ProductServer {
+			for _, arch := range archs {
+				dockerfile := path.Join(dir, ver, string(arch), "Dockerfile")
+				variant := DockerfileVariant{
+					Dockerfile:    dockerfile,
+					Edition:       edition,
+					Arch:          arch,
+					Product:       product,
+					Multiplatform: true,
+					Version:       strings.TrimSuffix(ver, "-staging"),
+					IsStaging:     strings.HasSuffix(ver, "-staging"),
+				}
+				if err := generateVariant(variant); err != nil {
+					return err
+				}
+			}
+		} else {
+			dockerfile := path.Join(dir, ver, "Dockerfile")
+			variant := DockerfileVariant{
+				Dockerfile:    dockerfile,
+				Edition:       edition,
+				Arch:          Archamd64,
+				Product:       product,
+				Multiplatform: false,
+				Version:       strings.TrimSuffix(ver, "-staging"),
+				IsStaging:     strings.HasSuffix(ver, "-staging"),
+			}
+			if err := generateVariant(variant); err != nil {
+				return err
+			}
+		}
+		if err != nil {
+			panic("error: version compare failed")
+		}
 	}
 
 	return nil
@@ -258,7 +257,7 @@ func generateDockerfile(variant DockerfileVariant) error {
 			CB_RELEASE_URL    string
 			DOCKER_BASE_IMAGE string
 			PKG_COMMAND       string
-                        ARCH              string
+			ARCH              string
 		}{
 			CB_VERSION:        variant.VersionWithSubstitutions(),
 			CB_PACKAGE:        variant.serverPackageName(),
@@ -267,7 +266,7 @@ func generateDockerfile(variant DockerfileVariant) error {
 			CB_RELEASE_URL:    variant.releaseURL(),
 			DOCKER_BASE_IMAGE: variant.dockerBaseImage(),
 			PKG_COMMAND:       variant.pkgCommand(),
-                        ARCH:              string(variant.Arch),
+			ARCH:              string(variant.Arch),
 		}
 
 	} else if variant.Product == ProductSyncGw {
@@ -468,13 +467,13 @@ func CopyDir(source string, dest string) (err error) {
 }
 
 type DockerfileVariant struct {
-	Dockerfile     string
-	Edition        Edition
-        Arch           Arch
-	Product        Product
-        Multiplatform  bool
-	Version        string
-	IsStaging      bool
+	Dockerfile    string
+	Edition       Edition
+	Arch          Arch
+	Product       Product
+	Multiplatform bool
+	Version       string
+	IsStaging     bool
 }
 
 func (variant DockerfileVariant) getSHA256() string {
@@ -513,23 +512,23 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 		}
 		return "centos:centos7"
 	case ProductServer:
-                if variant.Arch == Archaarch64 {
-		        return "amazonlinux:2"
-                }
-                return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
+		if variant.Arch == Archaarch64 {
+			return "amazonlinux:2"
+		}
+		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	default:
-                log.Printf("Failed %v", variant.Product)
+		log.Printf("Failed %v", variant.Product)
 		panic("Unexpected product")
 	}
 }
 
 func (variant DockerfileVariant) pkgCommand() string {
 
-        log.Printf("Arch: %v", variant.Arch)
-        if variant.Arch== Archaarch64 {
-                return "yum"
-        }
-        return "apt-get"
+	log.Printf("Arch: %v", variant.Arch)
+	if variant.Arch == Archaarch64 {
+		return "yum"
+	}
+	return "apt-get"
 }
 
 func intVer(v string) (int64, error) {
@@ -599,14 +598,14 @@ func extraStuffAfterVersion(version string) string {
 // eg: couchbase-server-enterprise-7.1.0-ubuntu20.04_amd64.deb
 // eg: couchbase-server-enterprise-7.1.0-amzn2.aarch64.rpm
 func (variant DockerfileVariant) serverPackageName() string {
-        if variant.Arch == Archaarch64 {
-                return fmt.Sprintf(
-                        "%v-%v-%v-amzn2.aarch64.rpm",
-                        variant.Product,
-                        variant.Edition,
-                        variant.Version,
-               )
-        }
+	if variant.Arch == Archaarch64 {
+		return fmt.Sprintf(
+			"%v-%v-%v-amzn2.aarch64.rpm",
+			variant.Product,
+			variant.Edition,
+			variant.Version,
+		)
+	}
 	return fmt.Sprintf(
 		"%v-%v_%v-ubuntu%v_amd64.deb",
 		variant.Product,
@@ -627,20 +626,20 @@ func (variant DockerfileVariant) operatorPackageName() string {
 // Specify any extra dependencies, based on variant
 func (variant DockerfileVariant) extraDependencies() string {
 	if variant.Product == "couchbase-server" {
-                if variant.Arch == Archamd64 {
-		        if variant.isMadHatterOrNewer() {
-			        return "bzip2 runit"
-		        } else {
-			        return "python-httplib2 runit"
-		        }
-	        } else {
-                        if variant.isMadHatterOrNewer() {
-                                return "bzip2"
-                        } else {
-                                return "python-httplib2"
-                        }
-                }
-        }
+		if variant.Arch == Archamd64 {
+			if variant.isMadHatterOrNewer() {
+				return "bzip2 runit"
+			} else {
+				return "python-httplib2 runit"
+			}
+		} else {
+			if variant.isMadHatterOrNewer() {
+				return "bzip2"
+			} else {
+				return "python-httplib2"
+			}
+		}
+	}
 	return ""
 }
 
@@ -649,23 +648,23 @@ func (variant DockerfileVariant) targetDir() string {
 	if variant.IsStaging {
 		version = fmt.Sprintf("%s-staging", version)
 	}
-        targetDir := path.Join(
-                processingRoot,
-                string(variant.Edition),
-                string(variant.Product),
-                version,
-        )
-        if variant.Multiplatform {
-	        targetDir = path.Join(
-		        targetDir,
-		        string(variant.Arch),
-	        )
+	targetDir := path.Join(
+		processingRoot,
+		string(variant.Edition),
+		string(variant.Product),
+		version,
+	)
+	if variant.Multiplatform {
+		targetDir = path.Join(
+			targetDir,
+			string(variant.Arch),
+		)
 
-                err := os.MkdirAll(targetDir, 0755)
-                if err != nil {
-                       log.Fatalf("Failed to create %v: %v", targetDir, err)
-                }
-        }
+		err := os.MkdirAll(targetDir, 0755)
+		if err != nil {
+			log.Fatalf("Failed to create %v: %v", targetDir, err)
+		}
+	}
 	return targetDir
 }
 
