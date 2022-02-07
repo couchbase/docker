@@ -158,7 +158,6 @@ func generateVersions(edition Edition, product Product) error {
 		// Couchbase Server has some special cases based on Version.
 		if product == ProductServer {
 			serverVer, _ := intVer(variant.Version)
-			log.Printf("Hey look it's Couchbase Server %d", serverVer)
 			if serverVer == 70003 {
 				// CBD-4603: 7.0.3 actually builds from 7.0.3-MP1 for complete
 				// Log4Shell remediation
