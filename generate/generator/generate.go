@@ -4,7 +4,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/hashicorp/go-version"
 	"io"
 	"io/ioutil"
 	"log"
@@ -73,7 +72,6 @@ var (
 	products              []Product
 	versionCustomizations VersionCustomizations
 	processingRoot        string
-	archs                 []Arch
 	skipGeneration        ProductVersionFilter
 )
 
@@ -88,11 +86,6 @@ func init() {
 		ProductServer,
 		ProductSyncGw,
 		ProductOperator,
-	}
-
-	archs = []Arch{
-		Archamd64,
-		Archaarch64,
 	}
 
 	// TODO: Read the version_customizations.json file into map
@@ -151,43 +144,40 @@ func generateVersions(edition Edition, product Product) error {
 			continue
 		}
 
-		//versions such as 1.1.0-forestdb_bucket is not comparable.
-		//hence strip these when checking against the constraint.
-		v1, err := version.NewVersion(strings.Split(ver, "-")[0])
-		constraints, err := version.NewConstraint(">= 7.1.0")
-		if constraints.Check(v1) && product == ProductServer {
-			for _, arch := range archs {
-				dockerfile := path.Join(dir, ver, string(arch), "Dockerfile")
-				variant := DockerfileVariant{
-					Dockerfile:    dockerfile,
-					Edition:       edition,
-					Arch:          arch,
-					Product:       product,
-					Multiplatform: true,
-					Version:       strings.TrimSuffix(ver, "-staging"),
-					IsStaging:     strings.HasSuffix(ver, "-staging"),
-				}
-				if err := generateVariant(variant); err != nil {
-					return err
-				}
+		// Start with a basic DockerfileVariant, then tweak if necessary
+		variant := DockerfileVariant{
+			Edition:       edition,
+			Product:       product,
+			Multiplatform: false,
+			Version:       strings.TrimSuffix(ver, "-staging"),
+			TargetVersion: strings.TrimSuffix(ver, "-staging"),
+			IsStaging:     strings.HasSuffix(ver, "-staging"),
+		}
+		variantArches := []Arch{Archamd64}
+
+		// Couchbase Server has some special cases based on Version.
+		if product == ProductServer {
+			serverVer, _ := intVer(variant.Version)
+			log.Printf("Hey look it's Couchbase Server %d", serverVer)
+			if serverVer == 70003 {
+				// CBD-4603: 7.0.3 actually builds from 7.0.3-MP1 for complete
+				// Log4Shell remediation
+				variant.Version = "7.0.3-MP1"
 			}
-		} else {
-			dockerfile := path.Join(dir, ver, "Dockerfile")
-			variant := DockerfileVariant{
-				Dockerfile:    dockerfile,
-				Edition:       edition,
-				Arch:          Archamd64,
-				Product:       product,
-				Multiplatform: false,
-				Version:       strings.TrimSuffix(ver, "-staging"),
-				IsStaging:     strings.HasSuffix(ver, "-staging"),
-			}
-			if err := generateVariant(variant); err != nil {
-				return err
+			if serverVer >= 70100 {
+				// From Neo onwards, we have both amd64 and aarch64 images
+				variant.Multiplatform = true
+				variantArches = []Arch{Archamd64, Archaarch64}
 			}
 		}
-		if err != nil {
-			panic("error: version compare failed")
+
+		// Now generate the Dockerfile(s) based on the constructed variant
+		for _, arch := range variantArches {
+			variant.Arch = arch
+			if err := generateVariant(variant); err != nil {
+				return err
+
+			}
 		}
 	}
 
@@ -197,8 +187,8 @@ func generateVersions(edition Edition, product Product) error {
 
 func generateVariant(variant DockerfileVariant) error {
 
-	if _, err := os.Stat(variant.Dockerfile); !os.IsNotExist(err) {
-		log.Printf("%s exists, not regenerating...", variant.Dockerfile)
+	if _, err := os.Stat(variant.dockerfile()); !os.IsNotExist(err) {
+		log.Printf("%s exists, not regenerating...", variant.dockerfile())
 	} else {
 		if err := generateDockerfile(variant); err != nil {
 			return err
@@ -467,12 +457,18 @@ func CopyDir(source string, dest string) (err error) {
 }
 
 type DockerfileVariant struct {
-	Dockerfile    string
 	Edition       Edition
 	Arch          Arch
 	Product       Product
 	Multiplatform bool
-	Version       string
+	// Version is the real version of the product as seen in the outside
+	// world - eg., in download URLs, package filenames, etc.
+	Version string
+	// TargetVersion is the version of the Docker image (which in turn
+	// is the directory name in this repository). 99.99% of the time
+	// this will be the same as Version, but very occasionally we need
+	// to translate a bit here
+	TargetVersion string
 	IsStaging     bool
 }
 
@@ -644,7 +640,8 @@ func (variant DockerfileVariant) extraDependencies() string {
 }
 
 func (variant DockerfileVariant) targetDir() string {
-	version := string(variant.Version)
+	// Here we use TargetVersion rather than Version
+	version := string(variant.TargetVersion)
 	if variant.IsStaging {
 		version = fmt.Sprintf("%s-staging", version)
 	}
@@ -666,6 +663,10 @@ func (variant DockerfileVariant) targetDir() string {
 		}
 	}
 	return targetDir
+}
+
+func (variant DockerfileVariant) dockerfile() string {
+	return path.Join(variant.targetDir(), "Dockerfile")
 }
 
 func (variant DockerfileVariant) releaseURL() string {

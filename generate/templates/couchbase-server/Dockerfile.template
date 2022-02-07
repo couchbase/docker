@@ -60,7 +60,6 @@ RUN set -x \
       lsof lshw sysstat net-tools numactl {{ .CB_EXTRA_DEPS }} \
     && ${CLEANUP_COMMAND}
 
-ARG CB_VERSION={{ .CB_VERSION }}
 ARG CB_RELEASE_URL={{ .CB_RELEASE_URL }}/{{ .CB_VERSION }}
 ARG CB_PACKAGE={{ .CB_PACKAGE }}
 ARG CB_SHA256={{ .CB_SHA256 }}
