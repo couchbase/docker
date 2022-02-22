@@ -1,19 +1,15 @@
 {
-	"logging": {
-		"console": {
-			"enabled": true,
-			"log_level": "info",
-			"log_keys": ["HTTP"]
-		}
-	},
-	"interface": ":4984",
-	"databases": {
-		"db": {
-			"server": "walrus:/opt/couchbase-sync-gateway/data",
-			"users": {
-				"GUEST": {"disabled": false, "admin_channels": ["*"] }
-			}
-		}
-	}
+  "bootstrap": {
+    "server": "couchbases://localhost",
+    "server_tls_skip_verify": true,
+    "username": "username",
+    "password": "password"
+  },
+  "logging": {
+    "console": {
+      "enabled": true,
+      "log_level": "info",
+      "log_keys": ["*"]
+    }
+  }
 }
-
