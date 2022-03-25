@@ -239,23 +239,27 @@ func generateDockerfile(variant DockerfileVariant) error {
 	if variant.Product == ProductServer {
 		// template parameters
 		params = struct {
-			CB_VERSION        string
-			CB_PACKAGE        string
-			CB_EXTRA_DEPS     string
-			CB_SHA256         string
-			CB_RELEASE_URL    string
-			DOCKER_BASE_IMAGE string
-			PKG_COMMAND       string
-			ARCH              string
+			CB_VERSION         string
+			CB_PACKAGE         string
+			CB_PACKAGE_NAME    string
+			CB_EXTRA_DEPS      string
+			CB_SHA256          string
+			CB_RELEASE_URL     string
+			DOCKER_BASE_IMAGE  string
+			PKG_COMMAND        string
+			SYSTEMD_WORKAROUND bool
+			ARCH               string
 		}{
-			CB_VERSION:        variant.VersionWithSubstitutions(),
-			CB_PACKAGE:        variant.serverPackageName(),
-			CB_EXTRA_DEPS:     variant.extraDependencies(),
-			CB_SHA256:         variant.getSHA256(),
-			CB_RELEASE_URL:    variant.releaseURL(),
-			DOCKER_BASE_IMAGE: variant.dockerBaseImage(),
-			PKG_COMMAND:       variant.pkgCommand(),
-			ARCH:              string(variant.Arch),
+			CB_VERSION:         variant.VersionWithSubstitutions(),
+			CB_PACKAGE:         variant.serverPackageFile(),
+			CB_PACKAGE_NAME:    variant.serverPackageName(),
+			CB_EXTRA_DEPS:      variant.extraDependencies(),
+			CB_SHA256:          variant.getSHA256(),
+			CB_RELEASE_URL:     variant.releaseURL(),
+			DOCKER_BASE_IMAGE:  variant.dockerBaseImage(),
+			PKG_COMMAND:        variant.pkgCommand(),
+			SYSTEMD_WORKAROUND: variant.systemdWorkaround(),
+			ARCH:               string(variant.Arch),
 		}
 
 	} else if variant.Product == ProductSyncGw {
@@ -475,7 +479,7 @@ func (variant DockerfileVariant) getSHA256() string {
 	var sha256url string
 	if variant.Product == "couchbase-server" {
 		sha256url = variant.releaseURL() + "/" +
-			variant.Version + "/" + variant.serverPackageName() + ".sha256"
+			variant.Version + "/" + variant.serverPackageFile() + ".sha256"
 	} else if variant.Product == "couchbase-operator" {
 		sha256url = variant.releaseURL() + "/" +
 			variant.Version + "/" + variant.operatorPackageName() + ".sha256"
@@ -524,6 +528,16 @@ func (variant DockerfileVariant) pkgCommand() string {
 		return "yum"
 	}
 	return "apt-get"
+}
+
+func (variant DockerfileVariant) systemdWorkaround() bool {
+    if variant.Product == ProductServer {
+        ver, _ := intVer(variant.Version)
+		if ver < 70000 {
+			return true
+		}
+	}
+	return false
 }
 
 func intVer(v string) (int64, error) {
@@ -589,10 +603,10 @@ func extraStuffAfterVersion(version string) string {
 	return ""
 }
 
-// Generate the package name for this variant:
+// Generate the package filename for this variant:
 // eg: couchbase-server-enterprise-7.1.0-ubuntu20.04_amd64.deb
 // eg: couchbase-server-enterprise-7.1.0-amzn2.aarch64.rpm
-func (variant DockerfileVariant) serverPackageName() string {
+func (variant DockerfileVariant) serverPackageFile() string {
 	if variant.Arch == Archaarch64 {
 		return fmt.Sprintf(
 			"%v-%v-%v-amzn2.aarch64.rpm",
@@ -608,6 +622,16 @@ func (variant DockerfileVariant) serverPackageName() string {
 		variant.Version,
 		variant.ubuntuVersion(),
 	)
+}
+
+// Generate the package name (couchbase-server or couchbase-server-community)
+// for this variant
+func (variant DockerfileVariant) serverPackageName() string {
+	if variant.Edition == EditionCommunity {
+		return "couchbase-server-community"
+	} else {
+		return "couchbase-server"
+	}
 }
 
 // Generate the bits package name for this couchbase-operator variant
