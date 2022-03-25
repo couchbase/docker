@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# If HOME is set, Erlang requires that it be a writable directory.
+# We can't guarantee that as it depends on which UID the container
+# is started as. The couchbase-server script will handle it being
+# unset, though, so do that for safety.
+unset HOME
+
 exec 2>&1
 
 # Create directories where couchbase stores its data
@@ -11,7 +17,11 @@ mkdir -p var/lib/couchbase \
          var/lib/couchbase/logs \
          var/lib/moxi
 
-chown -R couchbase:couchbase var
+# Ensure everything in var is owned and writable to Server.
+# Skip "inbox" as it may contain readonly-mounted things like k8s certs.
+find var -path var/lib/couchbase/inbox -prune -o -print0 | \
+  xargs -0 chown --no-dereference couchbase:couchbase
+
 if [ "$(whoami)" = "couchbase" ]; then
   exec /opt/couchbase/bin/couchbase-server -- -kernel global_enable_tracing false -noinput
 else
