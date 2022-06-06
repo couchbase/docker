@@ -78,7 +78,7 @@ const playwright = require('playwright');
         height: 400,
     });
     await page.waitForNavigation()
-    await page.click('css=[for="setup-sample-beer-sample"]')
+    await page.click('css=[for="bucketbeer-sample"]')
     await page.screenshot({
         path: `/output/load-sample-data.jpg`,
         quality: 85,
