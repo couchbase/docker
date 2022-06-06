@@ -80,10 +80,19 @@ $ curl http://localhost:4985
 
 **Step - 1 :** Prepare the Sync Gateway configuration file on your local machine:
 
+For versions 3.0.0 and newer:
 ```
 $ cd /tmp
-$ wget https://raw.githubusercontent.com/couchbase/sync_gateway/master/examples/basic-walrus-bucket.json
-$ mv basic-walrus-bucket.json my-sg-config.json
+$ wget https://raw.githubusercontent.com/couchbase/sync_gateway/master/examples/startup_config/basic.json
+$ mv basic.json my-sg-config.json
+$ vi my-sg-config.json  # make edits
+```
+
+For older versions:
+```
+$ cd /tmp
+$ wget https://raw.githubusercontent.com/couchbase/sync_gateway/master/examples/release/2.8.3/examples/serviceconfig.json
+$ mv serviceconfig.json my-sg-config.json
 $ vi my-sg-config.json  # make edits
 ```
 
@@ -99,7 +108,13 @@ Sync Gateway can also load its configuration directly from a public URL.
 
 **Step - 2 :** Then start Sync Gateway and give it the URL to the raw JSON data:
 
-`$ docker run -p 4984:4984 -d couchbase/sync-gateway https://raw.githubusercontent.com/couchbase/sync_gateway/master/examples/basic-walrus-bucket.json`
+For versions 3.0.0 and newer:
+
+`$ docker run -p 4984:4984 -d couchbase/sync-gateway https://raw.githubusercontent.com/couchbase/sync_gateway/master/examples/startup_config/basic.json`
+
+For older versions:
+
+`$ docker run -p 4984:4984 -d couchbase/sync-gateway https://raw.githubusercontent.com/couchbase/sync_gateway/release/2.8.3/examples/serviceconfig.json`
 
 # Running with a Couchbase Server container
 

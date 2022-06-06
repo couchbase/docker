@@ -8,6 +8,6 @@ services:
     environment:
       - TAG=\${TAG}
     volumes:
-      - ./output/${TAG}:/output
+      - ./output:/output
     depends_on:
       - couchbase
