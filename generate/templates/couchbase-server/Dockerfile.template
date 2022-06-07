@@ -1,41 +1,7 @@
-{{ if eq .DOCKER_BASE_IMAGE "amazonlinux:2" -}}
-
-# Stage 0: compile runit.
-# This is ONLY used for amzonlinux which doesn't come with runit
-FROM amazonlinux:2 as runit_build
-
-ARG RUNIT_VER=2.1.2
-USER root
-RUN set -x \
-    && yum update -y -q \
-    && yum install -y -q gcc glibc-static gzip make tar \
-    && yum clean -q all
-
-RUN set -x \
-    && mkdir /tmp/runit \
-    && cd /tmp/runit \
-    && curl -O http://smarden.org/runit/runit-${RUNIT_VER}.tar.gz \
-    && tar xf runit-${RUNIT_VER}.tar.gz \
-    && cd admin/runit-${RUNIT_VER} \
-    && package/install
-
-# Set up directory structure we want in target container, so we
-# can use only COPY and not have to move/rename/delete things there
-RUN set -x \
-    && mkdir /tmp/sbin \
-    && cd /tmp/runit/admin/runit \
-    && cp command/* /tmp/sbin/ \
-    && cp etc/2 /tmp/sbin/runsvdir-start
-
-{{- end }}
-
 FROM {{ .DOCKER_BASE_IMAGE }}
 
 LABEL maintainer="docker@couchbase.com"
 
-{{ if eq .DOCKER_BASE_IMAGE "amazonlinux:2" -}}
-COPY --from=runit_build /tmp/sbin/ /sbin/
-{{- end}}
 {{ if eq .PKG_COMMAND "yum" }}
 ARG UPDATE_COMMAND=true
 ARG CLEANUP_COMMAND="yum clean -q all"
@@ -62,11 +28,13 @@ RUN set -x \
 
 ARG CB_RELEASE_URL={{ .CB_RELEASE_URL }}/{{ .CB_VERSION }}
 ARG CB_PACKAGE={{ .CB_PACKAGE }}
+{{- if not .CB_MULTIARCH }}
+ARG CB_SHA256={{ .CB_SHA256_amd64 }}
+{{- end }}
+ARG CB_SKIP_CHECKSUM=false
 {{- if .SYSTEMD_WORKAROUND }}
 ARG CB_PACKAGE_NAME={{ .CB_PACKAGE_NAME }}
 {{- end }}
-ARG CB_SHA256={{ .CB_SHA256 }}
-
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
 # Create Couchbase user with UID 1000 (necessary to match default
@@ -82,8 +50,20 @@ RUN groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M
 {{- end }}
 RUN set -x \
     && export INSTALL_DONT_START_SERVER=1 \
+{{- if .CB_MULTIARCH }}
+    && dpkgArch="$(dpkg --print-architecture)" \
+    && case "${dpkgArch}" in \
+         'arm64') \
+           CB_SHA256={{ .CB_SHA256_arm64 }} \
+           ;; \
+         'amd64') \
+           CB_SHA256={{ .CB_SHA256_amd64 }} \
+           ;; \
+       esac \
+    && CB_PACKAGE=$(echo ${CB_PACKAGE} | sed -e "s/@@ARCH@@/${dpkgArch}/") \
+{{- end }}
     && wget -N --no-verbose $CB_RELEASE_URL/$CB_PACKAGE \
-    && echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - \
+    && { ${CB_SKIP_CHECKSUM} || echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - ; } \
     && ${UPDATE_COMMAND} \
 {{- if .SYSTEMD_WORKAROUND }}
     && dpkg --unpack ./$CB_PACKAGE \

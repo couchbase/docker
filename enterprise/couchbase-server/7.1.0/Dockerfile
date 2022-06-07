@@ -1,9 +1,6 @@
-
-
 FROM ubuntu:20.04
 
 LABEL maintainer="docker@couchbase.com"
-
 
 ARG UPDATE_COMMAND="apt-get update -y -q"
 ARG CLEANUP_COMMAND="rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
@@ -25,9 +22,8 @@ RUN set -x \
     && ${CLEANUP_COMMAND}
 
 ARG CB_RELEASE_URL=https://packages.couchbase.com/releases/7.1.0
-ARG CB_PACKAGE=couchbase-server-enterprise_7.1.0-ubuntu20.04_amd64.deb
-ARG CB_SHA256=5cefdbf8970a86b7869b3bc1f37bea2454e0d1f72733be39a1c20bb5c2641987
-
+ARG CB_PACKAGE=couchbase-server-enterprise_7.1.0-linux_@@ARCH@@.deb
+ARG CB_SKIP_CHECKSUM=false
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
 # Create Couchbase user with UID 1000 (necessary to match default
@@ -37,8 +33,18 @@ RUN groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M
 # Install couchbase
 RUN set -x \
     && export INSTALL_DONT_START_SERVER=1 \
+    && dpkgArch="$(dpkg --print-architecture)" \
+    && case "${dpkgArch}" in \
+         'arm64') \
+           CB_SHA256=MISSING_SHA256_ERROR \
+           ;; \
+         'amd64') \
+           CB_SHA256=5cefdbf8970a86b7869b3bc1f37bea2454e0d1f72733be39a1c20bb5c2641987 \
+           ;; \
+       esac \
+    && CB_PACKAGE=$(echo ${CB_PACKAGE} | sed -e "s/@@ARCH@@/${dpkgArch}/") \
     && wget -N --no-verbose $CB_RELEASE_URL/$CB_PACKAGE \
-    && echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - \
+    && { ${CB_SKIP_CHECKSUM} || echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - ; } \
     && ${UPDATE_COMMAND} \
     && apt-get install -y ./$CB_PACKAGE \
     && rm -f ./$CB_PACKAGE \

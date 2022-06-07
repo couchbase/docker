@@ -35,11 +35,16 @@ const (
 	ProductOperator = Product("couchbase-operator")
 )
 
+// These are Docker's idea of architecture names, eg. amd64, arm64.
+// "Archgeneric" is for a filename with @@ARCH@@ in place of the
+// actual architecture, which will be substituted at build time in
+// the Dockerfile.
 type Arch string
 
 const (
-	Archamd64   = Arch("x86_64")
-	Archaarch64 = Arch("aarch64")
+	Archamd64   = Arch("amd64")
+	Archarm64   = Arch("arm64")
+	Archgeneric = Arch("@@ARCH@@")
 )
 
 // A map of "overrides" which specify custom package download urls and package names
@@ -148,12 +153,11 @@ func generateVersions(edition Edition, product Product) error {
 		variant := DockerfileVariant{
 			Edition:       edition,
 			Product:       product,
-			Multiplatform: false,
 			Version:       strings.TrimSuffix(ver, "-staging"),
 			TargetVersion: strings.TrimSuffix(ver, "-staging"),
+			Arches:        []Arch{Archamd64},
 			IsStaging:     strings.HasSuffix(ver, "-staging"),
 		}
-		variantArches := []Arch{Archamd64}
 
 		// Couchbase Server has some special cases based on Version.
 		if product == ProductServer {
@@ -163,20 +167,16 @@ func generateVersions(edition Edition, product Product) error {
 				// Log4Shell remediation
 				variant.Version = "7.0.3-MP1"
 			}
+
 			if serverVer >= 70100 {
-				// From Neo onwards, we have both amd64 and aarch64 images
-				variant.Multiplatform = true
-				variantArches = []Arch{Archamd64, Archaarch64}
+				// 7.1.0 and higher also support arm64
+				variant.Arches = append(variant.Arches, Archarm64)
 			}
 		}
 
 		// Now generate the Dockerfile(s) based on the constructed variant
-		for _, arch := range variantArches {
-			variant.Arch = arch
-			if err := generateVariant(variant); err != nil {
-				return err
-
-			}
+		if err := generateVariant(variant); err != nil {
+			return err
 		}
 	}
 
@@ -220,7 +220,7 @@ func generateDockerfile(variant DockerfileVariant) error {
 	log.Printf("targetDir: %v", targetDir)
 
 	// figure out output filename
-	targetDockerfile := path.Join(targetDir, "Dockerfile")
+	targetDockerfile := variant.dockerfile()
 	log.Printf("targetDockerfile: %v", targetDockerfile)
 
 	// find the path to the source template
@@ -243,23 +243,25 @@ func generateDockerfile(variant DockerfileVariant) error {
 			CB_PACKAGE         string
 			CB_PACKAGE_NAME    string
 			CB_EXTRA_DEPS      string
-			CB_SHA256          string
+			CB_SHA256_arm64    string
+			CB_SHA256_amd64    string
 			CB_RELEASE_URL     string
 			DOCKER_BASE_IMAGE  string
 			PKG_COMMAND        string
 			SYSTEMD_WORKAROUND bool
-			ARCH               string
+			CB_MULTIARCH       bool
 		}{
 			CB_VERSION:         variant.VersionWithSubstitutions(),
-			CB_PACKAGE:         variant.serverPackageFile(),
+			CB_PACKAGE:         variant.serverPackageFile(Archgeneric),
 			CB_PACKAGE_NAME:    variant.serverPackageName(),
 			CB_EXTRA_DEPS:      variant.extraDependencies(),
-			CB_SHA256:          variant.getSHA256(),
+			CB_SHA256_arm64:    variant.getSHA256(Archarm64),
+			CB_SHA256_amd64:    variant.getSHA256(Archamd64),
 			CB_RELEASE_URL:     variant.releaseURL(),
 			DOCKER_BASE_IMAGE:  variant.dockerBaseImage(),
-			PKG_COMMAND:        variant.pkgCommand(),
+			PKG_COMMAND:        variant.serverPkgCommand(),
 			SYSTEMD_WORKAROUND: variant.systemdWorkaround(),
-			ARCH:               string(variant.Arch),
+			CB_MULTIARCH:       (len(variant.Arches) > 1),
 		}
 
 	} else if variant.Product == ProductSyncGw {
@@ -273,6 +275,7 @@ func generateDockerfile(variant DockerfileVariant) error {
 			SYNC_GATEWAY_PACKAGE_FILENAME: variant.sgPackageFilename(),
 			DOCKER_BASE_IMAGE:             variant.dockerBaseImage(),
 		}
+
 	} else if variant.Product == ProductOperator {
 		// template parameters
 		params = struct {
@@ -284,7 +287,7 @@ func generateDockerfile(variant DockerfileVariant) error {
 			CO_VERSION:     variant.VersionWithSubstitutions(),
 			CO_RELEASE_URL: variant.releaseURL(),
 			CO_PACKAGE:     variant.operatorPackageName(),
-			CO_SHA256:      variant.getSHA256(),
+			CO_SHA256:      variant.getSHA256(Archamd64),
 		}
 	}
 
@@ -460,10 +463,8 @@ func CopyDir(source string, dest string) (err error) {
 }
 
 type DockerfileVariant struct {
-	Edition       Edition
-	Arch          Arch
-	Product       Product
-	Multiplatform bool
+	Edition Edition
+	Product Product
 	// Version is the real version of the product as seen in the outside
 	// world - eg., in download URLs, package filenames, etc.
 	Version string
@@ -472,15 +473,17 @@ type DockerfileVariant struct {
 	// this will be the same as Version, but very occasionally we need
 	// to translate a bit here
 	TargetVersion string
+	Arches        []Arch
 	IsStaging     bool
 }
 
-func (variant DockerfileVariant) getSHA256() string {
+func (variant DockerfileVariant) getSHA256(arch Arch) string {
 	var sha256url string
 	if variant.Product == "couchbase-server" {
 		sha256url = variant.releaseURL() + "/" +
-			variant.Version + "/" + variant.serverPackageFile() + ".sha256"
+			variant.Version + "/" + variant.serverPackageFile(arch) + ".sha256"
 	} else if variant.Product == "couchbase-operator" {
+		// No arm64 operator builds (yet)
 		sha256url = variant.releaseURL() + "/" +
 			variant.Version + "/" + variant.operatorPackageName() + ".sha256"
 	}
@@ -511,9 +514,6 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 		}
 		return "centos:centos7"
 	case ProductServer:
-		if variant.Arch == Archaarch64 {
-			return "amazonlinux:2"
-		}
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	default:
 		log.Printf("Failed %v", variant.Product)
@@ -521,18 +521,17 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 	}
 }
 
-func (variant DockerfileVariant) pkgCommand() string {
-
-	log.Printf("Arch: %v", variant.Arch)
-	if variant.Arch == Archaarch64 {
-		return "yum"
-	}
+func (variant DockerfileVariant) serverPkgCommand() string {
+	// Currently all Server Dockerfiles are based on Ubuntu, so this is
+	// always "apt-get". However we did some work in the Dockerfile
+	// template to support "yum" as well. Leaving that in place for now
+	// in case we work on integrating the RHCC Dockerfile in future.
 	return "apt-get"
 }
 
 func (variant DockerfileVariant) systemdWorkaround() bool {
-    if variant.Product == ProductServer {
-        ver, _ := intVer(variant.Version)
+	if variant.Product == ProductServer {
+		ver, _ := intVer(variant.Version)
 		if ver < 70000 {
 			return true
 		}
@@ -604,24 +603,28 @@ func extraStuffAfterVersion(version string) string {
 }
 
 // Generate the package filename for this variant:
-// eg: couchbase-server-enterprise-7.1.0-ubuntu20.04_amd64.deb
-// eg: couchbase-server-enterprise-7.1.0-amzn2.aarch64.rpm
-func (variant DockerfileVariant) serverPackageFile() string {
-	if variant.Arch == Archaarch64 {
+// eg: couchbase-server-enterprise-7.1.1-linux_amd64.deb
+func (variant DockerfileVariant) serverPackageFile(arch Arch) string {
+	serverVer, _ := intVer(variant.Version)
+	if serverVer >= 70100 {
+		// From Neo onwards, use "linux" package since it's all the same.
 		return fmt.Sprintf(
-			"%v-%v-%v-amzn2.aarch64.rpm",
+			"%v-%v_%v-linux_%v.deb",
 			variant.Product,
 			variant.Edition,
 			variant.Version,
+			arch,
+		)
+	} else {
+		// For earlier releases, no arm64 builds, so just hardcode amd64
+		return fmt.Sprintf(
+			"%v-%v_%v-ubuntu%v_amd64.deb",
+			variant.Product,
+			variant.Edition,
+			variant.Version,
+			variant.ubuntuVersion(),
 		)
 	}
-	return fmt.Sprintf(
-		"%v-%v_%v-ubuntu%v_amd64.deb",
-		variant.Product,
-		variant.Edition,
-		variant.Version,
-		variant.ubuntuVersion(),
-	)
 }
 
 // Generate the package name (couchbase-server or couchbase-server-community)
@@ -645,18 +648,10 @@ func (variant DockerfileVariant) operatorPackageName() string {
 // Specify any extra dependencies, based on variant
 func (variant DockerfileVariant) extraDependencies() string {
 	if variant.Product == "couchbase-server" {
-		if variant.Arch == Archamd64 {
-			if variant.isMadHatterOrNewer() {
-				return "bzip2 runit"
-			} else {
-				return "python-httplib2 runit"
-			}
+		if variant.isMadHatterOrNewer() {
+			return "bzip2 runit"
 		} else {
-			if variant.isMadHatterOrNewer() {
-				return "bzip2"
-			} else {
-				return "python-httplib2"
-			}
+			return "python-httplib2 runit"
 		}
 	}
 	return ""
@@ -674,17 +669,6 @@ func (variant DockerfileVariant) targetDir() string {
 		string(variant.Product),
 		version,
 	)
-	if variant.Multiplatform {
-		targetDir = path.Join(
-			targetDir,
-			string(variant.Arch),
-		)
-
-		err := os.MkdirAll(targetDir, 0755)
-		if err != nil {
-			log.Fatalf("Failed to create %v: %v", targetDir, err)
-		}
-	}
 	return targetDir
 }
 
