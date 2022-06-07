@@ -1,39 +1,9 @@
-# Stage 0: compile runit.
-# This is ONLY used for amzonlinux which doesn't come with runit
-FROM amazonlinux:2 as runit_build
-
-ARG RUNIT_VER=2.1.2
-USER root
-RUN set -x \
-    && yum update -y -q \
-    && yum install -y -q gcc glibc-static gzip make tar \
-    && yum clean -q all
-
-RUN set -x \
-    && mkdir /tmp/runit \
-    && cd /tmp/runit \
-    && curl -O http://smarden.org/runit/runit-${RUNIT_VER}.tar.gz \
-    && tar xf runit-${RUNIT_VER}.tar.gz \
-    && cd admin/runit-${RUNIT_VER} \
-    && package/install
-
-# Set up directory structure we want in target container, so we
-# can use only COPY and not have to move/rename/delete things there
-RUN set -x \
-    && mkdir /tmp/sbin \
-    && cd /tmp/runit/admin/runit \
-    && cp command/* /tmp/sbin/ \
-    && cp etc/2 /tmp/sbin/runsvdir-start
-
-FROM amazonlinux:2
+FROM ubuntu:20.04
 
 LABEL maintainer="docker@couchbase.com"
 
-COPY --from=runit_build /tmp/sbin/ /sbin/
-
-ARG UPDATE_COMMAND=true
-ARG CLEANUP_COMMAND="yum clean -q all"
-
+ARG UPDATE_COMMAND="apt-get update -y -q"
+ARG CLEANUP_COMMAND="rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
 
 # Install dependencies:
 #  runit: for container process management
@@ -47,14 +17,13 @@ ARG CLEANUP_COMMAND="yum clean -q all"
 #  numactl: numactl
 RUN set -x \
     && ${UPDATE_COMMAND} \
-    && yum install -y -q wget tzdata \
-      lsof lshw sysstat net-tools numactl bzip2 \
+    && apt-get install -y -q wget tzdata \
+      lsof lshw sysstat net-tools numactl bzip2 runit \
     && ${CLEANUP_COMMAND}
 
 ARG CB_RELEASE_URL=https://packages.couchbase.com/releases/7.1.0
-ARG CB_PACKAGE=couchbase-server-enterprise-7.1.0-amzn2.aarch64.rpm
-ARG CB_SHA256=927d552ed0a558a1d25e205203c0af068f60e34cf65db74a5f8ea2d7e46e5ed7
-
+ARG CB_PACKAGE=couchbase-server-community_7.1.0-linux_@@ARCH@@.deb
+ARG CB_SKIP_CHECKSUM=false
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
 # Create Couchbase user with UID 1000 (necessary to match default
@@ -64,10 +33,20 @@ RUN groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M
 # Install couchbase
 RUN set -x \
     && export INSTALL_DONT_START_SERVER=1 \
+    && dpkgArch="$(dpkg --print-architecture)" \
+    && case "${dpkgArch}" in \
+         'arm64') \
+           CB_SHA256=MISSING_SHA256_ERROR \
+           ;; \
+         'amd64') \
+           CB_SHA256=23c24973c9a9c57341bd78549dc8b07b149b3c3798bfa0968b77678c47b7f539 \
+           ;; \
+       esac \
+    && CB_PACKAGE=$(echo ${CB_PACKAGE} | sed -e "s/@@ARCH@@/${dpkgArch}/") \
     && wget -N --no-verbose $CB_RELEASE_URL/$CB_PACKAGE \
-    && echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - \
+    && { ${CB_SKIP_CHECKSUM} || echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - ; } \
     && ${UPDATE_COMMAND} \
-    && yum install -y ./$CB_PACKAGE \
+    && apt-get install -y ./$CB_PACKAGE \
     && rm -f ./$CB_PACKAGE \
     && ${CLEANUP_COMMAND} \
     && rm -rf /tmp/* /var/tmp/*
@@ -98,10 +77,10 @@ RUN set -x \
 RUN set -ex \
     &&  if [ ! -e /opt/couchbase/bin/curl.real ]; then \
             ${UPDATE_COMMAND}; \
-            yum install -y chrpath; \
+            apt-get install -y chrpath; \
             chrpath -r '$ORIGIN/../lib' /opt/couchbase/bin/curl; \
-            yum remove -y chrpath; \
-            yum autoremove -y; \
+            apt-get remove -y chrpath; \
+            apt-get autoremove -y; \
             ${CLEANUP_COMMAND}; \
         fi
 
