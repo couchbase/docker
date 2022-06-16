@@ -1,9 +1,6 @@
-
-
 FROM ubuntu:20.04
 
 LABEL maintainer="docker@couchbase.com"
-
 
 ARG UPDATE_COMMAND="apt-get update -y -q"
 ARG CLEANUP_COMMAND="rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
@@ -24,11 +21,11 @@ RUN set -x \
       lsof lshw sysstat net-tools numactl bzip2 runit \
     && ${CLEANUP_COMMAND}
 
-ARG CB_VERSION=6.6.5
 ARG CB_RELEASE_URL=https://packages.couchbase.com/releases/6.6.5
 ARG CB_PACKAGE=couchbase-server-enterprise_6.6.5-ubuntu20.04_amd64.deb
 ARG CB_SHA256=fb2da1880ea993dc7a5695c6fbe14cde62024d865a71a7d44ab653f0f633d4c6
-
+ARG CB_SKIP_CHECKSUM=false
+ARG CB_PACKAGE_NAME=couchbase-server
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
 # Create Couchbase user with UID 1000 (necessary to match default
@@ -36,12 +33,19 @@ ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/in
 RUN groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M
 
 # Install couchbase
+# Note: installers for Server prior to 7.0.0 used a method for detecting
+# if they were running in a container that caused installation to fail
+# in some environments, such as some GitHub actions. Below we patch the
+# detection mid-install to work around this issue.
 RUN set -x \
     && export INSTALL_DONT_START_SERVER=1 \
     && wget -N --no-verbose $CB_RELEASE_URL/$CB_PACKAGE \
-    && echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - \
+    && { ${CB_SKIP_CHECKSUM} || echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - ; } \
     && ${UPDATE_COMMAND} \
-    && apt-get install -y ./$CB_PACKAGE \
+    && dpkg --unpack ./$CB_PACKAGE \
+    && sed -i -e '/Best heuristic/ a \ \ \ \ [ -d /run/systemd/system ] && return 1; return 0' /opt/couchbase/bin/install/systemd-ctl \
+    && dpkg --configure couchbase-server \
+    && apt-get install -yf \
     && rm -f ./$CB_PACKAGE \
     && ${CLEANUP_COMMAND} \
     && rm -rf /tmp/* /var/tmp/*
