@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+
+	"github.com/docopt/docopt-go"
 )
 
 // Convert Dockerfile.template into version specific Dockerfile
@@ -76,7 +78,7 @@ var (
 	editions              []Edition
 	products              []Product
 	versionCustomizations VersionCustomizations
-	processingRoot        string
+	baseDir               string
 	skipGeneration        ProductVersionFilter
 )
 
@@ -112,76 +114,110 @@ func init() {
 
 func main() {
 
-	// get args with this binary stripped off
-	args := os.Args[1:]
+	usage := `Dockerfile Generator
 
-	if len(args) == 0 {
-		log.Fatalf("Usage: ./generate <path> where <path> is the directory where you checked out couchbase-docker, eg: /home/you/dev/couchbase-docker")
-	}
+Usage:
+  generate BASE_DIRECTORY -p PRODUCT -v VERSION -e EDITION -o OUTPUT_DIRECTORY
+  generate BASE_DIRECTORY
 
-	processingRoot = args[0]
+The first form generates a single Dockerfile and its associated resources
+in the specified directory (which must exist). The second form will
+search for directories under the specified directory with the form
 
-	for _, edition := range editions {
-		for _, product := range products {
-			if err := generateVersions(edition, product); err != nil {
-				log.Fatalf("Failed (%v/%v): %v", edition, product, err)
-			}
-		}
+    EDITION/PRODUCT/VERSION
+
+and for each such directory that does not contain a Dockerfile, will
+create the corresponding Dockerfile with its associated resources.
+
+Arguments:
+  BASE_DIRECTORY                  Root of "docker" repository
+
+Options:
+  -p PRODUCT, --product PRODUCT   Product name
+  -v VERSION, --version VERSION   Product version
+  -e EDITION, --edition EDITION   Product edition (community/enterprise)
+  -o OUTPUT_DIRECTORY             Directory to write Dockerfile to
+  -h, --help                      Print this usage message
+`
+
+	args, _ := docopt.ParseDoc(usage)
+	baseDir = args["BASE_DIRECTORY"].(string)
+
+	if args["--product"] != nil {
+		log.Println("Generating single product")
+		generateOneDockerfile(
+			Edition(args["--edition"].(string)),
+			Product(args["--product"].(string)),
+			args["--version"].(string),
+			args["-o"].(string),
+		)
+	} else {
+		log.Println("Generating multiple products")
+		generateAllDockerfiles()
 	}
 
 	log.Printf("Successfully finished!")
-
 }
 
-func generateVersions(edition Edition, product Product) error {
+func generateAllDockerfiles() {
+	for _, edition := range editions {
+		for _, product := range products {
+			// find corresponding directory for this edition/product combo
+			dir := path.Join(baseDir, string(edition), string(product))
 
-	// find corresponding directory for this edition/product combo
-	dir := path.Join(processingRoot, string(edition), string(product))
+			// find all version subdirectories (must match regex)
+			versions := versionSubdirectories(dir)
 
-	// find all version subdirectories (must match regex)
-	versions := versionSubdirectories(dir)
+			// for each version
+			for _, ver := range versions {
 
-	// for each version
-	for _, ver := range versions {
-
-		if skipGeneration.Matches(product, ver) {
-			log.Printf("Skipping generation for %v %v %v", product, edition, ver)
-			continue
-		}
-
-		// Start with a basic DockerfileVariant, then tweak if necessary
-		variant := DockerfileVariant{
-			Edition:       edition,
-			Product:       product,
-			Version:       strings.TrimSuffix(ver, "-staging"),
-			TargetVersion: strings.TrimSuffix(ver, "-staging"),
-			Arches:        []Arch{Archamd64},
-			IsStaging:     strings.HasSuffix(ver, "-staging"),
-		}
-
-		// Couchbase Server has some special cases based on Version.
-		if product == ProductServer {
-			serverVer, _ := intVer(variant.Version)
-			if serverVer == 70003 {
-				// CBD-4603: 7.0.3 actually builds from 7.0.3-MP1 for complete
-				// Log4Shell remediation
-				variant.Version = "7.0.3-MP1"
+				if skipGeneration.Matches(product, ver) {
+					log.Printf("Skipping generation for %v %v %v", product, edition, ver)
+					continue
+				}
+				generateOneDockerfile(edition, product, ver, "")
 			}
-
-			if serverVer >= 70100 {
-				// 7.1.0 and higher also support arm64
-				variant.Arches = append(variant.Arches, Archarm64)
-			}
-		}
-
-		// Now generate the Dockerfile(s) based on the constructed variant
-		if err := generateVariant(variant); err != nil {
-			return err
 		}
 	}
 
-	return nil
+}
 
+func generateOneDockerfile(
+	edition Edition, product Product, ver string, outputDir string,
+) error {
+
+	// Start with a basic DockerfileVariant, then tweak if necessary
+	variant := DockerfileVariant{
+		Edition:       edition,
+		Product:       product,
+		Version:       strings.TrimSuffix(ver, "-staging"),
+		TargetVersion: strings.TrimSuffix(ver, "-staging"),
+		Arches:        []Arch{Archamd64},
+		IsStaging:     strings.HasSuffix(ver, "-staging"),
+		OutputDir:     outputDir,
+	}
+
+	// Couchbase Server has some special cases based on Version.
+	if product == ProductServer {
+		serverVer, _ := intVer(variant.Version)
+		if serverVer == 70003 {
+			// CBD-4603: 7.0.3 actually builds from 7.0.3-MP1 for complete
+			// Log4Shell remediation
+			variant.Version = "7.0.3-MP1"
+		}
+
+		if serverVer >= 70100 {
+			// 7.1.0 and higher also support arm64
+			variant.Arches = append(variant.Arches, Archarm64)
+		}
+	}
+
+	// Now generate the Dockerfile(s) based on the constructed variant
+	if err := generateVariant(variant); err != nil {
+		log.Fatalf("Failed (%v/%v/%v): %v", edition, product, ver, err)
+	}
+
+	return nil
 }
 
 func generateVariant(variant DockerfileVariant) error {
@@ -225,7 +261,7 @@ func generateDockerfile(variant DockerfileVariant) error {
 
 	// find the path to the source template
 	sourceTemplate := path.Join(
-		processingRoot,
+		baseDir,
 		"generate",
 		"templates",
 		string(variant.Product),
@@ -319,7 +355,7 @@ func generateDockerfile(variant DockerfileVariant) error {
 func deployResourcesSubdir(variant DockerfileVariant, subdir string) error {
 
 	srcDir := path.Join(
-		processingRoot,
+		baseDir,
 		"generate",
 		"resources",
 		string(variant.Product),
@@ -355,7 +391,7 @@ func deployConfigResources(variant DockerfileVariant) error {
 func deployReadme(variant DockerfileVariant) error {
 
 	srcDir := path.Join(
-		processingRoot,
+		baseDir,
 		"generate",
 		"resources",
 		string(variant.Product),
@@ -475,6 +511,7 @@ type DockerfileVariant struct {
 	TargetVersion string
 	Arches        []Arch
 	IsStaging     bool
+	OutputDir     string
 }
 
 func (variant DockerfileVariant) getSHA256(arch Arch) string {
@@ -658,13 +695,18 @@ func (variant DockerfileVariant) extraDependencies() string {
 }
 
 func (variant DockerfileVariant) targetDir() string {
+	// If variant has an explicit output directory, use that
+	if variant.OutputDir != "" {
+		return variant.OutputDir
+	}
+
 	// Here we use TargetVersion rather than Version
 	version := string(variant.TargetVersion)
 	if variant.IsStaging {
 		version = fmt.Sprintf("%s-staging", version)
 	}
 	targetDir := path.Join(
-		processingRoot,
+		baseDir,
 		string(variant.Edition),
 		string(variant.Product),
 		version,
