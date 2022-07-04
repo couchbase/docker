@@ -6,15 +6,22 @@ ENV PATH $PATH:/opt/couchbase-sync-gateway/bin
 
 # Install dependencies:
 #  wget: for downloading Sync Gateway package installer
-RUN yum -y update && \
-    yum install -y \
-    wget && \
-    yum clean all
+RUN set -x \
+    && apt update \
+    && apt install -y \
+           lsb-release \
+           systemctl \
+           wget \
+    && apt autoremove \
+    && apt clean
 
 # Install Sync Gateway
-RUN wget {{ .SYNC_GATEWAY_PACKAGE_URL }} && \
-    rpm -i {{ .SYNC_GATEWAY_PACKAGE_FILENAME }} && \
-    rm {{ .SYNC_GATEWAY_PACKAGE_FILENAME }}
+RUN set -x \
+    && wget {{ .SYNC_GATEWAY_PACKAGE_URL }} \
+    && apt install -y ./{{ .SYNC_GATEWAY_PACKAGE_FILENAME }} \
+    && rm {{ .SYNC_GATEWAY_PACKAGE_FILENAME }} \
+    && apt autoremove \
+    && apt clean
 
 # Create directory where the default config stores memory snapshots to disk
 RUN mkdir /opt/couchbase-sync-gateway/data

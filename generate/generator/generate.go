@@ -83,7 +83,6 @@ var (
 )
 
 func init() {
-
 	editions = []Edition{
 		EditionCommunity,
 		EditionEnterprise,
@@ -109,11 +108,9 @@ func init() {
 	skipGeneration = ProductVersionFilter{
 		ProductSyncGw: regexp.MustCompile(`^(1\.|2\.0\.).+$`), // 1.x and 2.0.x
 	}
-
 }
 
 func main() {
-
 	usage := `Dockerfile Generator
 
 Usage:
@@ -179,13 +176,11 @@ func generateAllDockerfiles() {
 			}
 		}
 	}
-
 }
 
 func generateOneDockerfile(
 	edition Edition, product Product, ver string, outputDir string,
 ) error {
-
 	// Start with a basic DockerfileVariant, then tweak if necessary
 	variant := DockerfileVariant{
 		Edition:       edition,
@@ -221,7 +216,6 @@ func generateOneDockerfile(
 }
 
 func generateVariant(variant DockerfileVariant) error {
-
 	if _, err := os.Stat(variant.dockerfile()); !os.IsNotExist(err) {
 		log.Printf("%s exists, not regenerating...", variant.dockerfile())
 	} else {
@@ -245,11 +239,9 @@ func generateVariant(variant DockerfileVariant) error {
 	}
 
 	return nil
-
 }
 
 func generateDockerfile(variant DockerfileVariant) error {
-
 	log.Printf("generateDockerfile called with: %v", variant)
 
 	targetDir := variant.targetDir()
@@ -349,11 +341,9 @@ func generateDockerfile(variant DockerfileVariant) error {
 	}
 
 	return nil
-
 }
 
 func deployResourcesSubdir(variant DockerfileVariant, subdir string) error {
-
 	srcDir := path.Join(
 		baseDir,
 		"generate",
@@ -375,21 +365,17 @@ func deployResourcesSubdir(variant DockerfileVariant, subdir string) error {
 	destDir := path.Join(targetDir, subdir)
 
 	return CopyDir(srcDir, destDir)
-
 }
 
 func deployScriptResources(variant DockerfileVariant) error {
-
 	return deployResourcesSubdir(variant, "scripts")
 }
 
 func deployConfigResources(variant DockerfileVariant) error {
-
 	return deployResourcesSubdir(variant, "config")
 }
 
 func deployReadme(variant DockerfileVariant) error {
-
 	srcDir := path.Join(
 		baseDir,
 		"generate",
@@ -406,11 +392,9 @@ func deployReadme(variant DockerfileVariant) error {
 	}
 
 	return nil
-
 }
 
 func versionSubdirectories(dir string) []string {
-
 	// eg, 3.0.25
 	versionDirGlobPattern := "[0-9]*.[0-9]*.[0-9]*"
 
@@ -422,7 +406,6 @@ func versionSubdirectories(dir string) []string {
 	}
 
 	return versions
-
 }
 
 func CopyFile(source string, dest string) (err error) {
@@ -456,7 +439,6 @@ func CopyFile(source string, dest string) (err error) {
 }
 
 func CopyDir(source string, dest string) (err error) {
-
 	// get properties of source dir
 	sourceinfo, err := os.Stat(source)
 	if err != nil {
@@ -543,13 +525,12 @@ func (variant DockerfileVariant) getSHA256(arch Arch) string {
 }
 
 func (variant DockerfileVariant) dockerBaseImage() string {
-
 	switch variant.Product {
 	case ProductSyncGw:
 		if strings.Contains(variant.Version, "forestdb") {
 			return "tleyden5iwx/forestdb"
 		}
-		return "centos:centos7"
+		return "ubuntu:22.04"
 	case ProductServer:
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	default:
@@ -731,7 +712,6 @@ func (variant DockerfileVariant) releaseURL() string {
 
 // Find the package URL for this Sync Gateway version
 func (variant DockerfileVariant) sgPackageUrl() string {
-
 	var packagesBaseUrl string
 	if variant.IsStaging {
 		packagesBaseUrl = "http://packages-staging.couchbase.com/releases/couchbase-sync-gateway"
@@ -753,29 +733,24 @@ func (variant DockerfileVariant) sgPackageUrl() string {
 			variant.Version,
 			sgFileName,
 		)
-
 	}
 }
 
 func (variant DockerfileVariant) sgPackageFilename() string {
-
 	versionCustomization, hasCustomization := variant.versionCustomization()
 	switch hasCustomization {
 	case true:
 		return fmt.Sprintf("%s", versionCustomization.PackageFilename)
 	default:
 		return fmt.Sprintf(
-			"couchbase-sync-gateway-%s_%s_x86_64.rpm",
+			"couchbase-sync-gateway-%s_%s_x86_64.deb",
 			strings.ToLower(string(variant.Edition)),
 			variant.Version,
 		)
-
 	}
-
 }
 
 func (variant DockerfileVariant) versionCustomization() (v VersionCustomization, exists bool) {
-
 	// eg, "sync-gateway_community_2.0.0-build
 	key := variant.versionCustomizationKey()
 
