@@ -32,7 +32,7 @@ COPY config/sync_gateway_config.json /etc/sync_gateway/config.json
 # Create log dir
 RUN set -x \
     && mkdir -p /var/log/sync_gateway \
-    && chown couchbase:couchbase /var/log/sync_gateway
+    && chown sync_gateway:sync_gateway /var/log/sync_gateway
 
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
@@ -41,7 +41,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 # If user doesn't specify any args, use the default config
 CMD ["/etc/sync_gateway/config.json"]
 
-USER couchbase
+USER sync_gateway
 
 # Expose ports
 #  port 4984: public port
