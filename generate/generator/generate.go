@@ -183,26 +183,35 @@ func generateOneDockerfile(
 ) error {
 	// Start with a basic DockerfileVariant, then tweak if necessary
 	variant := DockerfileVariant{
-		Edition:       edition,
-		Product:       product,
-		Version:       strings.TrimSuffix(ver, "-staging"),
-		TargetVersion: strings.TrimSuffix(ver, "-staging"),
-		Arches:        []Arch{Archamd64},
-		IsStaging:     strings.HasSuffix(ver, "-staging"),
-		OutputDir:     outputDir,
+		Edition:          edition,
+		Product:          product,
+		Version:          strings.TrimSuffix(ver, "-staging"),
+		TargetVersion:    strings.TrimSuffix(ver, "-staging"),
+		Arches:           []Arch{Archamd64},
+		IsStaging:        strings.HasSuffix(ver, "-staging"),
+		TemplateFilename: "Dockerfile.template",
+		OutputDir:        outputDir,
 	}
+
+	productVer, _ := intVer(variant.Version)
 
 	// Couchbase Server has some special cases based on Version.
 	if product == ProductServer {
-		serverVer, _ := intVer(variant.Version)
-		if serverVer == 70003 {
+		if productVer == 70003 {
 			// CBD-4603: 7.0.3 actually builds from 7.0.3-MP1 for complete
 			// Log4Shell remediation
 			variant.Version = "7.0.3-MP1"
 		}
 
-		if serverVer >= 70100 {
+		if productVer >= 70100 {
 			// 7.1.0 and higher also support arm64
+			variant.Arches = append(variant.Arches, Archarm64)
+		}
+	} else if product == ProductSyncGw {
+		if productVer <= 30003 {
+			variant.TemplateFilename = "Dockerfile.centos.template"
+		} else {
+			variant.TemplateFilename = "Dockerfile.ubuntu.template"
 			variant.Arches = append(variant.Arches, Archarm64)
 		}
 	}
@@ -257,7 +266,7 @@ func generateDockerfile(variant DockerfileVariant) error {
 		"generate",
 		"templates",
 		string(variant.Product),
-		"Dockerfile.template",
+		string(variant.TemplateFilename),
 	)
 
 	log.Printf("template: %v", sourceTemplate)
@@ -490,10 +499,11 @@ type DockerfileVariant struct {
 	// is the directory name in this repository). 99.99% of the time
 	// this will be the same as Version, but very occasionally we need
 	// to translate a bit here
-	TargetVersion string
-	Arches        []Arch
-	IsStaging     bool
-	OutputDir     string
+	TargetVersion    string
+	TemplateFilename string
+	Arches           []Arch
+	IsStaging        bool
+	OutputDir        string
 }
 
 func (variant DockerfileVariant) getSHA256(arch Arch) string {
@@ -527,10 +537,15 @@ func (variant DockerfileVariant) getSHA256(arch Arch) string {
 func (variant DockerfileVariant) dockerBaseImage() string {
 	switch variant.Product {
 	case ProductSyncGw:
+		productVer, _ := intVer(variant.Version)
 		if strings.Contains(variant.Version, "forestdb") {
 			return "tleyden5iwx/forestdb"
 		}
-		return "ubuntu:22.04"
+		if productVer <= 30003 {
+			return "centos:centos7"
+		} else {
+			return "ubuntu:22.04"
+		}
 	case ProductServer:
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	default:
@@ -742,11 +757,21 @@ func (variant DockerfileVariant) sgPackageFilename() string {
 	case true:
 		return fmt.Sprintf("%s", versionCustomization.PackageFilename)
 	default:
-		return fmt.Sprintf(
-			"couchbase-sync-gateway-%s_%s_x86_64.deb",
-			strings.ToLower(string(variant.Edition)),
-			variant.Version,
-		)
+		productVer, _ := intVer(variant.Version)
+		// Containers for SGW versions <= 3.0.3 were only produced for x64
+		if productVer <= 30003 {
+			return fmt.Sprintf(
+				"couchbase-sync-gateway-%s_%s_@@ARCH@@.rpm",
+				strings.ToLower(string(variant.Edition)),
+				variant.Version,
+			)
+		} else {
+			return fmt.Sprintf(
+				"couchbase-sync-gateway-%s_%s_@@ARCH@@.deb",
+				strings.ToLower(string(variant.Edition)),
+				variant.Version,
+			)
+		}
 	}
 }
 

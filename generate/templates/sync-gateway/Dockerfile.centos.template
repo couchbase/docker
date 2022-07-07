@@ -6,27 +6,22 @@ ENV PATH $PATH:/opt/couchbase-sync-gateway/bin
 
 # Install dependencies:
 #  wget: for downloading Sync Gateway package installer
-RUN set -x \
-    && apt update \
-    && apt install -y \
-           lsb-release \
-           systemctl \
-           wget \
-    && apt autoremove \
-    && apt clean
+RUN yum -y update && \
+    yum install -y \
+    wget && \
+    yum clean all
 
 # Install Sync Gateway
-RUN set -x \
-    && wget {{ .SYNC_GATEWAY_PACKAGE_URL }} \
-    && apt install -y ./{{ .SYNC_GATEWAY_PACKAGE_FILENAME }} \
-    && rm {{ .SYNC_GATEWAY_PACKAGE_FILENAME }} \
-    && apt autoremove \
-    && apt clean
+RUN SGW_PACKAGE=$(echo "{{ .SYNC_GATEWAY_PACKAGE_URL }}" | sed -e "s/@@ARCH@@/$(uname -m)/") && \
+    SGW_PACKAGE_FILENAME=$(echo "{{ .SYNC_GATEWAY_PACKAGE_FILENAME }}" | sed -e "s/@@ARCH@@/$(uname -m)/") && \
+    wget "${SGW_PACKAGE}" && \
+    rpm -i ${SGW_PACKAGE_FILENAME} && \
+    rm ${SGW_PACKAGE_FILENAME}
 
 # Create directory where the default config stores memory snapshots to disk
 RUN mkdir /opt/couchbase-sync-gateway/data
 
-# Copy the default config into the container
+# copy the default config into the container
 COPY config/sync_gateway_config.json /etc/sync_gateway/config.json
 
 # Create log dir
@@ -40,8 +35,6 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 # If user doesn't specify any args, use the default config
 CMD ["/etc/sync_gateway/config.json"]
-
-USER sync_gateway
 
 # Expose ports
 #  port 4984: public port
