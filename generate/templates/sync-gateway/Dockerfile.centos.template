@@ -12,15 +12,22 @@ RUN yum -y update && \
     yum clean all
 
 # Install Sync Gateway
-RUN wget {{ .SYNC_GATEWAY_PACKAGE_URL }} && \
-    rpm -i {{ .SYNC_GATEWAY_PACKAGE_FILENAME }} && \
-    rm {{ .SYNC_GATEWAY_PACKAGE_FILENAME }}
+RUN SGW_PACKAGE=$(echo "{{ .SYNC_GATEWAY_PACKAGE_URL }}" | sed -e "s/@@ARCH@@/$(uname -m)/") && \
+    SGW_PACKAGE_FILENAME=$(echo "{{ .SYNC_GATEWAY_PACKAGE_FILENAME }}" | sed -e "s/@@ARCH@@/$(uname -m)/") && \
+    wget "${SGW_PACKAGE}" && \
+    rpm -i ${SGW_PACKAGE_FILENAME} && \
+    rm ${SGW_PACKAGE_FILENAME}
 
 # Create directory where the default config stores memory snapshots to disk
 RUN mkdir /opt/couchbase-sync-gateway/data
 
 # copy the default config into the container
 COPY config/sync_gateway_config.json /etc/sync_gateway/config.json
+
+# Create log dir
+RUN set -x \
+    && mkdir -p /var/log/sync_gateway \
+    && chown sync_gateway:sync_gateway /var/log/sync_gateway
 
 # Add bootstrap script
 COPY scripts/entrypoint.sh /

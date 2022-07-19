@@ -1,0 +1,50 @@
+FROM {{ .DOCKER_BASE_IMAGE }}
+
+LABEL maintainer="docker@couchbase.com"
+
+ENV PATH $PATH:/opt/couchbase-sync-gateway/bin
+
+# Install dependencies:
+#  wget: for downloading Sync Gateway package installer
+RUN set -x \
+    && apt update \
+    && apt install -y \
+           lsb-release \
+           systemctl \
+           wget \
+    && apt autoremove \
+    && apt clean
+
+# Install Sync Gateway
+RUN set -x \
+    && SGW_PACKAGE=$(echo "{{ .SYNC_GATEWAY_PACKAGE_URL }}" | sed -e "s/@@ARCH@@/$(uname -m)/") \
+    && SGW_PACKAGE_FILENAME=$(echo "{{ .SYNC_GATEWAY_PACKAGE_FILENAME }}" | sed -e "s/@@ARCH@@/$(uname -m)/") \
+    && wget "${SGW_PACKAGE}" \
+    && apt install -y ./"${SGW_PACKAGE_FILENAME}" \
+    && rm "${SGW_PACKAGE_FILENAME}" \
+    && apt autoremove \
+    && apt clean
+
+# Create directory where the default config stores memory snapshots to disk
+RUN mkdir /opt/couchbase-sync-gateway/data
+
+# Copy the default config into the container
+COPY config/sync_gateway_config.json /etc/sync_gateway/config.json
+
+# Create log dir
+RUN set -x \
+    && mkdir -p /var/log/sync_gateway \
+    && chown sync_gateway:sync_gateway /var/log/sync_gateway
+
+# Add bootstrap script
+COPY scripts/entrypoint.sh /
+ENTRYPOINT ["/entrypoint.sh"]
+
+# If user doesn't specify any args, use the default config
+CMD ["/etc/sync_gateway/config.json"]
+
+USER sync_gateway
+
+# Expose ports
+#  port 4984: public port
+EXPOSE 4984
