@@ -303,7 +303,7 @@ func generateDockerfile(variant DockerfileVariant) error {
 			DOCKER_BASE_IMAGE:  variant.dockerBaseImage(),
 			PKG_COMMAND:        variant.serverPkgCommand(),
 			SYSTEMD_WORKAROUND: variant.systemdWorkaround(),
-			CB_MULTIARCH:       (len(variant.Arches) > 1),
+			CB_MULTIARCH:       len(variant.Arches) > 1,
 		}
 
 	} else if variant.Product == ProductSyncGw {
@@ -327,7 +327,7 @@ func generateDockerfile(variant DockerfileVariant) error {
 		}{
 			CB_VERSION:        variant.VersionWithSubstitutions(),
 			DOCKER_BASE_IMAGE: variant.dockerBaseImage(),
-			CB_MULTIARCH:      (len(variant.Arches) > 1),
+			CB_MULTIARCH:      len(variant.Arches) > 1,
 		}
 
 	}
