@@ -32,9 +32,8 @@ const (
 type Product string
 
 const (
-	ProductServer   = Product("couchbase-server")
-	ProductSyncGw   = Product("sync-gateway")
-	ProductOperator = Product("couchbase-operator")
+	ProductServer = Product("couchbase-server")
+	ProductSyncGw = Product("sync-gateway")
 )
 
 // These are Docker's idea of architecture names, eg. amd64, arm64.
@@ -91,7 +90,6 @@ func init() {
 	products = []Product{
 		ProductServer,
 		ProductSyncGw,
-		ProductOperator,
 	}
 
 	// TODO: Read the version_customizations.json file into map
@@ -313,19 +311,6 @@ func generateDockerfile(variant DockerfileVariant) error {
 			DOCKER_BASE_IMAGE:             variant.dockerBaseImage(),
 		}
 
-	} else if variant.Product == ProductOperator {
-		// template parameters
-		params = struct {
-			CO_VERSION     string
-			CO_RELEASE_URL string
-			CO_PACKAGE     string
-			CO_SHA256      string
-		}{
-			CO_VERSION:     variant.VersionWithSubstitutions(),
-			CO_RELEASE_URL: variant.releaseURL(),
-			CO_PACKAGE:     variant.operatorPackageName(),
-			CO_SHA256:      variant.getSHA256(Archamd64),
-		}
 	}
 
 	// open a file at destPath
@@ -511,10 +496,6 @@ func (variant DockerfileVariant) getSHA256(arch Arch) string {
 	if variant.Product == "couchbase-server" {
 		sha256url = variant.releaseURL() + "/" +
 			variant.Version + "/" + variant.serverPackageFile(arch) + ".sha256"
-	} else if variant.Product == "couchbase-operator" {
-		// No arm64 operator builds (yet)
-		sha256url = variant.releaseURL() + "/" +
-			variant.Version + "/" + variant.operatorPackageName() + ".sha256"
 	}
 
 	resp, err := http.Get(sha256url)
@@ -670,14 +651,6 @@ func (variant DockerfileVariant) serverPackageName() string {
 	}
 }
 
-// Generate the bits package name for this couchbase-operator variant
-func (variant DockerfileVariant) operatorPackageName() string {
-	return fmt.Sprintf(
-		"couchbase-autonomous-operator-dist_%v.tar.gz",
-		variant.Version,
-	)
-}
-
 // Specify any extra dependencies, based on variant
 func (variant DockerfileVariant) extraDependencies() string {
 	if variant.Product == "couchbase-server" {
@@ -715,9 +688,6 @@ func (variant DockerfileVariant) dockerfile() string {
 }
 
 func (variant DockerfileVariant) releaseURL() string {
-	if variant.Product == "couchbase-operator" {
-		return "https://packages.couchbase.com/kubernetes"
-	}
 	if variant.IsStaging {
 		return "http://packages-staging.couchbase.com/releases"
 	} else {
