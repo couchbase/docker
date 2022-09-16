@@ -32,8 +32,9 @@ const (
 type Product string
 
 const (
-	ProductServer = Product("couchbase-server")
-	ProductSyncGw = Product("sync-gateway")
+	ProductServer  = Product("couchbase-server")
+	ProductSyncGw  = Product("sync-gateway")
+	ProductSandbox = Product("server-sandbox")
 )
 
 // These are Docker's idea of architecture names, eg. amd64, arm64.
@@ -74,22 +75,23 @@ func (filter ProductVersionFilter) Matches(product Product, version string) bool
 }
 
 var (
-	editions              []Edition
-	products              []Product
+	default_editions      []Edition
+	default_products      []Product
 	versionCustomizations VersionCustomizations
 	baseDir               string
 	skipGeneration        ProductVersionFilter
 )
 
 func init() {
-	editions = []Edition{
+	default_editions = []Edition{
 		EditionCommunity,
 		EditionEnterprise,
 	}
 
-	products = []Product{
+	default_products = []Product{
 		ProductServer,
 		ProductSyncGw,
+		ProductSandbox,
 	}
 
 	// TODO: Read the version_customizations.json file into map
@@ -155,8 +157,8 @@ Options:
 }
 
 func generateAllDockerfiles() {
-	for _, edition := range editions {
-		for _, product := range products {
+	for _, edition := range default_editions {
+		for _, product := range default_products {
 			// find corresponding directory for this edition/product combo
 			dir := path.Join(baseDir, string(edition), string(product))
 
@@ -193,7 +195,7 @@ func generateOneDockerfile(
 
 	productVer, _ := intVer(variant.Version)
 
-	// Couchbase Server has some special cases based on Version.
+	// Update according to special cases based on Product and Version.
 	if product == ProductServer {
 		if productVer == 70003 {
 			// CBD-4603: 7.0.3 actually builds from 7.0.3-MP1 for complete
@@ -210,6 +212,11 @@ func generateOneDockerfile(
 			variant.TemplateFilename = "Dockerfile.centos.template"
 		} else {
 			variant.TemplateFilename = "Dockerfile.ubuntu.template"
+			variant.Arches = append(variant.Arches, Archarm64)
+		}
+	} else if product == ProductSandbox {
+		if productVer >= 71000 {
+			// 7.1.0 and higher also support arm64
 			variant.Arches = append(variant.Arches, Archarm64)
 		}
 	}
@@ -309,6 +316,18 @@ func generateDockerfile(variant DockerfileVariant) error {
 			SYNC_GATEWAY_PACKAGE_URL:      variant.sgPackageUrl(),
 			SYNC_GATEWAY_PACKAGE_FILENAME: variant.sgPackageFilename(),
 			DOCKER_BASE_IMAGE:             variant.dockerBaseImage(),
+		}
+
+	} else if variant.Product == ProductSandbox {
+		// template parameters
+		params = struct {
+			CB_VERSION        string
+			DOCKER_BASE_IMAGE string
+			CB_MULTIARCH      bool
+		}{
+			CB_VERSION:        variant.VersionWithSubstitutions(),
+			DOCKER_BASE_IMAGE: variant.dockerBaseImage(),
+			CB_MULTIARCH:      (len(variant.Arches) > 1),
 		}
 
 	}
@@ -529,6 +548,8 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 		}
 	case ProductServer:
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
+	case ProductSandbox:
+		return fmt.Sprintf("couchbase/server:%s", variant.Version)
 	default:
 		log.Printf("Failed %v", variant.Product)
 		panic("Unexpected product")
