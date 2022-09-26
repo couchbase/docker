@@ -12,12 +12,12 @@ RUN set -x \
            lsb-release \
            systemctl \
            wget \
-    && apt autoremove \
     && apt clean
 
 # Install Sync Gateway
+ARG SGW_PACKAGE="{{ .SYNC_GATEWAY_PACKAGE_URL }}"
 RUN set -x \
-    && SGW_PACKAGE=$(echo "{{ .SYNC_GATEWAY_PACKAGE_URL }}" | sed -e "s/@@ARCH@@/$(uname -m)/") \
+    && SGW_PACKAGE=$(echo "${SGW_PACKAGE}" | sed -e "s/@@ARCH@@/$(uname -m)/") \
     && SGW_PACKAGE_FILENAME=$(echo "{{ .SYNC_GATEWAY_PACKAGE_FILENAME }}" | sed -e "s/@@ARCH@@/$(uname -m)/") \
     && wget "${SGW_PACKAGE}" \
     && apt install -y ./"${SGW_PACKAGE_FILENAME}" \
