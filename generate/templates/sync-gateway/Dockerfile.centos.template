@@ -21,8 +21,10 @@ RUN SGW_PACKAGE=$(echo "{{ .SYNC_GATEWAY_PACKAGE_URL }}" | sed -e "s/@@ARCH@@/$(
 # Create directory where the default config stores memory snapshots to disk
 RUN mkdir /opt/couchbase-sync-gateway/data
 
-# copy the default config into the container
-COPY config/sync_gateway_config.json /etc/sync_gateway/config.json
+# Copy sample service config as the initial config
+RUN mkdir /etc/sync_gateway \
+    && cp /opt/couchbase-sync-gateway/examples/serviceconfig.json /etc/sync_gateway/config.json \
+    && chown -R sync_gateway:sync_gateway /etc/sync_gateway
 
 # Create log dir
 RUN set -x \
