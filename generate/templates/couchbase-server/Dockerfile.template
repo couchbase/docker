@@ -22,7 +22,7 @@ ARG CLEANUP_COMMAND="rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
 #  numactl: numactl
 RUN set -x \
     && ${UPDATE_COMMAND} \
-    && {{ .PKG_COMMAND }} install -y -q wget tzdata \
+    && {{ .PKG_COMMAND }} install -y -q --no-install-recommends wget tzdata \
       lsof lshw sysstat net-tools numactl {{ .CB_EXTRA_DEPS }} \
     && ${CLEANUP_COMMAND}
 
