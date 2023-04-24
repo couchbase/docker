@@ -9,6 +9,7 @@ ENV PATH $PATH:/opt/couchbase-sync-gateway/bin
 RUN set -x \
     && apt update \
     && apt install -y \
+           curl \
            lsb-release \
            systemctl \
            wget \
@@ -30,7 +31,7 @@ RUN mkdir /opt/couchbase-sync-gateway/data
 
 # Copy sample service config as the initial config
 RUN mkdir /etc/sync_gateway \
-    && cp /opt/couchbase-sync-gateway/examples/serviceconfig.json /etc/sync_gateway/config.json \
+    && cp /opt/couchbase-sync-gateway/examples/startup_config/basic.json /etc/sync_gateway/config.json \
     && chown -R sync_gateway:sync_gateway /etc/sync_gateway
 
 # Create log dir
