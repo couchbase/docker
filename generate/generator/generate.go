@@ -114,7 +114,7 @@ func main() {
 	usage := `Dockerfile Generator
 
 Usage:
-  generate BASE_DIRECTORY -p PRODUCT -v VERSION -e EDITION -o OUTPUT_DIRECTORY
+  generate BASE_DIRECTORY -p PRODUCT -v VERSION -e EDITION -o DIR [ -t TEMPLATE_ARG ]...
   generate BASE_DIRECTORY
 
 The first form generates a single Dockerfile and its associated resources
@@ -134,6 +134,7 @@ Options:
   -v VERSION, --version VERSION   Product version
   -e EDITION, --edition EDITION   Product edition (community/enterprise)
   -o OUTPUT_DIRECTORY             Directory to write Dockerfile to
+  -t TEMPLATE_ARG                 KEY=VALUE to provide to the template
   -h, --help                      Print this usage message
 `
 
@@ -147,6 +148,7 @@ Options:
 			Product(args["--product"].(string)),
 			args["--version"].(string),
 			args["-o"].(string),
+			generateOverrides(args["-t"].([]string)),
 		)
 	} else {
 		log.Println("Generating multiple products")
@@ -154,6 +156,20 @@ Options:
 	}
 
 	log.Printf("Successfully finished!")
+}
+
+func generateOverrides(args []string) (retval map[string]any) {
+
+	retval = map[string]any{}
+	for _, mapping := range args {
+		vals := strings.Split(mapping, "=")
+		if len(vals) != 2 {
+			log.Fatalf("-t '%s' not of form KEY=VALUE", mapping)
+		}
+		retval[vals[0]] = vals[1]
+	}
+
+	return
 }
 
 func generateAllDockerfiles() {
@@ -172,7 +188,7 @@ func generateAllDockerfiles() {
 					log.Printf("Skipping generation for %v %v %v", product, edition, ver)
 					continue
 				}
-				generateOneDockerfile(edition, product, ver, "")
+				generateOneDockerfile(edition, product, ver, "", nil)
 			}
 		}
 	}
@@ -180,6 +196,7 @@ func generateAllDockerfiles() {
 
 func generateOneDockerfile(
 	edition Edition, product Product, ver string, outputDir string,
+	overrides map[string]any,
 ) error {
 	// Start with a basic DockerfileVariant, then tweak if necessary
 	variant := DockerfileVariant{
@@ -191,6 +208,7 @@ func generateOneDockerfile(
 		IsStaging:        strings.HasSuffix(ver, "-staging"),
 		TemplateFilename: "Dockerfile.template",
 		OutputDir:        outputDir,
+		TemplateOverrides: overrides,
 	}
 
 	productVer, _ := intVer(variant.Version)
@@ -276,60 +294,46 @@ func generateDockerfile(variant DockerfileVariant) error {
 
 	log.Printf("template: %v", sourceTemplate)
 	log.Printf("product: %v", variant.Product)
-	var params interface{}
+	var params map[string]any
 
 	if variant.Product == ProductServer {
 		// template parameters
-		params = struct {
-			CB_VERSION         string
-			CB_PACKAGE         string
-			CB_PACKAGE_NAME    string
-			CB_EXTRA_DEPS      string
-			CB_SHA256_arm64    string
-			CB_SHA256_amd64    string
-			CB_RELEASE_URL     string
-			DOCKER_BASE_IMAGE  string
-			PKG_COMMAND        string
-			SYSTEMD_WORKAROUND bool
-			CB_MULTIARCH       bool
-		}{
-			CB_VERSION:         variant.VersionWithSubstitutions(),
-			CB_PACKAGE:         variant.serverPackageFile(Archgeneric),
-			CB_PACKAGE_NAME:    variant.serverPackageName(),
-			CB_EXTRA_DEPS:      variant.extraDependencies(),
-			CB_SHA256_arm64:    variant.getSHA256(Archarm64),
-			CB_SHA256_amd64:    variant.getSHA256(Archamd64),
-			CB_RELEASE_URL:     variant.releaseURL(),
-			DOCKER_BASE_IMAGE:  variant.dockerBaseImage(),
-			PKG_COMMAND:        variant.serverPkgCommand(),
-			SYSTEMD_WORKAROUND: variant.systemdWorkaround(),
-			CB_MULTIARCH:       len(variant.Arches) > 1,
+		params = map[string]any{
+			"CB_VERSION":         variant.VersionWithSubstitutions(),
+			"CB_PACKAGE":         variant.serverPackageFile(Archgeneric),
+			"CB_PACKAGE_NAME":    variant.serverPackageName(),
+			"CB_EXTRA_DEPS":      variant.extraDependencies(),
+			"CB_SHA256_arm64":    variant.getSHA256(Archarm64),
+			"CB_SHA256_amd64":    variant.getSHA256(Archamd64),
+			"CB_RELEASE_URL":     variant.releaseURL(),
+			"DOCKER_BASE_IMAGE":  variant.dockerBaseImage(),
+			"PKG_COMMAND":        variant.serverPkgCommand(),
+			"SYSTEMD_WORKAROUND": variant.systemdWorkaround(),
+			"CB_MULTIARCH":       len(variant.Arches) > 1,
+			"CB_SKIP_CHECKSUM":   "false",
 		}
 
 	} else if variant.Product == ProductSyncGw {
 		// template parameters
-		params = struct {
-			SYNC_GATEWAY_PACKAGE_URL      string
-			SYNC_GATEWAY_PACKAGE_FILENAME string
-			DOCKER_BASE_IMAGE             string
-		}{
-			SYNC_GATEWAY_PACKAGE_URL:      variant.sgPackageUrl(),
-			SYNC_GATEWAY_PACKAGE_FILENAME: variant.sgPackageFilename(),
-			DOCKER_BASE_IMAGE:             variant.dockerBaseImage(),
+		params = map[string]any{
+			"SYNC_GATEWAY_PACKAGE_URL":      variant.sgPackageUrl(),
+			"SYNC_GATEWAY_PACKAGE_FILENAME": variant.sgPackageFilename(),
+			"DOCKER_BASE_IMAGE":             variant.dockerBaseImage(),
 		}
 
 	} else if variant.Product == ProductSandbox {
 		// template parameters
-		params = struct {
-			CB_VERSION        string
-			DOCKER_BASE_IMAGE string
-			CB_MULTIARCH      bool
-		}{
-			CB_VERSION:        variant.VersionWithSubstitutions(),
-			DOCKER_BASE_IMAGE: variant.dockerBaseImage(),
-			CB_MULTIARCH:      len(variant.Arches) > 1,
+		params = map[string]any{
+			"CB_VERSION":        variant.VersionWithSubstitutions(),
+			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
+			"CB_MULTIARCH":      len(variant.Arches) > 1,
 		}
+	}
 
+	// Apply any user-requested template overrides
+	for key, value := range variant.TemplateOverrides {
+		log.Printf("Hello %s=%s", key, value)
+        params[key] = value
 	}
 
 	// open a file at destPath
@@ -508,13 +512,14 @@ type DockerfileVariant struct {
 	Arches           []Arch
 	IsStaging        bool
 	OutputDir        string
+	TemplateOverrides map[string]any
 }
 
 func (variant DockerfileVariant) getSHA256(arch Arch) string {
 	var sha256url string
 	if variant.Product == "couchbase-server" {
 		sha256url = variant.releaseURL() + "/" +
-			variant.Version + "/" + variant.serverPackageFile(arch) + ".sha256"
+			variant.serverPackageFile(arch) + ".sha256"
 	}
 
 	resp, err := http.Get(sha256url)
@@ -710,9 +715,9 @@ func (variant DockerfileVariant) dockerfile() string {
 
 func (variant DockerfileVariant) releaseURL() string {
 	if variant.IsStaging {
-		return "http://packages-staging.couchbase.com/releases"
+		return "http://packages-staging.couchbase.com/releases/" + variant.Version
 	} else {
-		return "https://packages.couchbase.com/releases"
+		return "https://packages.couchbase.com/releases/" + variant.Version
 	}
 }
 
