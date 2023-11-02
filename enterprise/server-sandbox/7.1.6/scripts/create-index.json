@@ -1,0 +1,31 @@
+{
+    "type": "fulltext-index",
+    "name": "hotels",
+    "sourceType": "couchbase",
+    "sourceName": "travel-sample",
+    "planParams": {
+      "maxPartitionsPerPIndex": 171
+    },
+    "params": {
+      "doc_config": {
+        "mode": "type_field",
+        "type_field": "type"
+      },
+      "mapping": {
+        "default_analyzer": "standard",
+        "default_datetime_parser": "dateTimeOptional",
+        "default_field": "_all",
+        "default_mapping": {
+          "dynamic": true,
+          "enabled": true
+        },
+        "default_type": "_default",
+        "index_dynamic": true,
+        "store_dynamic": false
+      },
+      "store": {
+        "kvStoreName": "mossStore"
+      }
+    },
+    "sourceParams": {}
+}
