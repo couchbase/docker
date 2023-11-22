@@ -47,6 +47,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 CMD ["/etc/sync_gateway/config.json"]
 
 USER sync_gateway
+WORKDIR /home/sync_gateway
 
 # Expose ports
 #  port 4984: public port
