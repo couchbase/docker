@@ -200,14 +200,14 @@ func generateOneDockerfile(
 ) error {
 	// Start with a basic DockerfileVariant, then tweak if necessary
 	variant := DockerfileVariant{
-		Edition:          edition,
-		Product:          product,
-		Version:          strings.TrimSuffix(ver, "-staging"),
-		TargetVersion:    strings.TrimSuffix(ver, "-staging"),
-		Arches:           []Arch{Archamd64},
-		IsStaging:        strings.HasSuffix(ver, "-staging"),
-		TemplateFilename: "Dockerfile.template",
-		OutputDir:        outputDir,
+		Edition:           edition,
+		Product:           product,
+		Version:           strings.TrimSuffix(ver, "-staging"),
+		TargetVersion:     strings.TrimSuffix(ver, "-staging"),
+		Arches:            []Arch{Archamd64},
+		IsStaging:         strings.HasSuffix(ver, "-staging"),
+		TemplateFilename:  "Dockerfile.template",
+		OutputDir:         outputDir,
 		TemplateOverrides: overrides,
 	}
 
@@ -332,8 +332,7 @@ func generateDockerfile(variant DockerfileVariant) error {
 
 	// Apply any user-requested template overrides
 	for key, value := range variant.TemplateOverrides {
-		log.Printf("Hello %s=%s", key, value)
-        params[key] = value
+		params[key] = value
 	}
 
 	// open a file at destPath
@@ -507,11 +506,11 @@ type DockerfileVariant struct {
 	// is the directory name in this repository). 99.99% of the time
 	// this will be the same as Version, but very occasionally we need
 	// to translate a bit here
-	TargetVersion    string
-	TemplateFilename string
-	Arches           []Arch
-	IsStaging        bool
-	OutputDir        string
+	TargetVersion     string
+	TemplateFilename  string
+	Arches            []Arch
+	IsStaging         bool
+	OutputDir         string
 	TemplateOverrides map[string]any
 }
 
