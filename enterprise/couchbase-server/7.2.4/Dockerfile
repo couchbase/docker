@@ -36,10 +36,10 @@ RUN set -x \
     && dpkgArch="$(dpkg --print-architecture)" \
     && case "${dpkgArch}" in \
          'arm64') \
-           CB_SHA256=f803901b4d4793276df46482ca4a39a7447491b1b266bbee4560e4c8dbd0889c \
+           CB_SHA256=c675d9e2a355cca833c9c12f85585e92a4d1cd95858d79e958b507f9ba1a4349 \
            ;; \
          'amd64') \
-           CB_SHA256=9401d5ed083af9d6b086df5450df5cd5b83d9a26e37cadc746f4153e2583d140 \
+           CB_SHA256=0f5edf6c011df25e172ae54c6bbe5f83be6a3c24e4e23b25e77d5079262c30ca \
            ;; \
        esac \
     && CB_PACKAGE=$(echo ${CB_PACKAGE} | sed -e "s/@@ARCH@@/${dpkgArch}/") \
