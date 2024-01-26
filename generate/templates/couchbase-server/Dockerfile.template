@@ -1,3 +1,12 @@
+FROM gcc:9.5.0 as runit_build
+
+RUN set -x \
+    && mkdir /tmp/work \
+    && cd /tmp/work \
+    && git clone https://github.com/couchbasedeps/runit
+WORKDIR /tmp/work/runit
+RUN ./package/compile
+
 FROM {{ .DOCKER_BASE_IMAGE }}
 
 LABEL maintainer="docker@couchbase.com"
@@ -25,6 +34,9 @@ RUN set -x \
     && {{ .PKG_COMMAND }} install -y -q wget tzdata \
       lsof lshw sysstat net-tools numactl {{ .CB_EXTRA_DEPS }} \
     && ${CLEANUP_COMMAND}
+
+# Add runit
+COPY --from=runit_build /tmp/work/runit/command/* /sbin/
 
 ARG CB_RELEASE_URL={{ .CB_RELEASE_URL }}
 ARG CB_PACKAGE={{ .CB_PACKAGE }}
@@ -80,13 +92,13 @@ RUN set -x \
 # Update VARIANT.txt to indicate we're running in our Docker image
 RUN sed -i -e '1 s/$/\/docker/' /opt/couchbase/VARIANT.txt
 
-# Add runit script for couchbase-server
+# Add runit service script for couchbase-server
 COPY scripts/run /etc/service/couchbase-server/run
 RUN set -x \
-    && mkdir -p /etc/runit/runsvdir/default/couchbase-server/supervise \
+    && mkdir -p /etc/service/couchbase-server/supervise \
     && chown -R couchbase:couchbase \
                 /etc/service \
-                /etc/runit/runsvdir/default/couchbase-server/supervise
+                /etc/service/couchbase-server/supervise
 
 # Add dummy script for commands invoked by cbcollect_info that
 # make no sense in a Docker container
