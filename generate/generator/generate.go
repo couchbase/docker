@@ -680,9 +680,9 @@ func (variant DockerfileVariant) serverPackageName() string {
 func (variant DockerfileVariant) extraDependencies() string {
 	if variant.Product == "couchbase-server" {
 		if variant.isMadHatterOrNewer() {
-			return "bzip2 runit"
+			return "bzip2"
 		} else {
-			return "python-httplib2 runit"
+			return "python-httplib2"
 		}
 	}
 	return ""
