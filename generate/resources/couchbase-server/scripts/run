@@ -20,7 +20,8 @@ mkdir -p var/lib/couchbase \
 # Ensure everything in var is owned and writable to Server.
 # Skip "inbox" as it may contain readonly-mounted things like k8s certs.
 find var -path var/lib/couchbase/inbox -prune -o -print0 | \
-  xargs -0 chown --no-dereference couchbase:couchbase
+  xargs -0 -I {} sh -c 'chown --no-dereference couchbase:couchbase {} >/dev/null 2>&1 ||
+    echo "Warning: could not ensure '\''couchbase'\'' user owns $(pwd)/{}; this may cause issues" >&2;'
 
 if [ "$(whoami)" = "couchbase" ]; then
   exec /opt/couchbase/bin/couchbase-server -- -kernel global_enable_tracing false -noinput
