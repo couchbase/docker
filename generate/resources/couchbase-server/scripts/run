@@ -17,11 +17,14 @@ mkdir -p var/lib/couchbase \
          var/lib/couchbase/logs \
          var/lib/moxi
 
-# Ensure everything in var is owned and writable to Server.
+# Ensure everything in var is writable by the 'couchbase' user, and warn when
+# encountering files or directories which aren't.
 # Skip "inbox" as it may contain readonly-mounted things like k8s certs.
 find var -path var/lib/couchbase/inbox -prune -o -print0 | \
-  xargs -0 -I {} sh -c 'chown --no-dereference couchbase:couchbase "{}" >/dev/null 2>&1 ||
-    echo "Warning: could not ensure '\''couchbase'\'' user owns '\''$(pwd)/{}'\''; this may cause issues" >&2;'
+  xargs -0 -I {} sh -c '
+    if ! test -w "{}"; then
+      echo "Warning: '\''$(pwd)/{}'\'' is not writable by user '\''couchbase'\''; this may result in issues" >&2;
+    fi'
 
 if [ "$(whoami)" = "couchbase" ]; then
   exec /opt/couchbase/bin/couchbase-server -- -kernel global_enable_tracing false -noinput
