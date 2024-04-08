@@ -21,13 +21,15 @@ mkdir -p var/lib/couchbase \
 # owned by the 'couchbase' user. If running as 'couchbase', don't attempt to
 # claim ownership, but instead warn when encountering unwritable paths.
 # Skip "inbox" as it may contain readonly-mounted things like k8s certs.
-find var -path var/lib/couchbase/inbox -prune -o -print0 | \
-  xargs -0 -I {} sh -c '
-    if [ "$(whoami)" = "root" ]; then
-      chown --no-dereference couchbase:couchbase "{}"
-    elif ! test -w "{}"; then
-      echo "Warning: '\''$(pwd)/{}'\'' is not writable by user '\''$(whoami)'\''" >&2;
-    fi'
+container_user=$(whoami)
+if [ "${container_user}" = "root" ]; then
+    find var -path var/lib/couchbase/inbox -prune -o -print0 | \
+      xargs -0 chown --no-dereference couchbase:couchbase
+else
+    find var -path var/lib/couchbase/inbox -prune -o \! -writable -print0 | \
+      xargs -0 -I {} echo "Warning: '/opt/couchbase/{}' is not writable by user '${container_user}'"
+fi
+unset container_user
 
 if [ "$(whoami)" = "couchbase" ]; then
   exec /opt/couchbase/bin/couchbase-server -- -kernel global_enable_tracing false -noinput
