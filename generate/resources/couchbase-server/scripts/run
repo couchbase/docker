@@ -17,11 +17,19 @@ mkdir -p var/lib/couchbase \
          var/lib/couchbase/logs \
          var/lib/moxi
 
-# Ensure everything in var is owned and writable to Server.
+# If container is running as root, ensure contents of /opt/couchbase/var are
+# owned by the 'couchbase' user. If running as 'couchbase', don't attempt to
+# claim ownership, but instead warn when encountering unwritable paths.
 # Skip "inbox" as it may contain readonly-mounted things like k8s certs.
-find var -path var/lib/couchbase/inbox -prune -o -print0 | \
-  xargs -0 -I {} sh -c 'chown --no-dereference couchbase:couchbase "{}" >/dev/null 2>&1 ||
-    echo "Warning: could not ensure '\''couchbase'\'' user owns '\''$(pwd)/{}'\''; this may cause issues" >&2;'
+container_user=$(whoami)
+if [ "${container_user}" = "root" ]; then
+    find var -path var/lib/couchbase/inbox -prune -o -print0 | \
+      xargs -0 chown --no-dereference couchbase:couchbase
+else
+    find var -path var/lib/couchbase/inbox -prune -o \! -writable -print0 | \
+      xargs -0 -I {} echo "Warning: '/opt/couchbase/{}' is not writable by user '${container_user}'"
+fi
+unset container_user
 
 if [ "$(whoami)" = "couchbase" ]; then
   exec /opt/couchbase/bin/couchbase-server -- -kernel global_enable_tracing false -noinput
