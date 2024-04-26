@@ -62,9 +62,21 @@ RUN groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M
 # in some environments, such as some GitHub actions. Below we patch the
 # detection mid-install to work around this issue.
 {{- end }}
-RUN set -x \
+{{- if .FROM_LOCAL_INSTALL }}
+RUN --mount=type=bind,source=.,target=/install \
+{{- else }}
+RUN \
+{{- end }}
+    set -x \
+    && ${UPDATE_COMMAND} \
+{{- if .FROM_LOCAL_INSTALL }}
+    && mkdir /opt/couchbase \
+    && cp -a /install/* /opt/couchbase \
+    && rm -rf /opt/couchbase/Dockerfile /opt/couchbase/scripts \
+    && chown -R couchbase:couchbase /opt/couchbase \
+{{- else }}
     && export INSTALL_DONT_START_SERVER=1 \
-{{- if .CB_MULTIARCH }}
+{{-   if .CB_MULTIARCH }}
     && dpkgArch="$(dpkg --print-architecture)" \
     && case "${dpkgArch}" in \
          'arm64') \
@@ -75,19 +87,19 @@ RUN set -x \
            ;; \
        esac \
     && CB_PACKAGE=$(echo ${CB_PACKAGE} | sed -e "s/@@ARCH@@/${dpkgArch}/") \
-{{- end }}
+{{-   end }}
     && wget -N --no-verbose $CB_RELEASE_URL/$CB_PACKAGE \
     && { ${CB_SKIP_CHECKSUM} || echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - ; } \
-    && ${UPDATE_COMMAND} \
-{{- if .SYSTEMD_WORKAROUND }}
+{{-   if .SYSTEMD_WORKAROUND }}
     && dpkg --unpack ./$CB_PACKAGE \
     && sed -i -e '/Best heuristic/ a \ \ \ \ [ -d /run/systemd/system ] && return 1; return 0' /opt/couchbase/bin/install/systemd-ctl \
     && dpkg --configure {{ .CB_PACKAGE_NAME }} \
     && apt-get install -yf \
-{{- else }}
+{{-   else }}
     && {{ .PKG_COMMAND }} install -y ./$CB_PACKAGE \
-{{- end }}
+{{-   end }}
     && rm -f ./$CB_PACKAGE \
+{{- end }}
     && ${CLEANUP_COMMAND} \
     && rm -rf /tmp/* /var/tmp/*
 
@@ -129,6 +141,14 @@ COPY scripts/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["couchbase-server"]
 
+{{- if .PROFILE }}
+# Add profile
+RUN set -x \
+    && mkdir -p /etc/couchbase.d \
+    && echo "{{ .PROFILE }}" >  /etc/couchbase.d/config_profile \
+    && chown -R couchbase:couchbase /etc/couchbase.d
+
+{{- end }}
 # 8091: Cluster administration REST/HTTP traffic, including Couchbase Web Console
 # 8092: Views and XDCR access
 # 8093: Query service REST/HTTP traffic
