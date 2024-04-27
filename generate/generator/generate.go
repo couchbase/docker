@@ -149,6 +149,7 @@ Options:
 			args["--version"].(string),
 			args["-o"].(string),
 			generateOverrides(args["-t"].([]string)),
+			false,
 		)
 	} else {
 		log.Println("Generating multiple products")
@@ -188,7 +189,7 @@ func generateAllDockerfiles() {
 					log.Printf("Skipping generation for %v %v %v", product, edition, ver)
 					continue
 				}
-				generateOneDockerfile(edition, product, ver, "", nil)
+				generateOneDockerfile(edition, product, ver, "", nil, true)
 			}
 		}
 	}
@@ -196,7 +197,7 @@ func generateAllDockerfiles() {
 
 func generateOneDockerfile(
 	edition Edition, product Product, ver string, outputDir string,
-	overrides map[string]any,
+	overrides map[string]any, noOverwrite bool,
 ) error {
 	// Start with a basic DockerfileVariant, then tweak if necessary
 	variant := DockerfileVariant{
@@ -240,15 +241,16 @@ func generateOneDockerfile(
 	}
 
 	// Now generate the Dockerfile(s) based on the constructed variant
-	if err := generateVariant(variant); err != nil {
+	if err := generateVariant(variant, noOverwrite); err != nil {
 		log.Fatalf("Failed (%v/%v/%v): %v", edition, product, ver, err)
 	}
 
 	return nil
 }
 
-func generateVariant(variant DockerfileVariant) error {
-	if _, err := os.Stat(variant.dockerfile()); !os.IsNotExist(err) {
+func generateVariant(variant DockerfileVariant, noOverwrite bool) error {
+	_, err := os.Stat(variant.dockerfile())
+	if noOverwrite && !os.IsNotExist(err) {
 		log.Printf("%s exists, not regenerating...", variant.dockerfile())
 	} else {
 		if err := generateDockerfile(variant); err != nil {
