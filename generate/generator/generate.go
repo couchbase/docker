@@ -32,9 +32,10 @@ const (
 type Product string
 
 const (
-	ProductServer  = Product("couchbase-server")
-	ProductSyncGw  = Product("sync-gateway")
-	ProductSandbox = Product("server-sandbox")
+	ProductServer   = Product("couchbase-server")
+	ProductSyncGw   = Product("sync-gateway")
+	ProductSandbox  = Product("server-sandbox")
+	ProductColumnar = Product("couchbase-columnar")
 )
 
 // These are Docker's idea of architecture names, eg. amd64, arm64.
@@ -92,6 +93,7 @@ func init() {
 		ProductServer,
 		ProductSyncGw,
 		ProductSandbox,
+		ProductColumnar,
 	}
 
 	// TODO: Read the version_customizations.json file into map
@@ -238,7 +240,9 @@ func generateOneDockerfile(
 			// 7.1.0 and higher also support arm64
 			variant.Arches = append(variant.Arches, Archarm64)
 		}
-	}
+	} else if product == ProductColumnar {
+                variant.Arches = append(variant.Arches, Archarm64)
+        }
 
 	// Now generate the Dockerfile(s) based on the constructed variant
 	if err := generateVariant(variant, noOverwrite); err != nil {
@@ -330,7 +334,15 @@ func generateDockerfile(variant DockerfileVariant) error {
 			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
 			"CB_MULTIARCH":      len(variant.Arches) > 1,
 		}
-	}
+
+        } else if variant.Product == ProductColumnar {
+                // template parameters
+                params = map[string]any{
+                        "CB_VERSION":        variant.VersionWithSubstitutions(),
+                        "DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
+                        "CB_MULTIARCH":      len(variant.Arches) > 1,
+                }
+        }
 
 	// Apply any user-requested template overrides
 	for key, value := range variant.TemplateOverrides {
@@ -556,6 +568,8 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	case ProductSandbox:
 		return fmt.Sprintf("couchbase/server:%s", variant.Version)
+        case ProductColumnar:
+		return "ubuntu:24.04"
 	default:
 		log.Printf("Failed %v", variant.Product)
 		panic("Unexpected product")
