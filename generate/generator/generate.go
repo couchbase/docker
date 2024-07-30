@@ -17,6 +17,7 @@ import (
 	"text/template"
 
 	"github.com/docopt/docopt-go"
+	"github.com/hashicorp/go-version"
 )
 
 // Convert Dockerfile.template into version specific Dockerfile
@@ -241,8 +242,8 @@ func generateOneDockerfile(
 			variant.Arches = append(variant.Arches, Archarm64)
 		}
 	} else if product == ProductColumnar {
-                variant.Arches = append(variant.Arches, Archarm64)
-        }
+		variant.Arches = append(variant.Arches, Archarm64)
+	}
 
 	// Now generate the Dockerfile(s) based on the constructed variant
 	if err := generateVariant(variant, noOverwrite); err != nil {
@@ -335,14 +336,14 @@ func generateDockerfile(variant DockerfileVariant) error {
 			"CB_MULTIARCH":      len(variant.Arches) > 1,
 		}
 
-        } else if variant.Product == ProductColumnar {
-                // template parameters
-                params = map[string]any{
-                        "CB_VERSION":        variant.VersionWithSubstitutions(),
-                        "DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
-                        "CB_MULTIARCH":      len(variant.Arches) > 1,
-                }
-        }
+	} else if variant.Product == ProductColumnar {
+		// template parameters
+		params = map[string]any{
+			"CB_VERSION":        variant.VersionWithSubstitutions(),
+			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
+			"CB_MULTIARCH":      len(variant.Arches) > 1,
+		}
+	}
 
 	// Apply any user-requested template overrides
 	for key, value := range variant.TemplateOverrides {
@@ -562,14 +563,14 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 		if productVer <= 30003 {
 			return "centos:centos7"
 		} else {
-			return "ubuntu:22.04"
+			return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 		}
 	case ProductServer:
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	case ProductSandbox:
 		return fmt.Sprintf("couchbase/server:%s", variant.Version)
-        case ProductColumnar:
-		return "ubuntu:24.04"
+	case ProductColumnar:
+		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	default:
 		log.Printf("Failed %v", variant.Product)
 		panic("Unexpected product")
@@ -613,20 +614,44 @@ func (variant DockerfileVariant) isMadHatterOrNewer() bool {
 }
 
 func (variant DockerfileVariant) ubuntuVersion() string {
-	// Intended for use by Couchbase Server only
-	if strings.HasPrefix(variant.Version, "4") {
-		return "14.04"
-	} else if strings.HasPrefix(variant.Version, "5") {
-		return "16.04"
-	} else if strings.HasPrefix(variant.Version, "6") {
-		if variant.Version == "6.0.0" {
-			return "16.04"
-		} else if strings.HasPrefix(variant.Version, "6.0") || strings.HasPrefix(variant.Version, "6.5") || variant.Version == "6.6.0" || variant.Version == "6.6.1" {
-			return "18.04"
-		}
+	v1, err := version.NewVersion(variant.Version)
+	if err != nil {
+		log.Fatalf("go-version failed to parse %v", variant.Version)
 	}
-	// Value for 7.x and 6.6.2+
-	return "20.04"
+	switch variant.Product {
+	case ProductSyncGw:
+		return "22.04"
+        case ProductColumnar:
+                return "22.04"
+        case ProductServer:
+		version4, err := version.NewConstraint(">= 4.0, < 5.0")
+		if err != nil {
+			log.Fatalf("Error creating version constraint 4.x: %v", err)
+		}
+		version5To6Dot0Dot0, err := version.NewConstraint(">= 5.0, <= 6.0.0")
+		if err != nil {
+			log.Fatalf("Error creating version constraint 5.x--6.0.0: %v", err)
+		}
+		version6Dot0Dot1To6Dot6Dot1, err := version.NewConstraint(">= 6.0.1, <= 6.6.1")
+		if err != nil {
+			log.Fatalf("Error creating version constraint 6.0.1--6.6.1: %v", err)
+		}
+		version6Dot6Dot2To7Dot6Dot2, err := version.NewConstraint(">= 6.6.2, <= 7.6.2")
+		if err != nil {
+			log.Fatalf("Error creating version constraint 6.6.2--7.6.2: %v", err)
+		}
+		if version4.Check(v1) {
+			return "14.04"
+		} else if version5To6Dot0Dot0.Check(v1) {
+			return "16.04"
+		} else if version6Dot0Dot1To6Dot6Dot1.Check(v1) {
+			return "18.04"
+                } else if version6Dot6Dot2To7Dot6Dot2.Check(v1) {
+                        return "20.04"
+		}
+		return "22.04"
+	}
+	return ""
 }
 
 // Get the version for this variant, possibly doing substitutions
