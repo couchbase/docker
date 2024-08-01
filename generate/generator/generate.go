@@ -622,7 +622,7 @@ func (variant DockerfileVariant) ubuntuVersion() string {
 	case ProductSyncGw:
 		return "22.04"
         case ProductColumnar:
-                return "22.04"
+                return "20.04"
         case ProductServer:
 		version4, err := version.NewConstraint(">= 4.0, < 5.0")
 		if err != nil {
@@ -649,7 +649,7 @@ func (variant DockerfileVariant) ubuntuVersion() string {
                 } else if version6Dot6Dot2To7Dot6Dot2.Check(v1) {
                         return "20.04"
 		}
-		return "22.04"
+		return "20.04"
 	}
 	return ""
 }
