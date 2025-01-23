@@ -33,10 +33,11 @@ const (
 type Product string
 
 const (
-	ProductServer   = Product("couchbase-server")
-	ProductSyncGw   = Product("sync-gateway")
-	ProductSandbox  = Product("server-sandbox")
-	ProductColumnar = Product("couchbase-columnar")
+	ProductServer     = Product("couchbase-server")
+	ProductSyncGw     = Product("sync-gateway")
+	ProductSandbox    = Product("server-sandbox")
+	ProductColumnar   = Product("couchbase-columnar")
+	ProductEdgeServer = Product("couchbase-edge-server")
 )
 
 // These are Docker's idea of architecture names, eg. amd64, arm64.
@@ -95,6 +96,7 @@ func init() {
 		ProductSyncGw,
 		ProductSandbox,
 		ProductColumnar,
+		ProductEdgeServer,
 	}
 
 	// TODO: Read the version_customizations.json file into map
@@ -340,10 +342,19 @@ func generateDockerfile(variant DockerfileVariant) error {
 		// template parameters
 		params = map[string]any{
 			"CB_VERSION":        variant.VersionWithSubstitutions(),
+			"CB_PACKAGE":         variant.columnarPackageFile(Archgeneric),
+			"CB_RELEASE_URL":     variant.releaseURL(),
 			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
 			"CB_MULTIARCH":      len(variant.Arches) > 1,
 		}
-	}
+        } else if variant.Product == ProductEdgeServer {
+                // template parameters
+                params = map[string]any{
+			"CB_RELEASE_URL":      variant.releaseURL(),
+			"CB_PACKAGE_NAME":     variant.edgeServerPackageFile(Archgeneric),
+			"DOCKER_BASE_IMAGE":   variant.dockerBaseImage(),
+                }
+        }
 
 	// Apply any user-requested template overrides
 	for key, value := range variant.TemplateOverrides {
@@ -565,6 +576,8 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 		} else {
 			return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 		}
+        case ProductEdgeServer:
+                return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	case ProductServer:
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	case ProductSandbox:
@@ -621,6 +634,8 @@ func (variant DockerfileVariant) ubuntuVersion() string {
 	switch variant.Product {
 	case ProductSyncGw:
 		return "22.04"
+        case ProductEdgeServer:
+                return "22.04"
         case ProductColumnar:
                 return "22.04"
         case ProductServer:
@@ -754,10 +769,18 @@ func (variant DockerfileVariant) dockerfile() string {
 }
 
 func (variant DockerfileVariant) releaseURL() string {
-	if variant.IsStaging {
-		return "http://packages-staging.couchbase.com/releases/" + variant.Version
+	if variant.Product == ProductServer {
+		if variant.IsStaging {
+			return "http://packages-staging.couchbase.com/releases/" + variant.Version
+		} else {
+			return "https://packages.couchbase.com/releases/" + variant.Version
+		}
 	} else {
-		return "https://packages.couchbase.com/releases/" + variant.Version
+		if variant.IsStaging {
+			return "http://packages-staging.couchbase.com/releases/" + string(variant.Product) + "/" + variant.Version
+		} else {
+			return "https://packages.couchbase.com/releases/" + string(variant.Product) + "/" + variant.Version
+		}
 	}
 }
 
@@ -821,6 +844,29 @@ func (variant DockerfileVariant) versionCustomization() (v VersionCustomization,
 
 func (variant DockerfileVariant) versionCustomizationKey() string {
 	return fmt.Sprintf("%s_%s_%s", variant.Product, variant.Edition, variant.Version)
+}
+
+// Generate the package filename for couchbase-edge-server:
+// eg: couchbase-edge-server_1.0.0_amd64.deb
+func (variant DockerfileVariant) edgeServerPackageFile(arch Arch) string {
+	return fmt.Sprintf(
+		"%v_%v_%v.deb",
+		variant.Product,
+		variant.Version,
+		arch,
+	)
+}
+
+// Generate the package filename for this variant:
+// eg: couchbase-columnar-enterprise-1.1.0-linux_amd64.deb
+func (variant DockerfileVariant) columnarPackageFile(arch Arch) string {
+	return fmt.Sprintf(
+		"%v-%v_%v-linux_%v.deb",
+		variant.Product,
+		variant.Edition,
+		variant.Version,
+		arch,
+	)
 }
 
 // exists returns whether the given file or directory exists or not
