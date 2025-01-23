@@ -2,7 +2,7 @@ FROM {{ .DOCKER_BASE_IMAGE }}
 
 LABEL maintainer="docker@couchbase.com"
 
-# Some ubuntu 22.04 and newer ubuntu have "ubuntu" as the default user, 1000:1000
+# Ubuntu 23.04 and newer have "ubuntu" as the default user, 1000:1000
 # Remove it before creating couchbase user as the default user.
 RUN set -x \
     && USER1000=$(getent passwd 1000 | cut -d: -f1) \
