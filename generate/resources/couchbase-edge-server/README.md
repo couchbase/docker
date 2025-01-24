@@ -1,6 +1,6 @@
 This README will guide you through running Couchbase Edge Server with Docker Containers.
 
-[Edge Server](#) is a lightweight self contained alternative to Sync Gateway that securely manages the synchronization of data between [Couchbase Lite](https://www.couchbase.com/products/lite), other Edge Server deployments and [Sync Gateway](https://www.couchbase.com/products/sync-gateway) designed to run in environments where a full cloud deployment is not optimal.
+[Edge Server](#) is a lightweight self contained alternative to Sync Gateway that securely manages the synchronization of data between [Couchbase Lite](https://www.couchbase.com/products/lite), other Edge Server deployments and [Sync Gateway](https://www.couchbase.com/products/sync-gateway).  It is designed to run in environments where a full cloud deployment is not optimal.
 
 For configuration references, or additional information about anything described below, visit the [Edge Server documentation site](#).
 
@@ -14,7 +14,7 @@ For additional questions and feedback, please visit the [Couchbase Forums](https
 $ docker run -d --name edge-server -p 59840:59840 couchbase/edge-server
 ```
 
-At this point you should be able to send a HTTP request to the Edge Server on port `59840` using curl:
+At this point you should be able to send an HTTP request to the Edge Server on port 59840 using curl:
 
 ```
 $ curl http://localhost:59840
@@ -25,10 +25,10 @@ This setup is minimal and launches with an empty database, though any changes wi
 
 ![Default Docker Layout](./diagrams/docker-nomount.png)
 
-Where the bin and lib directories contain the necessary executable data to run the server, `/etc/config.json` is the configuration file that was used at startup, and `/var/databases` stores the resulting database specified by the configuration.
+Under the `/opt/couchbase-edge-server` root, the bin and lib directories contain the necessary executable data to run the server, `etc/config.json` is the configuration file that was used at startup, and `var/databases` stores the resulting database specified by the configuration.
 
 ## Viewing Logs
-You can view the Sync Gateway logs via the `docker logs` command:
+You can view the Edge Server logs via the `docker logs` command:
 
 ```
 $ docker logs edge-server
@@ -54,17 +54,21 @@ The default configuration is useful for trying out the server, but a production 
 docker run -it --rm --entrypoint=bash -v $LOCALPATH/etc:/opt/couchbase-edge-server/etc couchbase/edge-server
 ```
 
-**Step - 3 :** Create a TLS key and certificate for use with the server.  Normally, this would be done through your provider and the instructions are out of scope for this README, but for testing and tutorial purposes the edge server can create some self signed certificates for you.  The following command will create a cert and key file in the mounted `etc` directory (the default working directory of the container)
+**Step - 3 :** Create a TLS key and certificate for use with the server.  Normally, this would be done through your provider and the instructions are out of scope for this README, but for testing and tutorial purposes the edge server can create a self signed certificate for you.  The following command will create a cert and key file in the mounted `etc` directory (the default working directory of the container):
 
 ```
-couchbase-edge-server --create-cert 127.0.0.1 cert.pem key.pem
+couchbase-edge-server --create-cert $HOSTNAME cert.pem key.pem
 ```
 
-**Step - 4 :** While still in the container, create a user for the server so that HTTP auth can be used.  This will create a user named alice..
+`$HOSTNAME` here is is hostname of the machine you plan to run it on.  
+
+> [!IMPORTANT]  
+> key.pem contains sensitive private key information inside of it and should be kept guarded.  Preferably it should have `600` permissions.
+
+**Step - 4 :** While still in the container, create a user for the server so that HTTP auth can be used.  This will create a user named "alice":
 
 ```
-echo "{}" > users.json
-couchbase-edge-server --add-user users.json alice
+couchbase-edge-server --add-user --create users.json alice
 ```
 
 This will prompt you twice for a password.  Pick whatever you like, I will refer to it as `$PASSWORD`.
@@ -99,3 +103,6 @@ docker run -d -p 59840:59840 -v $LOCALPATH/etc:/opt/couchbase-edge-server/etc -v
 Once started, you will notice that your `$LOCALPATH/databases` folder now has a database called `example.cblite2` inside of it, due to the `create: true` portion of the config.  Accordingly, if you have pre-existing databases that you want to use, you can include them in this folder and add the appropriate section to the `databases` section of the config.
 
 You'll also notice that now in order to access the REST API you will need to use HTTP basic auth as user `alice` with password `$PASSWORD`.  If you were to use a real TLS certificate instead, along with users applicable to your use case, then this would be a production deployment.
+
+> [!IMPORTANT]  
+> Now that the server is running, any changes to any of the configuration files or certificates will not take effect unless the server is restarted.
