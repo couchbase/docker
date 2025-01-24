@@ -60,7 +60,7 @@ docker run -it --rm --entrypoint=bash -v $LOCALPATH/etc:/opt/couchbase-edge-serv
 couchbase-edge-server --create-cert $HOSTNAME cert.pem key.pem
 ```
 
-`$HOSTNAME` here is is hostname of the machine you plan to run it on.  
+`$HOSTNAME` here is is hostname of the machine you plan to run it on, and it will be recorded in the `CN` of the resulting certificate. 
 
 > [!IMPORTANT]  
 > key.pem contains sensitive private key information inside of it and should be kept guarded.  Preferably it should have `600` permissions.
