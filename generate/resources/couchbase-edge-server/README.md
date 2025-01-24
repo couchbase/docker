@@ -1,16 +1,101 @@
-
 This README will guide you through running Couchbase Edge Server with Docker Containers.
 
-For configuration references or any additional information, please visit [Edge Server documentation site](https://docs.couchbase.com/edge-server/current/index.html).
+[Edge Server](#) is a lightweight self contained alternative to Sync Gateway that securely manages the synchronization of data between [Couchbase Lite](https://www.couchbase.com/products/lite), other Edge Server deployments and [Sync Gateway](https://www.couchbase.com/products/sync-gateway) designed to run in environments where a full cloud deployment is not optimal.
 
-# Running Edge Server with Docker
+For configuration references, or additional information about anything described below, visit the [Edge Server documentation site](#).
 
-1. Start Edge Server container with the default configuration file
+For additional questions and feedback, please visit the [Couchbase Forums](https://forums.couchbase.com/c/mobile/edge-server).
+
+# QuickStart with Edge Server and Docker
+
+## Running Edge Server with Docker
+
 ```
-$ docker run --name edge-server couchbase/edge-server
+$ docker run -d --name edge-server -p 59840:59840 couchbase/edge-server
 ```
 
-2. Start Edge Server container with an external configuration file
+At this point you should be able to send a HTTP request to the Edge Server on port `59840` using curl:
+
 ```
-$ docker run --name edge-server -d -v /tmp/my-edge-server.json:/tmp/my-edge-server.json couchbase/edge-server /tmp/my-edge-server.json
+$ curl http://localhost:59840
+{"couchdb":"Welcome","vendor":{"name":"CouchbaseEdgeServer","version":"0.0.0 ()"},"version":"CouchbaseEdgeServer/0.0.0 () CouchbaseLiteCore/1.0.0 (21)"}
 ```
+
+This setup is minimal and launches with an empty database, though any changes will be persisted.  Some key container paths are noted in the following diagram:
+
+![Default Docker Layout](./diagrams/docker-nomount.png)
+
+Where the bin and lib directories contain the necessary executable data to run the server, `/etc/config.json` is the configuration file that was used at startup, and `/var/databases` stores the resulting database specified by the configuration.
+
+## Viewing Logs
+You can view the Sync Gateway logs via the `docker logs` command:
+
+```
+$ docker logs edge-server
+2025-01-24T01:59:00.276Z        Using server TLS certificate: CN=127.0.0.1
+2025-01-24T01:59:00.277Z        Starting Couchbase Edge Server 0.0.0 ()
+2025-01-24T01:59:00.339Z        Sharing database https://localhost:59840/db/ from file /opt/couchbase-edge-server/var/databases/example.cblite2
+etc ...
+```
+
+# Customizing Edge Server configuration
+
+## Using a Docker volume
+
+The default configuration is useful for trying out the server, but a production deployment is going to be a little more involved in its creation.  A production deployment should contain persistent files that are outside of the container, as shown in the following diagram:
+
+![Production Docker](./diagrams/docker-mount.png)
+
+**Step - 1 :** Prepare a local working directory somewhere on your machine.  These steps will refer to your working directory as `$LOCALPATH`.  Inside this directory, create two folders called `etc` and `databases`.
+
+**Step - 2 :** Start the docker container in interactive mode with the previously created `etc` directory mounted.  This is accomplished by setting the entry point of the container to `bash`. 
+
+```
+docker run -it --rm --entrypoint=bash -v $LOCALPATH/etc:/opt/couchbase-edge-server/etc couchbase/edge-server
+```
+
+**Step - 3 :** Create a TLS key and certificate for use with the server.  Normally, this would be done through your provider and the instructions are out of scope for this README, but for testing and tutorial purposes the edge server can create some self signed certificates for you.  The following command will create a cert and key file in the mounted `etc` directory (the default working directory of the container)
+
+```
+couchbase-edge-server --create-cert 127.0.0.1 cert.pem key.pem
+```
+
+**Step - 4 :** While still in the container, create a user for the server so that HTTP auth can be used.  This will create a user named alice..
+
+```
+echo "{}" > users.json
+couchbase-edge-server --add-user users.json alice
+```
+
+This will prompt you twice for a password.  Pick whatever you like, I will refer to it as `$PASSWORD`.
+
+**Step - 5 :** After exiting the container, now it is time to write a config.json into the `$LOCALPATH/etc` folder that will use the items that were just created.  Create a config.json file with the following content:
+
+```json
+{
+    "$schema": "https://packages.couchbase.com/couchbase-edge-server/config_schema.json",
+    "https": {
+        "tls_cert_path": "/opt/couchbase-edge-server/etc/cert.pem",
+        "tls_key_path": "/opt/couchbase-edge-server/etc/key.pem"
+    },
+    "users": "/opt/couchbase-edge-server/etc/users.json",
+    "databases": {
+        "db": {
+            "path":  "/opt/couchbase-edge-server/var/databases/example.cblite2",
+            "create": true,                   
+            "enable_client_writes": true,
+            "enable_client_sync": true
+        }
+    }
+}
+```
+
+**Step - 6 :** Now all that's left to do is to start the container in server mode with both the `etc` and `databases` directories mounted.
+
+```
+docker run -d -p 59840:59840 -v $LOCALPATH/etc:/opt/couchbase-edge-server/etc -v $LOCALPATH/databases:/opt/couchbase-edge-server/var/databases couchbase/edge-server
+```
+
+Once started, you will notice that your `$LOCALPATH/databases` folder now has a database called `example.cblite2` inside of it, due to the `create: true` portion of the config.  Accordingly, if you have pre-existing databases that you want to use, you can include them in this folder and add the appropriate section to the `databases` section of the config.
+
+You'll also notice that now in order to access the REST API you will need to use HTTP basic auth as user `alice` with password `$PASSWORD`.  If you were to use a real TLS certificate instead, along with users applicable to your use case, then this would be a production deployment.

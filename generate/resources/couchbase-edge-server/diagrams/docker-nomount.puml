@@ -1,0 +1,11 @@
+@startuml "docker-nomount"
+
+!theme crt-amber
+
+package "Inside Container" {
+    component "/opt/couchbase-edge-server/{bin,lib}"
+    component "/opt/couchbase-edge-server/etc/config.json" as etcin
+    component "/opt/couchbase-edge-server/var/databases" as varin
+}
+
+@enduml
