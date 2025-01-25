@@ -46,7 +46,7 @@ The default configuration is useful for trying out the server, but a production 
 
 ![Production Docker](./diagrams/docker-mount.png)
 
-**Step - 1 :** Prepare a local working directory somewhere on your machine.  These steps will refer to your working directory as `$LOCALPATH`.  Inside this directory, create two folders called `etc` and `databases`.
+**Step - 1 :** Prepare a local working directory somewhere on your machine.  These steps will refer to your working directory as `$LOCALPATH`.  Inside this directory, create two folders called `etc` and `databases`.  The former will contain read only configuration data and the latter will store the databases that the server writes to.
 
 > [!CAUTION]
 > Read/write permissions on files using docker volume mounts can get tricky.  By default, all mounted files and folders in the `/opt/couchbase-edge-server` directory must be accessible by either UID 1000 or GID 1000.  **This needs to be accounted for in `$LOCALPATH`**.  Please see [Notes on File and Folder Permissions](#Notes-on-File-and-Folder-Permissions) for more information.
@@ -112,7 +112,7 @@ You'll also notice that now in order to access the REST API you will need to use
 
 ## Notes on File and Folder Permissions
 
-This section only applies to Linux based hosts of Docker.  If you are running Docker on non-Linux you can ignore it.
+This section only applies to Linux based hosts of Docker.  If you are running Docker on non-Linux you can ignore the following paragraphs and just ensure that the local directories you create are readable (`etc`) and read/writable (`databases`) by the user who is going to launch the container.
 
 All entries mounted in `etc` need to be readable be either UID 1000 or GID 1000, and all entries mounted in `var/databases` need to be readable *and* writable by either UID 1000 or GID 1000.  You can check your UID and any GID that you are a part of by running the `id` command.  
 
