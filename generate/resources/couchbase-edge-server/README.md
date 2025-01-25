@@ -33,7 +33,7 @@ You can view the Edge Server logs via the `docker logs` command:
 ```
 $ docker logs edge-server
 2025-01-24T01:59:00.276Z        Using server TLS certificate: CN=127.0.0.1
-2025-01-24T01:59:00.277Z        Starting Couchbase Edge Server 0.0.0 ()
+2025-01-24T01:59:00.277Z        Starting Couchbase Edge Server 1.0.0 (26; )
 2025-01-24T01:59:00.339Z        Sharing database https://localhost:59840/db/ from file /opt/couchbase-edge-server/var/databases/example.cblite2
 etc ...
 ```
@@ -112,7 +112,7 @@ You'll also notice that now in order to access the REST API you will need to use
 
 ## Notes on File and Folder Permissions
 
-This section only applies to Unix based hosts of Docker.  If you are running Docker on Windows you can ignore it.
+This section only applies to Linux based hosts of Docker.  If you are running Docker on non-Linux you can ignore it.
 
 All entries mounted in `etc` need to be readable be either UID 1000 or GID 1000, and all entries mounted in `var/databases` need to be readable *and* writable by either UID 1000 or GID 1000.  You can check your UID and any GID that you are a part of by running the `id` command.  
 
