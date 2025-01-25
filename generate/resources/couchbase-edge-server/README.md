@@ -18,10 +18,10 @@ At this point you should be able to send an HTTP request to the Edge Server on p
 
 ```
 $ curl http://localhost:59840
-{"couchdb":"Welcome","vendor":{"name":"CouchbaseEdgeServer","version":"0.0.0 ()"},"version":"CouchbaseEdgeServer/0.0.0 () CouchbaseLiteCore/1.0.0 (21)"}
+{"couchdb":"Welcome","vendor":{"name":"Couchbase Edge Server","version":"1.0.0 (26; )"},"version":"CouchbaseEdgeServer/1.0.0 (26; ) CouchbaseLiteCore/0.0.0-EE (770a516a19d505b7+219a0c1909febc53)"}
 ```
 
-This setup is minimal and launches with an empty database, though any changes will be persisted.  Some key container paths are noted in the following diagram:
+This setup is minimal and launches with an empty database that you are free to write to.  Some key container paths are noted in the following diagram:
 
 ![Default Docker Layout](./diagrams/docker-nomount.png)
 
