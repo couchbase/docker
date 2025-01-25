@@ -48,6 +48,9 @@ The default configuration is useful for trying out the server, but a production 
 
 **Step - 1 :** Prepare a local working directory somewhere on your machine.  These steps will refer to your working directory as `$LOCALPATH`.  Inside this directory, create two folders called `etc` and `databases`.
 
+> [!CAUTION]
+> Read/write permissions on files using docker volume mounts can get tricky.  By default, all mounted files and folders in the `/opt/couchbase-edge-server` directory must be accessible by either UID 1000 or GID 1000.  **This needs to be accounted for in `$LOCALPATH`**.  Please see [Notes on File and Folder Permissions](#Notes-on-File-and-Folder-Permissions) for more information.
+
 **Step - 2 :** Start the docker container in interactive mode with the previously created `etc` directory mounted.  This is accomplished by setting the entry point of the container to `bash`. 
 
 ```
@@ -106,3 +109,11 @@ You'll also notice that now in order to access the REST API you will need to use
 
 > [!IMPORTANT]  
 > Now that the server is running, any changes to any of the configuration files or certificates will not take effect unless the server is restarted.
+
+## Notes on File and Folder Permissions
+
+This section only applies to Unix based hosts of Docker.  If you are running Docker on Windows you can ignore it.
+
+All entries mounted in `etc` need to be readable be either UID 1000 or GID 1000, and all entries mounted in `var/databases` need to be readable *and* writable by either UID 1000 or GID 1000.  You can check your UID and any GID that you are a part of by running the `id` command.  
+
+If your UID is not 1000 and 1000 is not in your GID list, then you can change the default UID and/or GID that docker runs with by using the `--user`.  You can pass in just a custom UID with `--user $uid` or both a custom UID and GID with `--user $uid:$gid`.  The recommended course of action is to use a custom GID, so you can pick one of the GID entries from the result of your `id` output and pass it in with the UID 1000:  `--user 1000:$gid` where `$gid` is the aforementioned entry from your GID list.  After that, ensure that your local `etc` directory has at least `755` permissions, and your local `databases` directory has at least `775` permissions.
