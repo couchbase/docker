@@ -1,6 +1,6 @@
 This README will guide you through running Couchbase Edge Server with Docker Containers.
 
-[Edge Server](#) is a lightweight self contained alternative to Sync Gateway that securely manages the synchronization of data between [Couchbase Lite](https://www.couchbase.com/products/lite), other Edge Server deployments and [Sync Gateway](https://www.couchbase.com/products/sync-gateway).  It is designed to run in environments where a full cloud deployment is not optimal.
+[Edge Server](https://docs.couchbase.com/couchbase-edge-server/current/index.html) is a lightweight self contained alternative to Sync Gateway that securely manages the synchronization of data between [Couchbase Lite](https://www.couchbase.com/products/lite), other Edge Server deployments and [Sync Gateway](https://www.couchbase.com/products/sync-gateway).  It is designed to run in environments where a full cloud deployment is not optimal.
 
 For configuration references, or additional information about anything described below, visit the [Edge Server documentation site](#).
 
