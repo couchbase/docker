@@ -1,7 +1,7 @@
 
 This README will guide you through running Couchbase Edge Server with Docker Containers.
 
-For configuration references or any additional information, please visit [Edge Server documentation site](https://docs.couchbase.com/edge-server/current/index.html).
+For configuration references or any additional information, please visit [Edge Server documentation site](https://docs.couchbase.com/couchbase-edge-server/current/index.html).
 
 # Running Edge Server with Docker
 
