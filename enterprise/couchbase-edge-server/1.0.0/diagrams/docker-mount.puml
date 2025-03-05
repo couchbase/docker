@@ -1,0 +1,27 @@
+@startuml "docker-mount"
+
+!theme crt-amber
+
+package "Inside Container" {
+    component "/opt/couchbase-edge-server/{bin,lib}"
+    component "/opt/couchbase-edge-server/etc" as etcin
+    component "/opt/couchbase-edge-server/var/databases" as varin
+}
+
+package "Outside Container" {
+    component "$LOCALPATH/etc/" as etcout {
+        component "config.json"
+        component "users.json"
+        component "key.pem"
+        component "cert.pem"
+    }
+
+    component "$LOCALPATH/databases/" as varout {
+        component "[all databases go here]"
+    }
+}
+
+etcin -d-> etcout
+varin -d-> varout
+
+@enduml
