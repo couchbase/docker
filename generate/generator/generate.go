@@ -245,6 +245,9 @@ func generateOneDockerfile(
 		}
 	} else if product == ProductColumnar {
 		variant.Arches = append(variant.Arches, Archarm64)
+		if productVer < 10200 {
+			variant.TemplateOverrides["PROFILE"] = "columnar"
+		}
 	}
 
 	// Now generate the Dockerfile(s) based on the constructed variant
@@ -347,14 +350,14 @@ func generateDockerfile(variant DockerfileVariant) error {
 			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
 			"CB_MULTIARCH":      len(variant.Arches) > 1,
 		}
-        } else if variant.Product == ProductEdgeServer {
-                // template parameters
-                params = map[string]any{
+    } else if variant.Product == ProductEdgeServer {
+		// template parameters
+		params = map[string]any{
 			"CB_RELEASE_URL":      variant.releaseURL(),
 			"CB_PACKAGE_NAME":     variant.edgeServerPackageFile(Archgeneric),
 			"DOCKER_BASE_IMAGE":   variant.dockerBaseImage(),
-                }
-        }
+		}
+	}
 
 	// Apply any user-requested template overrides
 	for key, value := range variant.TemplateOverrides {
