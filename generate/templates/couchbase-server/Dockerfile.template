@@ -51,8 +51,8 @@ ARG CB_PACKAGE_NAME={{ .CB_PACKAGE_NAME }}
 {{- end }}
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
-# Create Couchbase user with UID 1000 (necessary to match default
-# boot2docker UID)
+# Create couchbase user/group with fixed UID/GID 1000 for consistency across environments
+# (modifies existing user/group in images which already have UID/GID 1000 - e.g. ubuntu:24.04)
 RUN set -x \
     && if getent group 1000 >/dev/null; then \
           existing_group=$(getent group 1000 | cut -d: -f1); \
