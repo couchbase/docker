@@ -659,9 +659,9 @@ func (variant DockerfileVariant) ubuntuVersion() string {
 		if err != nil {
 			log.Fatalf("Error creating version constraint 7.2.0--7.2.5: %v", err)
 		}
-		version7Dot6Dot0To7Dot6Dot2, err := version.NewConstraint(">= 7.6.0, <= 7.6.2")
+		version7Dot6Dot0To7Dot6Dot1, err := version.NewConstraint(">= 7.6.0, <= 7.6.1")
 		if err != nil {
-			log.Fatalf("Error creating version constraint 7.6.0--7.6.2: %v", err)
+			log.Fatalf("Error creating version constraint 7.6.0--7.6.1: %v", err)
 		}
 		if version4.Check(v1) {
 			return "14.04"
@@ -673,7 +673,7 @@ func (variant DockerfileVariant) ubuntuVersion() string {
 			return "20.04"
 		} else if version7Dot2Dot0To7Dot2Dot5.Check(v1) {
 			return "22.04"
-		} else if version7Dot6Dot0To7Dot6Dot2.Check(v1) {
+		} else if version7Dot6Dot0To7Dot6Dot1.Check(v1) {
 			return "22.04"
 		}
 		return "24.04"
