@@ -342,19 +342,19 @@ func generateDockerfile(variant DockerfileVariant) error {
 		// template parameters
 		params = map[string]any{
 			"CB_VERSION":        variant.VersionWithSubstitutions(),
-			"CB_PACKAGE":         variant.columnarPackageFile(Archgeneric),
-			"CB_RELEASE_URL":     variant.releaseURL(),
+			"CB_PACKAGE":        variant.columnarPackageFile(Archgeneric),
+			"CB_RELEASE_URL":    variant.releaseURL(),
 			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
 			"CB_MULTIARCH":      len(variant.Arches) > 1,
 		}
-        } else if variant.Product == ProductEdgeServer {
-                // template parameters
-                params = map[string]any{
-			"CB_RELEASE_URL":      variant.releaseURL(),
-			"CB_PACKAGE_NAME":     variant.edgeServerPackageFile(Archgeneric),
-			"DOCKER_BASE_IMAGE":   variant.dockerBaseImage(),
-                }
-        }
+	} else if variant.Product == ProductEdgeServer {
+		// template parameters
+		params = map[string]any{
+			"CB_RELEASE_URL":    variant.releaseURL(),
+			"CB_PACKAGE_NAME":   variant.edgeServerPackageFile(Archgeneric),
+			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
+		}
+	}
 
 	// Apply any user-requested template overrides
 	for key, value := range variant.TemplateOverrides {
@@ -576,8 +576,8 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 		} else {
 			return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 		}
-        case ProductEdgeServer:
-                return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
+	case ProductEdgeServer:
+		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	case ProductServer:
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	case ProductSandbox:
@@ -634,11 +634,11 @@ func (variant DockerfileVariant) ubuntuVersion() string {
 	switch variant.Product {
 	case ProductSyncGw:
 		return "22.04"
-        case ProductEdgeServer:
-                return "22.04"
-        case ProductColumnar:
-                return "22.04"
-        case ProductServer:
+	case ProductEdgeServer:
+		return "22.04"
+	case ProductColumnar:
+		return "22.04"
+	case ProductServer:
 		version4, err := version.NewConstraint(">= 4.0, < 5.0")
 		if err != nil {
 			log.Fatalf("Error creating version constraint 4.x: %v", err)
@@ -651,9 +651,17 @@ func (variant DockerfileVariant) ubuntuVersion() string {
 		if err != nil {
 			log.Fatalf("Error creating version constraint 6.0.1--6.6.1: %v", err)
 		}
-		version6Dot6Dot2To7Dot6Dot2, err := version.NewConstraint(">= 6.6.2, <= 7.6.2")
+		version6Dot6Dot2To7Dot1Dot6, err := version.NewConstraint(">= 6.6.2, <= 7.1.6")
 		if err != nil {
-			log.Fatalf("Error creating version constraint 6.6.2--7.6.2: %v", err)
+			log.Fatalf("Error creating version constraint 6.6.2--7.1.6: %v", err)
+		}
+		version7Dot2Dot0To7Dot2Dot5, err := version.NewConstraint(">= 7.2.0, <= 7.2.5")
+		if err != nil {
+			log.Fatalf("Error creating version constraint 7.2.0--7.2.5: %v", err)
+		}
+		version7Dot6Dot0To7Dot6Dot1, err := version.NewConstraint(">= 7.6.0, <= 7.6.1")
+		if err != nil {
+			log.Fatalf("Error creating version constraint 7.6.0--7.6.1: %v", err)
 		}
 		if version4.Check(v1) {
 			return "14.04"
@@ -661,10 +669,14 @@ func (variant DockerfileVariant) ubuntuVersion() string {
 			return "16.04"
 		} else if version6Dot0Dot1To6Dot6Dot1.Check(v1) {
 			return "18.04"
-                } else if version6Dot6Dot2To7Dot6Dot2.Check(v1) {
-                        return "20.04"
+		} else if version6Dot6Dot2To7Dot1Dot6.Check(v1) {
+			return "20.04"
+		} else if version7Dot2Dot0To7Dot2Dot5.Check(v1) {
+			return "22.04"
+		} else if version7Dot6Dot0To7Dot6Dot1.Check(v1) {
+			return "22.04"
 		}
-		return "22.04"
+		return "24.04"
 	}
 	return ""
 }
