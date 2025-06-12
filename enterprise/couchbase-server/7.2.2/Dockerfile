@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 LABEL maintainer="docker@couchbase.com"
 
@@ -18,20 +18,48 @@ ARG CLEANUP_COMMAND="rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
 RUN set -x \
     && ${UPDATE_COMMAND} \
     && apt-get install -y -q wget tzdata \
-      lsof lshw sysstat net-tools numactl bzip2 runit \
+      lsof lshw sysstat net-tools numactl bzip2 \
     && ${CLEANUP_COMMAND}
+
+# Add runit
+RUN set -x \
+    && apt-get update \
+    && apt-get install -y gcc git make \
+    && cd /usr/src \
+    && git clone https://github.com/couchbasedeps/runit \
+    && cd runit \
+    && git checkout edb631449d89d5b452a5992c6ffaa1e384fea697 \
+    && ./package/compile \
+    && cp ./command/* /sbin/ \
+    && apt-get purge -y --autoremove gcc git make \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /usr/src/runit
 
 ARG CB_RELEASE_URL=https://packages.couchbase.com/releases/7.2.2
 ARG CB_PACKAGE=couchbase-server-enterprise_7.2.2-linux_@@ARCH@@.deb
 ARG CB_SKIP_CHECKSUM=false
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
-# Create Couchbase user with UID 1000 (necessary to match default
-# boot2docker UID)
-RUN groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M
+# Create couchbase user/group with fixed UID/GID 1000 for consistency across environments
+# (modifies existing user/group in images which already have UID/GID 1000 - e.g. ubuntu:24.04)
+RUN set -x \
+    && if getent group 1000 >/dev/null; then \
+          existing_group=$(getent group 1000 | cut -d: -f1); \
+          groupmod --new-name couchbase "${existing_group}"; \
+       else \
+          groupadd -g 1000 couchbase; \
+       fi \
+    && if getent passwd 1000 >/dev/null; then \
+          existing_user=$(getent passwd 1000 | cut -d: -f1); \
+          usermod --login couchbase -d /home/couchbase -m -g couchbase -s /bin/sh "${existing_user}"; \
+       else \
+          useradd couchbase -u 1000 -g couchbase -M -s /bin/sh; \
+       fi
 
 # Install couchbase
-RUN set -x \
+RUN \
+    set -x \
+    && ${UPDATE_COMMAND} \
     && export INSTALL_DONT_START_SERVER=1 \
     && dpkgArch="$(dpkg --print-architecture)" \
     && case "${dpkgArch}" in \
@@ -45,7 +73,6 @@ RUN set -x \
     && CB_PACKAGE=$(echo ${CB_PACKAGE} | sed -e "s/@@ARCH@@/${dpkgArch}/") \
     && wget -N --no-verbose $CB_RELEASE_URL/$CB_PACKAGE \
     && { ${CB_SKIP_CHECKSUM} || echo "$CB_SHA256  $CB_PACKAGE" | sha256sum -c - ; } \
-    && ${UPDATE_COMMAND} \
     && apt-get install -y ./$CB_PACKAGE \
     && rm -f ./$CB_PACKAGE \
     && ${CLEANUP_COMMAND} \
@@ -54,13 +81,13 @@ RUN set -x \
 # Update VARIANT.txt to indicate we're running in our Docker image
 RUN sed -i -e '1 s/$/\/docker/' /opt/couchbase/VARIANT.txt
 
-# Add runit script for couchbase-server
+# Add runit service script for couchbase-server
 COPY scripts/run /etc/service/couchbase-server/run
 RUN set -x \
-    && mkdir -p /etc/runit/runsvdir/default/couchbase-server/supervise \
+    && mkdir -p /etc/service/couchbase-server/supervise \
     && chown -R couchbase:couchbase \
                 /etc/service \
-                /etc/runit/runsvdir/default/couchbase-server/supervise
+                /etc/service/couchbase-server/supervise
 
 # Add dummy script for commands invoked by cbcollect_info that
 # make no sense in a Docker container
@@ -88,7 +115,6 @@ RUN set -ex \
 COPY scripts/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["couchbase-server"]
-
 # 8091: Cluster administration REST/HTTP traffic, including Couchbase Web Console
 # 8092: Views and XDCR access
 # 8093: Query service REST/HTTP traffic
@@ -106,7 +132,7 @@ CMD ["couchbase-server"]
 # 18094: Search Service REST/HTTP traffic (SSL)
 # 18095: Analytics service REST/HTTP traffic (SSL)
 # 18096: Eventing service REST/HTTP traffic (SSL)
-# 18097: Backup service REST/HTTP traffic (SSL)
+# 18097: Backup service REST/HTTP traffic (SSL)
 EXPOSE 8091 \
        8092 \
        8093 \
