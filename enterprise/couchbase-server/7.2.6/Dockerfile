@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 LABEL maintainer="docker@couchbase.com"
 
@@ -40,9 +40,21 @@ ARG CB_PACKAGE=couchbase-server-enterprise_7.2.6-linux_@@ARCH@@.deb
 ARG CB_SKIP_CHECKSUM=false
 ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
-# Create Couchbase user with UID 1000 (necessary to match default
-# boot2docker UID)
-RUN groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M
+# Create couchbase user/group with fixed UID/GID 1000 for consistency across environments
+# (modifies existing user/group in images which already have UID/GID 1000 - e.g. ubuntu:24.04)
+RUN set -x \
+    && if getent group 1000 >/dev/null; then \
+          existing_group=$(getent group 1000 | cut -d: -f1); \
+          groupmod --new-name couchbase "${existing_group}"; \
+       else \
+          groupadd -g 1000 couchbase; \
+       fi \
+    && if getent passwd 1000 >/dev/null; then \
+          existing_user=$(getent passwd 1000 | cut -d: -f1); \
+          usermod --login couchbase -d /home/couchbase -m -g couchbase -s /bin/sh "${existing_user}"; \
+       else \
+          useradd couchbase -u 1000 -g couchbase -M -s /bin/sh; \
+       fi
 
 # Install couchbase
 RUN \
@@ -120,7 +132,7 @@ CMD ["couchbase-server"]
 # 18094: Search Service REST/HTTP traffic (SSL)
 # 18095: Analytics service REST/HTTP traffic (SSL)
 # 18096: Eventing service REST/HTTP traffic (SSL)
-# 18097: Backup service REST/HTTP traffic (SSL)
+# 18097: Backup service REST/HTTP traffic (SSL)
 EXPOSE 8091 \
        8092 \
        8093 \
