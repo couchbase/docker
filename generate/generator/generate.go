@@ -33,11 +33,12 @@ const (
 type Product string
 
 const (
-	ProductServer     = Product("couchbase-server")
-	ProductSyncGw     = Product("sync-gateway")
-	ProductSandbox    = Product("server-sandbox")
-	ProductColumnar   = Product("couchbase-columnar")
-	ProductEdgeServer = Product("couchbase-edge-server")
+	ProductServer              = Product("couchbase-server")
+	ProductSyncGw              = Product("sync-gateway")
+	ProductSandbox             = Product("server-sandbox")
+	ProductColumnar            = Product("couchbase-columnar")
+	ProductEdgeServer          = Product("couchbase-edge-server")
+	ProductEnterpriseAnalytics = Product("enterprise-analytics")
 )
 
 // These are Docker's idea of architecture names, eg. amd64, arm64.
@@ -97,6 +98,7 @@ func init() {
 		ProductSandbox,
 		ProductColumnar,
 		ProductEdgeServer,
+		ProductEnterpriseAnalytics,
 	}
 
 	// TODO: Read the version_customizations.json file into map
@@ -243,7 +245,7 @@ func generateOneDockerfile(
 			// 7.1.0 and higher also support arm64
 			variant.Arches = append(variant.Arches, Archarm64)
 		}
-	} else if product == ProductColumnar {
+	} else if product == ProductColumnar || product == ProductEnterpriseAnalytics {
 		variant.Arches = append(variant.Arches, Archarm64)
 	}
 
@@ -343,6 +345,15 @@ func generateDockerfile(variant DockerfileVariant) error {
 		params = map[string]any{
 			"CB_VERSION":        variant.VersionWithSubstitutions(),
 			"CB_PACKAGE":        variant.columnarPackageFile(Archgeneric),
+			"CB_RELEASE_URL":    variant.releaseURL(),
+			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
+			"CB_MULTIARCH":      len(variant.Arches) > 1,
+		}
+	} else if variant.Product == ProductEnterpriseAnalytics {
+		// template parameters
+		params = map[string]any{
+			"CB_VERSION":        variant.VersionWithSubstitutions(),
+			"CB_PACKAGE":        variant.enterpriseAnalyticsPackageFile(Archgeneric),
 			"CB_RELEASE_URL":    variant.releaseURL(),
 			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
 			"CB_MULTIARCH":      len(variant.Arches) > 1,
@@ -584,6 +595,8 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 		return fmt.Sprintf("couchbase/server:%s", variant.Version)
 	case ProductColumnar:
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
+	case ProductEnterpriseAnalytics:
+		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	default:
 		log.Printf("Failed %v", variant.Product)
 		panic("Unexpected product")
@@ -638,6 +651,8 @@ func (variant DockerfileVariant) ubuntuVersion() string {
 		return "22.04"
 	case ProductColumnar:
 		return "22.04"
+	case ProductEnterpriseAnalytics:
+		return "24.04"
 	case ProductServer:
 		version4, err := version.NewConstraint(">= 4.0, < 5.0")
 		if err != nil {
@@ -876,6 +891,17 @@ func (variant DockerfileVariant) columnarPackageFile(arch Arch) string {
 		"%v-%v_%v-linux_%v.deb",
 		variant.Product,
 		variant.Edition,
+		variant.Version,
+		arch,
+	)
+}
+
+// Generate the package filename for this variant:
+// eg: enterprise-analytics_2.0.0-linux_arm64.deb
+func (variant DockerfileVariant) enterpriseAnalyticsPackageFile(arch Arch) string {
+	return fmt.Sprintf(
+		"%v_%v-linux_%v.deb",
+		variant.Product,
 		variant.Version,
 		arch,
 	)
