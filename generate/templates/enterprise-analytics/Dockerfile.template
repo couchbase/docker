@@ -5,7 +5,6 @@ LABEL maintainer="docker@couchbase.com"
 ARG PKG_COMMAND="apt-get"
 ARG UPDATE_COMMAND="apt-get update -y -q"
 ARG CLEANUP_COMMAND="rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
-ARG PROFILE="enterprise-analytics"
 
 # Install dependencies:
 #  runit: for container process management
@@ -126,12 +125,6 @@ RUN set -ex \
 COPY scripts/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["couchbase-server"]
-
-# Add profile
-RUN set -x \
-    && mkdir -p /etc/couchbase.d \
-    && echo "${PROFILE}" >  /etc/couchbase.d/config_profile \
-    && chown -R couchbase:couchbase /etc/couchbase.d
 
 # 8091: Cluster administration REST/HTTP traffic, including Couchbase Web Console
 # 8092: Views and XDCR access
