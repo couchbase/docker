@@ -38,7 +38,7 @@ RUN set -x \
 
 ARG CB_RELEASE_URL={{ .CB_RELEASE_URL }}
 ARG CB_PACKAGE={{ .CB_PACKAGE }}
-ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
+ENV PATH=$PATH:/opt/enterprise-analytics/bin:/opt/enterprise-analytics/bin/tools:/opt/enterprise-analytics/bin/install
 
 # Create Couchbase user with UID 1000 (necessary to match default
 # boot2docker UID)
@@ -71,10 +71,10 @@ RUN \
     set -x \
     && ${UPDATE_COMMAND} \
 {{- if .FROM_LOCAL_INSTALL }}
-    && mkdir /opt/couchbase \
-    && cp -a /install/* /opt/couchbase \
-    && rm -rf /opt/couchbase/Dockerfile /opt/couchbase/scripts \
-    && chown -R couchbase:couchbase /opt/couchbase \
+    && mkdir /opt/enterprise-analytics \
+    && cp -a /install/* /opt/enterprise-analytics \
+    && rm -rf /opt/enterprise-analytics/Dockerfile /opt/enterprise-analytics/scripts \
+    && chown -R couchbase:couchbase /opt/enterprise-analytics \
 {{- else }}
     && export INSTALL_DONT_START_SERVER=1 \
 {{-   if .CB_MULTIARCH }}
@@ -89,15 +89,15 @@ RUN \
     && rm -rf /tmp/* /var/tmp/*
 
 # Update VARIANT.txt to indicate we're running in our Docker image
-RUN sed -i -e '1 s/$/\/docker/' /opt/couchbase/VARIANT.txt
+RUN sed -i -e '1 s/$/\/docker/' /opt/enterprise-analytics/VARIANT.txt
 
-# Add runit service script for couchbase-server
-COPY scripts/run /etc/service/couchbase-server/run
+# Add runit service script for enterprise-analytics
+COPY scripts/run /etc/service/enterprise-analytics/run
 RUN set -x \
-    && mkdir -p /etc/service/couchbase-server/supervise \
+    && mkdir -p /etc/service/enterprise-analytics/supervise \
     && chown -R couchbase:couchbase \
                 /etc/service \
-                /etc/service/couchbase-server/supervise
+                /etc/service/enterprise-analytics/supervise
 
 # Add dummy script for commands invoked by cbcollect_info that
 # make no sense in a Docker container
@@ -112,10 +112,10 @@ RUN set -x \
 # enough package that we don't need to do anything. If not, it
 # may be OK, but just fix it
 RUN set -ex \
-    &&  if [ ! -e /opt/couchbase/bin/curl.real ]; then \
+    &&  if [ ! -e /opt/enterprise-analytics/bin/curl.real ]; then \
             ${UPDATE_COMMAND}; \
             ${PKG_COMMAND} install -y chrpath; \
-            chrpath -r '$ORIGIN/../lib' /opt/couchbase/bin/curl; \
+            chrpath -r '$ORIGIN/../lib' /opt/enterprise-analytics/bin/curl; \
             ${PKG_COMMAND} remove -y chrpath; \
             ${PKG_COMMAND} autoremove -y; \
             ${CLEANUP_COMMAND}; \
@@ -124,7 +124,7 @@ RUN set -ex \
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["couchbase-server"]
+CMD ["enterprise-analytics"]
 
 # 8091: Cluster administration REST/HTTP traffic, including Couchbase Web Console
 # 8092: Views and XDCR access
@@ -163,4 +163,4 @@ EXPOSE 8091 \
        18096 \
        18097
 
-VOLUME /opt/couchbase/var
+VOLUME /opt/enterprise-analytics/var
