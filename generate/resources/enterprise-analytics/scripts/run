@@ -9,7 +9,7 @@ unset HOME
 exec 2>&1
 
 # Create directories where couchbase stores its data
-cd /opt/couchbase
+cd /opt/enterprise-analytics
 mkdir -p var/lib/couchbase \
          var/lib/couchbase/config \
          var/lib/couchbase/data \
@@ -17,7 +17,7 @@ mkdir -p var/lib/couchbase \
          var/lib/couchbase/logs \
          var/lib/moxi
 
-# If container is running as root, ensure contents of /opt/couchbase/var are
+# If container is running as root, ensure contents of /opt/enterprise-analytics/var are
 # owned by the 'couchbase' user. If running as 'couchbase', don't attempt to
 # claim ownership, but instead warn when encountering unwritable paths.
 # Skip "inbox" as it may contain readonly-mounted things like k8s certs.
@@ -27,12 +27,12 @@ if [ "${container_user}" = "root" ]; then
       xargs -0 chown --no-dereference couchbase:couchbase
 else
     find var -path var/lib/couchbase/inbox -prune -o \! -writable -print0 | \
-      xargs -0 -I {} echo "Warning: '/opt/couchbase/{}' is not writable by user '${container_user}'"
+      xargs -0 -I {} echo "Warning: '/opt/enterprise-analytics/{}' is not writable by user '${container_user}'"
 fi
 unset container_user
 
 if [ "$(whoami)" = "couchbase" ]; then
-  exec /opt/couchbase/bin/couchbase-server -- -kernel global_enable_tracing false -noinput
+  exec /opt/enterprise-analytics/bin/couchbase-server -- -kernel global_enable_tracing false -noinput
 else
-  exec chpst -ucouchbase  /opt/couchbase/bin/couchbase-server -- -kernel global_enable_tracing false -noinput
+  exec chpst -ucouchbase  /opt/enterprise-analytics/bin/couchbase-server -- -kernel global_enable_tracing false -noinput
 fi
