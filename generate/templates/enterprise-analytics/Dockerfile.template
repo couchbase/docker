@@ -56,13 +56,7 @@ RUN set -x \
           useradd couchbase -u 1000 -g couchbase -M -s /bin/sh; \
        fi
 
-# Install couchbase
-{{- if .SYSTEMD_WORKAROUND }}
-# Note: installers for Server prior to 7.0.0 used a method for detecting
-# if they were running in a container that caused installation to fail
-# in some environments, such as some GitHub actions. Below we patch the
-# detection mid-install to work around this issue.
-{{- end }}
+# Install enterprise-analytics
 {{- if .FROM_LOCAL_INSTALL }}
 RUN --mount=type=bind,source=.,target=/install \
 {{- else }}
@@ -107,19 +101,6 @@ RUN set -x \
     && ln -s dummy.sh /usr/local/bin/lvdisplay \
     && ln -s dummy.sh /usr/local/bin/vgdisplay \
     && ln -s dummy.sh /usr/local/bin/pvdisplay
-
-# Fix curl RPATH if necessary - if curl.real exists, it's a new
-# enough package that we don't need to do anything. If not, it
-# may be OK, but just fix it
-RUN set -ex \
-    &&  if [ ! -e /opt/enterprise-analytics/bin/curl.real ]; then \
-            ${UPDATE_COMMAND}; \
-            ${PKG_COMMAND} install -y chrpath; \
-            chrpath -r '$ORIGIN/../lib' /opt/enterprise-analytics/bin/curl; \
-            ${PKG_COMMAND} remove -y chrpath; \
-            ${PKG_COMMAND} autoremove -y; \
-            ${CLEANUP_COMMAND}; \
-        fi
 
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
