@@ -51,6 +51,13 @@ overridePort "ssl_proxy_upstream_port"
             exit 1
         fi
     fi
+
+    # Ensure running on sufficient hardware
+    if [ -e /opt/couchbase/bin/validate-cpu-microarchitecture.sh ]; then
+        source /opt/couchbase/bin/validate-cpu-microarchitecture.sh
+        validate_cpu_microarchitecture
+    fi
+
     echo "Starting Couchbase Server -- Web UI available at http://<ip>:$restPortValue"
     echo "and logs available in /opt/enterprise-analytics/var/lib/couchbase/logs"
     exec runsvdir -P /etc/service
