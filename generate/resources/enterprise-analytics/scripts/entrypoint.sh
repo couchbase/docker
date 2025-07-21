@@ -47,7 +47,7 @@ overridePort "ssl_proxy_upstream_port"
         if [ ! -w /opt/enterprise-analytics/var -o \
             $(find /opt/enterprise-analytics/var -maxdepth 0 -printf '%u') != "couchbase" ]; then
             echo "/opt/enterprise-analytics/var is not owned and writable by UID 1000"
-            echo "Aborting as Couchbase Server will likely not run"
+            echo "Aborting as Enterprise Analytics will likely not run"
             exit 1
         fi
     fi
@@ -58,7 +58,7 @@ overridePort "ssl_proxy_upstream_port"
         validate_cpu_microarchitecture
     fi
 
-    echo "Starting Couchbase Server -- Web UI available at http://<ip>:$restPortValue"
+    echo "Starting Enterprise Analytics -- Web UI available at http://<ip>:$restPortValue"
     echo "and logs available in /opt/enterprise-analytics/var/lib/couchbase/logs"
     exec runsvdir -P /etc/service
 }
