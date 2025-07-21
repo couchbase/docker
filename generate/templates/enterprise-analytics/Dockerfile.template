@@ -114,7 +114,6 @@ CMD ["enterprise-analytics"]
 # 11210: Data Service
 # 11280: Data Service prometheus
 # 18091: Cluster administration REST/HTTP traffic, including Web Console (SSL)
-# 18092: Views and XDCR access (SSL)
 # 18095: Enterprise Analytics service REST/HTTP traffic (SSL)
 EXPOSE 8091 \
        8095 \

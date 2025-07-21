@@ -2,7 +2,7 @@
 
 # If HOME is set, Erlang requires that it be a writable directory.
 # We can't guarantee that as it depends on which UID the container
-# is started as. The enterprise-analytics script will handle it being
+# is started as. The couchbase-server script will handle it being
 # unset, though, so do that for safety.
 unset HOME
 
@@ -32,7 +32,7 @@ fi
 unset container_user
 
 if [ "$(whoami)" = "couchbase" ]; then
-  exec /opt/enterprise-analytics/bin/enterprise-analytics -- -kernel global_enable_tracing false -noinput
+  exec /opt/enterprise-analytics/bin/couchbase-server -- -kernel global_enable_tracing false -noinput
 else
-  exec chpst -ucouchbase  /opt/enterprise-analytics/bin/enterprise-analytics -- -kernel global_enable_tracing false -noinput
+  exec chpst -ucouchbase  /opt/enterprise-analytics/bin/couchbase-server -- -kernel global_enable_tracing false -noinput
 fi
