@@ -74,7 +74,7 @@ After completing the setup, the console will load.
 ![Install Samples](https://d774lla4im6mk.cloudfront.net/ea/install-samples.png)
 
 ### 6. Execute a sample query
-You can now run a sample query to verify that everything is working correctly. For example, you can run the following SQL++ query to get a count of airlines in the `travel-sample`.
+You can now run a sample query to verify that everything is working correctly. For example, you can run the following SQL++ query to get a count of airports in the `travel-sample`.
 
 ![Install Samples](https://d774lla4im6mk.cloudfront.net/ea/sample-query.png)
 
