@@ -26,7 +26,7 @@ To quickly get started with Enterprise Analytics, you can run an instance using 
 These instructions assume the following:
 1. Docker installed and running
 1. No services running on ports `8091` or `8095`
-1. No existing containers named `ea` (or 's3mock' if using S3Mock)
+1. No existing containers named `ea` (or `s3mock` if using S3Mock)
 
 ### 1. Create a Docker network
 Create a user-defined network so the container can communicate with other services if needed.
@@ -53,30 +53,30 @@ docker run -d --name ea --network ea-net -p 8091:8091 -p 8095:8095 couchbase/ent
 
 Next, visit http://localhost:8091 on the host machine to see the Web Console to start Enterprise Analytics setup.
 
-![Setup splash screen](images/setup-initial.png)
+![Setup splash screen](https://d774lla4im6mk.cloudfront.net/ea/setup-initial.png)
 
 Walk through the Setup wizard
 
-![Setup wizard](images/setup-wizard.png)
+![Setup wizard](https://d774lla4im6mk.cloudfront.net/ea/setup-wizard.png)
 
 If using S3Mock, you can configure the blob storage settings to point to the S3Mock endpoint:
 
-![Memory & Blob Storage Configuration-1](images/blob-storage-config-1.png)
-![Memory & Blob Storage Configuration-2](images/blob-storage-config-2.png)
+![Memory & Blob Storage Configuration-1](https://d774lla4im6mk.cloudfront.net/ea/blob-storage-config-1.png)
+![Memory & Blob Storage Configuration-2](https://d774lla4im6mk.cloudfront.net/ea/blob-storage-config-2.png)
 
 Otherwise, configure the blob storage settings to point to your chosen backend (e.g. AWS S3 or another S3-compatible service/appliance).
 
 ### 5. Install travel-sample dataset
 
-After completing the setup, the Console will load.
+After completing the setup, the console will load.
 
-![Workbench](images/workbench.png)
-![Install Samples](images/install-samples.png)
+![Workbench](https://d774lla4im6mk.cloudfront.net/ea/workbench.png)
+![Install Samples](https://d774lla4im6mk.cloudfront.net/ea/install-samples.png)
 
 ### 6. Execute a sample query
-You can now run a sample query to verify that everything is working correctly. For example, you can run the following SQL++ query to a count of airlines airlines in the `travel-sample`
+You can now run a sample query to verify that everything is working correctly. For example, you can run the following SQL++ query to get a count of airlines in the `travel-sample`.
 
-![Install Samples](images/sample-query.png)
+![Install Samples](https://d774lla4im6mk.cloudfront.net/ea/sample-query.png)
 
 ### 7. Next steps
 
@@ -118,7 +118,8 @@ docker run -d --name s3mock --network ea-net -e initialBuckets=ea-storage adobe/
 Run the first node (`ea1`) with host and port mappings for the Couchbase Web Console and Analytics service.
 
 ```bash
-docker run -d --name ea1 --network ea-net     --hostname ea1.example.com --network-alias ea1.example.com     -p 8091:8091 -p 8095:8095     couchbase/enterprise-analytics:2.0.0
+docker run -d --name ea1 --network ea-net --hostname ea1.example.com --network-alias ea1.example.com \
+       -p 8091:8091 -p 8095:8095 couchbase/enterprise-analytics:2.0.0
 ```
 
 ### 4. Start the second Enterprise Analytics node
@@ -126,12 +127,13 @@ docker run -d --name ea1 --network ea-net     --hostname ea1.example.com --netwo
 Run the second node (`ea2`) with its own mapped ports so you can access it separately from `ea1`.
 
 ```bash
-docker run -d --name ea2 --network ea-net     --hostname ea2.example.com --network-alias ea2.example.com     -p 9091:8091 -p 9095:8095     couchbase/enterprise-analytics:2.0.0
+docker run -d --name ea2 --network ea-net --hostname ea2.example.com --network-alias ea2.example.com \
+       -p 9091:8091 -p 9095:8095 couchbase/enterprise-analytics:2.0.0
 ```
 
 ### 5. Wait for the nodes to be ready
 
-Before proceeding, ensure the nodes are fully booted and ready for configuration. You can check the status of each node by querying the `/pools/default` API. The API should return a `404` status with the text "unknown pool" once the server is ready to accept configuration.
+Before proceeding, ensure the nodes are fully booted and ready for configuration. You can check the status of each node by querying the `/pools/default` API. The API should return a `404` status with the text 'unknown pool' when the server is ready to accept configuration.
 
 e.g.
 ```
@@ -144,30 +146,33 @@ $ curl http://localhost:8091/pools/default
 Initialize `ea1` and `ea2` nodes with hostnames and admin credentials.
 
 ```bash
-curl -X POST http://localhost:8091/node/controller/rename \
-     -u Administrator:password \
-     -d hostname=ea1.example.com
-     
-curl -X POST http://localhost:9091/node/controller/rename \
-     -u Administrator:password \
-     -d hostname=ea2.example.com
+docker exec ea1 couchbase-cli node-init \
+  --cluster http://localhost:8091 \
+  --username Administrator \
+  --password password \
+  --node-init-hostname ea1.example.com
+
+docker exec ea2 couchbase-cli node-init \
+  --cluster http://localhost:8091 \
+  --username Administrator \
+  --password password \
+  --node-init-hostname ea2.example.com
 ```
 
 ### 7. Configure blob storage to use S3Mock
 
 * Configure Enterprise Analytics to use the S3Mock endpoint
-* Reduce the number of storage partitions to `32` to help offset the performance of S3Mock
 
 ```bash
-curl -X POST http://localhost:8091/settings/analytics \
-    -u Administrator:password \
-    -d blobStorageScheme=s3 \
-    -d blobStorageBucket=ea-storage \
-    -d blobStorageRegion=us-east-1 \
-    -d blobStorageEndpoint=http://s3mock:9090 \
-    -d blobStorageAnonymousAuth=true \
-    -d blobStoragePathStyleAddressing=true \
-    -d numStoragePartitions=32
+docker exec ea1 couchbase-cli setting-enterprise-analytics --cluster http://localhost:8091 \
+  --username Administrator --password password \
+  --set \
+  --scheme s3 \
+  --bucket ea-storage \
+  --region us-east-1 \
+  --endpoint http://s3mock:9090 \
+  --anonymous-auth 1 \
+  --path-style-addressing 1 
 ```
 
 ### 8. Initialize the cluster
@@ -175,11 +180,10 @@ curl -X POST http://localhost:8091/settings/analytics \
 Initialize the Enterprise Analytics cluster.
 
 ```bash
-curl -X POST http://localhost:8091/clusterInit \
-     -u Administrator:password \
-     -d username=Administrator \
-     -d password=password \
-     -d port=SAME
+docker exec ea1 couchbase-cli cluster-init \
+  --cluster http://localhost:8091 \
+  --cluster-username Administrator \
+  --cluster-password password
 ```
 
 ### 9. Add the second node (ea2) to the cluster (ea1)
@@ -187,16 +191,18 @@ curl -X POST http://localhost:8091/clusterInit \
 Add `ea2` to the cluster, and perform a rebalance.
 
 ```bash
-curl -X POST http://localhost:8091/controller/addNode \
-     -u Administrator:password \
-     -d hostname=ea2.example.com \
-     -d user=Administrator \
-     -d password=password
-     
-
-curl -X POST http://localhost:8091/controller/rebalance \
-     -u Administrator:password \
-     -d knownNodes="ns_1@ea1.example.com,ns_1@ea2.example.com"
+docker exec ea1 couchbase-cli server-add \
+  --cluster http://localhost:8091 \
+  --username Administrator \
+  --password password \
+  --server-add ea2.example.com \
+  --server-add-username Administrator \
+  --server-add-password password
+  
+docker exec ea1 couchbase-cli rebalance \
+  --cluster http://localhost:8091 \
+  --username Administrator \
+  --password password
 ```
 
 ### 10. Access the Web Console
