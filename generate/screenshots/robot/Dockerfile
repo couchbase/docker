@@ -1,11 +1,16 @@
-FROM playwright/chrome:playwright-1.42.1
+FROM mcr.microsoft.com/playwright:v1.56.0-jammy
 
-# Uncomment this to show playwright debug output
-# ENV DEBUG=pw:api
-
-COPY --chown=pwuser:pwuser src /src
-COPY entrypoint.sh /
+# Avoid redownloading bundled browsers
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 WORKDIR /src
+
+# Install deps
+COPY --chown=pwuser:pwuser package.json /src/package.json
+RUN npm install --no-audit --no-fund
+
+# Copy app and entrypoint
+COPY --chown=pwuser:pwuser src /src
+COPY entrypoint.sh /
 
 CMD [ "/entrypoint.sh" ]
