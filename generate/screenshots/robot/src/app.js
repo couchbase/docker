@@ -47,7 +47,7 @@ const playwright = require('playwright');
         width: 640,
         height: 800,
     });
-    await page.waitForSelector('css=[for="for-accept-terms"]', { waitFor: "visible" });
+    await page.waitForSelector('css=[for="for-accept-terms"]', { state: 'visible' });
     await page.evaluate(() => {
         document.getElementById('for-accept-terms').click() // can't get this to work with page.click
     });
@@ -78,7 +78,9 @@ const playwright = require('playwright');
         height: 400,
     });
     await page.waitForNavigation()
+    await page.waitForSelector('text=Load Sample Data', { state: 'visible' });
     await page.click('css=[for="bucketbeer-sample"]')
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({
         path: `/output/load-sample-data.jpg`,
         quality: 85,
