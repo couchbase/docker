@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   couchbase:
     image: couchbase/server:${TAG}

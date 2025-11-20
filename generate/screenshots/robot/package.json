@@ -1,0 +1,13 @@
+{
+  "name": "screenshots-robot",
+  "private": true,
+  "version": "0.0.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "playwright": "1.56.0"
+  }
+}
+
+
