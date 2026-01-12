@@ -41,6 +41,10 @@ overridePort "ssl_proxy_upstream_port"
 
 [[ "$1" == "enterprise-analytics" ]] && {
 
+    # Create the supervise directory in /run for runit
+    mkdir -p /run/enterprise-analytics/supervise
+    chown -R couchbase:couchbase /run/enterprise-analytics
+
     if [ "$(whoami)" = "couchbase" ]; then
         # Ensure that /opt/enterprise-analytics/var is owned by user 'couchbase' and
         # is writable
