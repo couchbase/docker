@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"path"
@@ -623,6 +624,11 @@ func (variant DockerfileVariant) systemdWorkaround() bool {
 
 func intVer(v string) (int64, error) {
 	baseVer := strings.Split(v, "-")[0]
+
+	if baseVer == "0.0.0" {
+		return math.MaxInt64, nil
+	}
+
 	sections := strings.Split(baseVer, ".")
 	intVerSection := func(n int) string {
 		return fmt.Sprintf("%02s", sections[n])
