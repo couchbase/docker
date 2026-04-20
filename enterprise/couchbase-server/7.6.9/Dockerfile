@@ -17,7 +17,7 @@ ARG CLEANUP_COMMAND="rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
 #  numactl: numactl
 RUN set -x \
     && ${UPDATE_COMMAND} \
-    && apt-get install -y -q wget tzdata \
+    && apt-get install -y -q wget tzdata tzdata-legacy \
       lsof lshw sysstat net-tools numactl bzip2 \
     && ${CLEANUP_COMMAND}
 
