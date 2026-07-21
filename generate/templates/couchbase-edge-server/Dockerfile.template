@@ -2,15 +2,21 @@ FROM {{ .DOCKER_BASE_IMAGE }}
 
 LABEL maintainer="docker@couchbase.com"
 
-# Ubuntu 23.04 and newer have "ubuntu" as the default user, 1000:1000
-# Remove it before creating couchbase user as the default user.
+# Create couchbase user/group with fixed UID/GID 1000 for consistency across environments
+# (modifies existing user/group in images which already have UID/GID 1000 - e.g. ubuntu:24.04)
 RUN set -x \
-    && USER1000=$(getent passwd 1000 | cut -d: -f1) \
-    && if [ -n "${USER1000}" ]; then userdel --remove ${USER1000}; fi \
-    && GROUP1000=$(getent group 1000 | cut -d: -f1) \
-    && if [ -n "${GROUP1000}" ]; then groupdel ${GROUP1000}; fi \
-    && groupadd --gid 1000 couchbase \
-    && useradd couchbase -u 1000 -g couchbase -M -d / -s /usr/bin/bash
+    && if getent group 1000 >/dev/null; then \
+          existing_group=$(getent group 1000 | cut -d: -f1); \
+          groupmod --new-name couchbase "${existing_group}"; \
+       else \
+          groupadd -g 1000 couchbase; \
+       fi \
+    && if getent passwd 1000 >/dev/null; then \
+          existing_user=$(getent passwd 1000 | cut -d: -f1); \
+          usermod --login couchbase -d /home/couchbase -m -g couchbase -s /bin/sh "${existing_user}"; \
+       else \
+          useradd couchbase -u 1000 -g couchbase -M -s /bin/sh; \
+       fi
 
 # Install dependencies:
 RUN set -x \
