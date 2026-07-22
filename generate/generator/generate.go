@@ -648,7 +648,7 @@ func (variant DockerfileVariant) ubuntuVersion() string {
 	case ProductSyncGw:
 		return "22.04"
 	case ProductEdgeServer:
-		return "22.04"
+		return "24.04"
 	case ProductColumnar:
 		return "22.04"
 	case ProductEnterpriseAnalytics:
