@@ -1,0 +1,21 @@
+services:
+  s3mock:
+    image: adobe/s3mock
+    environment:
+      - COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS=ea-storage
+  enterprise-analytics:
+    image: couchbase/enterprise-analytics:${TAG}
+  robot:
+    build: robot-ea
+    environment:
+      - EA_HOST=enterprise-analytics
+      - S3_ENDPOINT=http://s3mock:9090
+      - S3_BUCKET=ea-storage
+      - CLUSTER_NAME=ea-cluster
+      - EA_USER=Administrator
+      - EA_PASS=password
+    volumes:
+      - ./output:/output
+    depends_on:
+      - enterprise-analytics
+      - s3mock
