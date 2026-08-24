@@ -33,12 +33,13 @@ const (
 type Product string
 
 const (
-	ProductServer              = Product("couchbase-server")
-	ProductSyncGw              = Product("sync-gateway")
-	ProductSandbox             = Product("server-sandbox")
-	ProductColumnar            = Product("couchbase-columnar")
-	ProductEdgeServer          = Product("couchbase-edge-server")
-	ProductEnterpriseAnalytics = Product("enterprise-analytics")
+	ProductServer                 = Product("couchbase-server")
+	ProductSyncGw                 = Product("sync-gateway")
+	ProductSandbox                = Product("server-sandbox")
+	ProductColumnar               = Product("couchbase-columnar")
+	ProductEdgeServer             = Product("couchbase-edge-server")
+	ProductEnterpriseAnalytics    = Product("enterprise-analytics")
+	ProductEnterpriseAnalyticsUdf = Product("enterprise-analytics-udf")
 )
 
 // These are Docker's idea of architecture names, eg. amd64, arm64.
@@ -99,6 +100,7 @@ func init() {
 		ProductColumnar,
 		ProductEdgeServer,
 		ProductEnterpriseAnalytics,
+		ProductEnterpriseAnalyticsUdf,
 	}
 
 	// TODO: Read the version_customizations.json file into map
@@ -245,7 +247,7 @@ func generateOneDockerfile(
 			// 7.1.0 and higher also support arm64
 			variant.Arches = append(variant.Arches, Archarm64)
 		}
-	} else if product == ProductColumnar || product == ProductEnterpriseAnalytics {
+	} else if product == ProductColumnar || product == ProductEnterpriseAnalytics || product == ProductEnterpriseAnalyticsUdf {
 		variant.Arches = append(variant.Arches, Archarm64)
 	}
 
@@ -357,6 +359,12 @@ func generateDockerfile(variant DockerfileVariant) error {
 			"CB_RELEASE_URL":    variant.releaseURL(),
 			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
 			"CB_MULTIARCH":      len(variant.Arches) > 1,
+		}
+	} else if variant.Product == ProductEnterpriseAnalyticsUdf {
+		// No Couchbase package: the UDF executor image is built entirely
+		// from OS packages on a fixed base image, independent of version.
+		params = map[string]any{
+			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
 		}
 	} else if variant.Product == ProductEdgeServer {
 		// template parameters
@@ -597,6 +605,8 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	case ProductEnterpriseAnalytics:
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
+	case ProductEnterpriseAnalyticsUdf:
+		return "debian:12-slim"
 	default:
 		log.Printf("Failed %v", variant.Product)
 		panic("Unexpected product")

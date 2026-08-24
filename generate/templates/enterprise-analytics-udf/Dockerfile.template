@@ -1,0 +1,25 @@
+FROM {{ .DOCKER_BASE_IMAGE }}
+
+LABEL maintainer="docker@couchbase.com"
+
+ENV TZ=Etc/UTC
+ENV DEBIAN_FRONTEND=noninteractive
+COPY scripts/udf_listener.py .
+RUN apt update &&\
+    apt -y upgrade && \
+    apt -y install \
+        python3 \
+        python3-msgpack \
+        s6
+RUN set -eux; \
+    if ! getent group udf-executor >/dev/null 2>&1; then \
+        groupadd --system udf-executor; \
+    fi; \
+    if ! id -u udf-executor >/dev/null 2>&1; then \
+        useradd --system --home-dir /tmp --gid udf-executor udf-executor; \
+    fi; \
+    chown udf-executor:udf-executor /udf_listener.py; \
+    mkdir -p /var/run/udf-sockets; \
+    chown udf-executor:udf-executor /var/run/udf-sockets
+USER udf-executor:udf-executor
+ENTRYPOINT ["s6-ipcserver", "-v", "-a", "0700", "/var/run/udf-sockets/pyudf.socket", "python3", "/udf_listener.py"]
