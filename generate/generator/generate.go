@@ -41,6 +41,7 @@ const (
 	ProductEdgeServer             = Product("couchbase-edge-server")
 	ProductEnterpriseAnalytics    = Product("enterprise-analytics")
 	ProductEnterpriseAnalyticsUdf = Product("enterprise-analytics-udf")
+	ProductOperationalInsights    = Product("operational-insights")
 )
 
 // These are Docker's idea of architecture names, eg. amd64, arm64.
@@ -102,6 +103,7 @@ func init() {
 		ProductEdgeServer,
 		ProductEnterpriseAnalytics,
 		ProductEnterpriseAnalyticsUdf,
+		ProductOperationalInsights,
 	}
 
 	// TODO: Read the version_customizations.json file into map
@@ -253,7 +255,8 @@ func generateOneDockerfile(
 			// 7.1.0 and higher also support arm64
 			variant.Arches = append(variant.Arches, Archarm64)
 		}
-	} else if product == ProductColumnar || product == ProductEnterpriseAnalytics || product == ProductEnterpriseAnalyticsUdf {
+	} else if product == ProductColumnar || product == ProductEnterpriseAnalytics ||
+		product == ProductEnterpriseAnalyticsUdf || product == ProductOperationalInsights {
 		variant.Arches = append(variant.Arches, Archarm64)
 	}
 
@@ -357,11 +360,11 @@ func generateDockerfile(variant DockerfileVariant) error {
 			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
 			"CB_MULTIARCH":      len(variant.Arches) > 1,
 		}
-	} else if variant.Product == ProductEnterpriseAnalytics {
+	} else if variant.Product == ProductEnterpriseAnalytics || variant.Product == ProductOperationalInsights {
 		// template parameters
 		params = map[string]any{
 			"CB_VERSION":        variant.VersionWithSubstitutions(),
-			"CB_PACKAGE":        variant.enterpriseAnalyticsPackageFile(Archgeneric),
+			"CB_PACKAGE":        variant.analyticsPackageFile(Archgeneric),
 			"CB_RELEASE_URL":    variant.releaseURL(),
 			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
 			"CB_MULTIARCH":      len(variant.Arches) > 1,
@@ -609,7 +612,7 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 		return fmt.Sprintf("couchbase/server:%s", variant.Version)
 	case ProductColumnar:
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
-	case ProductEnterpriseAnalytics:
+	case ProductEnterpriseAnalytics, ProductOperationalInsights:
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	case ProductEnterpriseAnalyticsUdf:
 		return "debian:12-slim"
@@ -672,7 +675,7 @@ func (variant DockerfileVariant) ubuntuVersion() string {
 		return "24.04"
 	case ProductColumnar:
 		return "22.04"
-	case ProductEnterpriseAnalytics:
+	case ProductEnterpriseAnalytics, ProductOperationalInsights:
 		return "24.04"
 	case ProductServer:
 		version4, err := version.NewConstraint(">= 4.0, < 5.0")
@@ -917,9 +920,10 @@ func (variant DockerfileVariant) columnarPackageFile(arch Arch) string {
 	)
 }
 
-// Generate the package filename for this variant:
-// eg: enterprise-analytics_2.0.0-linux_arm64.deb
-func (variant DockerfileVariant) enterpriseAnalyticsPackageFile(arch Arch) string {
+// Generate the package filename for the analytics products, whose installers
+// are named <product>_<version>-linux_<arch>.deb -- no edition, unlike Server
+// and Columnar.  eg: operational-insights_3.0.0-linux_arm64.deb
+func (variant DockerfileVariant) analyticsPackageFile(arch Arch) string {
 	return fmt.Sprintf(
 		"%v_%v-linux_%v.deb",
 		variant.Product,
