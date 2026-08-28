@@ -42,6 +42,7 @@ const (
 	ProductEnterpriseAnalytics    = Product("enterprise-analytics")
 	ProductEnterpriseAnalyticsUdf = Product("enterprise-analytics-udf")
 	ProductOperationalInsights    = Product("operational-insights")
+	ProductOperationalInsightsUdf = Product("operational-insights-udf")
 )
 
 // These are Docker's idea of architecture names, eg. amd64, arm64.
@@ -104,6 +105,7 @@ func init() {
 		ProductEnterpriseAnalytics,
 		ProductEnterpriseAnalyticsUdf,
 		ProductOperationalInsights,
+		ProductOperationalInsightsUdf,
 	}
 
 	// TODO: Read the version_customizations.json file into map
@@ -226,6 +228,8 @@ func generateOneDockerfile(
 
 	productVer, _ := intVer(variant.Version)
 
+	// operational-insights-udf needs no equivalent floor: the UDF sidecar has
+	// existed for every version of Operational Insights.
 	if product == ProductEnterpriseAnalyticsUdf && productVer < 20300 {
 		log.Printf("Skipping generation for %v/%v/%v: enterprise-analytics-udf is only built for version 2.3.0 or higher", edition, product, ver)
 		return nil
@@ -256,7 +260,8 @@ func generateOneDockerfile(
 			variant.Arches = append(variant.Arches, Archarm64)
 		}
 	} else if product == ProductColumnar || product == ProductEnterpriseAnalytics ||
-		product == ProductEnterpriseAnalyticsUdf || product == ProductOperationalInsights {
+		product == ProductEnterpriseAnalyticsUdf || product == ProductOperationalInsights ||
+		product == ProductOperationalInsightsUdf {
 		variant.Arches = append(variant.Arches, Archarm64)
 	}
 
@@ -369,7 +374,8 @@ func generateDockerfile(variant DockerfileVariant) error {
 			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
 			"CB_MULTIARCH":      len(variant.Arches) > 1,
 		}
-	} else if variant.Product == ProductEnterpriseAnalyticsUdf {
+	} else if variant.Product == ProductEnterpriseAnalyticsUdf ||
+		variant.Product == ProductOperationalInsightsUdf {
 		// No Couchbase package: the UDF executor image is built entirely
 		// from OS packages on a fixed base image, independent of version.
 		params = map[string]any{
@@ -614,7 +620,7 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	case ProductEnterpriseAnalytics, ProductOperationalInsights:
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
-	case ProductEnterpriseAnalyticsUdf:
+	case ProductEnterpriseAnalyticsUdf, ProductOperationalInsightsUdf:
 		return "debian:12-slim"
 	default:
 		log.Printf("Failed %v", variant.Product)
