@@ -223,6 +223,11 @@ func generateOneDockerfile(
 
 	productVer, _ := intVer(variant.Version)
 
+	if product == ProductEnterpriseAnalyticsUdf && productVer < 20300 {
+		log.Printf("Skipping generation for %v/%v/%v: enterprise-analytics-udf is only built for version 2.3.0 or higher", edition, product, ver)
+		return nil
+	}
+
 	// Update according to special cases based on Product and Version.
 	if product == ProductServer {
 		if productVer == 70003 {
