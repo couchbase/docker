@@ -41,6 +41,10 @@ overridePort "ssl_proxy_upstream_port"
 
 [[ "$1" == "couchbase-server" ]] && {
 
+    # Create the supervise directory in /run for runit
+    mkdir -p /run/couchbase-server/supervise
+    chown -R couchbase:couchbase /run/couchbase-server
+
     if [ "$(whoami)" = "couchbase" ]; then
         # Ensure that /opt/couchbase/var is owned by user 'couchbase' and
         # is writable

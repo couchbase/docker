@@ -86,12 +86,11 @@ RUN \
 RUN sed -i -e '1 s/$/\/docker/' /opt/enterprise-analytics/VARIANT.txt
 
 # Add runit service script for enterprise-analytics
+# Note: the supervise directory is symlinked to /run to support read-only root filesystems
 COPY scripts/run /etc/service/enterprise-analytics/run
 RUN set -x \
-    && mkdir -p /etc/service/enterprise-analytics/supervise \
-    && chown -R couchbase:couchbase \
-                /etc/service \
-                /etc/service/enterprise-analytics/supervise
+    && ln -s /run/enterprise-analytics/supervise /etc/service/enterprise-analytics/supervise \
+    && chown -R couchbase:couchbase /etc/service
 
 # Add dummy script for commands invoked by cbcollect_info that
 # make no sense in a Docker container
@@ -124,4 +123,5 @@ EXPOSE 8091 \
        18091 \
        18095
 
-VOLUME /opt/enterprise-analytics/var
+# Data directories
+VOLUME /opt/enterprise-analytics/etc /opt/enterprise-analytics/var/lib/couchbase
