@@ -337,6 +337,7 @@ func generateDockerfile(variant DockerfileVariant) error {
 			"SYNC_GATEWAY_PACKAGE_URL":      variant.sgPackageUrl(),
 			"SYNC_GATEWAY_PACKAGE_FILENAME": variant.sgPackageFilename(),
 			"DOCKER_BASE_IMAGE":             variant.dockerBaseImage(),
+			"SYNC_GATEWAY_CONFIG":           variant.sgDefaultConfig(),
 		}
 
 	} else if variant.Product == ProductSandbox {
@@ -824,6 +825,20 @@ func (variant DockerfileVariant) releaseURL() string {
 			return "https://packages.couchbase.com/releases/" + string(variant.Product) + "/" + variant.Version
 		}
 	}
+}
+
+// sgDefaultConfig returns the config to use as the image's initial config,
+// relative to the examples directory installed by the Sync Gateway package.
+// serviceconfig.json is the config the packaged service starts with; since
+// 3.2.0 it bootstraps from a rosmar in-memory bucket store, so the container
+// runs standalone. Older versions fall back to the Couchbase Server example,
+// as their serviceconfig.json is still in the legacy format.
+func (variant DockerfileVariant) sgDefaultConfig() string {
+	productVer, _ := intVer(variant.Version)
+	if productVer >= 30200 {
+		return "serviceconfig.json"
+	}
+	return "startup_config/basic.json"
 }
 
 // Find the package URL for this Sync Gateway version
