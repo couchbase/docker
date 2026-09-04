@@ -40,6 +40,7 @@ const (
 	ProductEdgeServer             = Product("couchbase-edge-server")
 	ProductEnterpriseAnalytics    = Product("enterprise-analytics")
 	ProductEnterpriseAnalyticsUdf = Product("enterprise-analytics-udf")
+	ProductMongoDBCompatibility   = Product("couchbase-mongodb-compatibility")
 )
 
 // These are Docker's idea of architecture names, eg. amd64, arm64.
@@ -101,6 +102,7 @@ func init() {
 		ProductEdgeServer,
 		ProductEnterpriseAnalytics,
 		ProductEnterpriseAnalyticsUdf,
+		ProductMongoDBCompatibility,
 	}
 
 	// TODO: Read the version_customizations.json file into map
@@ -252,7 +254,7 @@ func generateOneDockerfile(
 			// 7.1.0 and higher also support arm64
 			variant.Arches = append(variant.Arches, Archarm64)
 		}
-	} else if product == ProductColumnar || product == ProductEnterpriseAnalytics || product == ProductEnterpriseAnalyticsUdf {
+	} else if product == ProductColumnar || product == ProductEnterpriseAnalytics || product == ProductEnterpriseAnalyticsUdf || product == ProductMongoDBCompatibility {
 		variant.Arches = append(variant.Arches, Archarm64)
 	}
 
@@ -377,6 +379,13 @@ func generateDockerfile(variant DockerfileVariant) error {
 			"CB_RELEASE_URL":    variant.releaseURL(),
 			"CB_PACKAGE_NAME":   variant.edgeServerPackageFile(Archgeneric),
 			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
+		}
+	} else if variant.Product == ProductMongoDBCompatibility {
+		params = map[string]any{
+			"CB_VERSION":        variant.VersionWithSubstitutions(),
+			"CB_PACKAGE":        variant.mongoCompatibilityPackageFile(Archgeneric),
+			"DOCKER_BASE_IMAGE": variant.dockerBaseImage(),
+			"CB_MULTIARCH":      len(variant.Arches) > 1,
 		}
 	}
 
@@ -611,6 +620,8 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 	case ProductEnterpriseAnalytics:
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	case ProductEnterpriseAnalyticsUdf:
+		return "debian:12-slim"
+	case ProductMongoDBCompatibility:
 		return "debian:12-slim"
 	default:
 		log.Printf("Failed %v", variant.Product)
@@ -908,6 +919,16 @@ func (variant DockerfileVariant) columnarPackageFile(arch Arch) string {
 		variant.Edition,
 		variant.Version,
 		arch,
+	)
+}
+
+// Generate the package filename for this variant:
+// eg: cbmcd-arm64_1.0.0
+func (variant DockerfileVariant) mongoCompatibilityPackageFile(arch Arch) string {
+	return fmt.Sprintf(
+		"cbmcd-%v_%v",
+		arch,
+		variant.Version,
 	)
 }
 

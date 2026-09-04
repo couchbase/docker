@@ -1,0 +1,43 @@
+FROM {{ .DOCKER_BASE_IMAGE }}
+
+LABEL maintainer="docker@couchbase.com"
+
+# Create couchbase user/group with fixed UID/GID 1000 for consistency across environments
+# (modifies existing user/group in images which already have UID/GID 1000)
+RUN set -x \
+    && if getent group 1000 >/dev/null; then \
+          existing_group=$(getent group 1000 | cut -d: -f1); \
+          groupmod --new-name couchbase "${existing_group}"; \
+       else \
+          groupadd -g 1000 couchbase; \
+       fi \
+    && if getent passwd 1000 >/dev/null; then \
+          existing_user=$(getent passwd 1000 | cut -d: -f1); \
+          usermod --login couchbase -d /home/couchbase -m -g couchbase -s /bin/sh "${existing_user}"; \
+       else \
+          useradd couchbase -u 1000 -g couchbase -M -s /bin/sh; \
+       fi
+
+# curl + ca-certificates: for downloading the cbmcd binary below over HTTPS
+RUN set -x \
+    && apt-get update -y -q \
+    && apt-get install -y -q --no-install-recommends curl ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG CB_VERSION={{ .CB_VERSION }}
+ARG CB_RELEASE_URL=https://packages.couchbase.com/releases/rosetta-mdb/${CB_VERSION}
+ARG CB_PACKAGE={{ .CB_PACKAGE }}
+RUN set -x \
+    && CB_BINARY="$(echo "${CB_PACKAGE}" | cut -d'-' -f1)" \
+    && curl --fail -o "/usr/local/bin/${CB_BINARY}" \
+         "${CB_RELEASE_URL}/${CB_PACKAGE}" \
+    && chmod +x "/usr/local/bin/${CB_BINARY}"
+
+USER couchbase
+
+ENTRYPOINT ["cbmcd"]
+
+# --mongo-port (default 27017): the MongoDB wire-protocol port cbmcd serves.
+# All other configuration is via CLI flags / ROSETTA_* env vars - see --help.
+EXPOSE 27017
