@@ -623,7 +623,7 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 	case ProductEnterpriseAnalyticsUdf:
 		return "debian:12-slim"
 	case ProductMongoDBCompatibility:
-		return "dhi/debian-base:12"
+		return "dhi.io/debian-base:12"
 	default:
 		log.Printf("Failed %v", variant.Product)
 		panic("Unexpected product")
