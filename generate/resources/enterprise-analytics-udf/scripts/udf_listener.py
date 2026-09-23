@@ -104,10 +104,6 @@ class Wrapper(object):
     def read_header(self, readbuf):
         self.sz, self.mid, self.rmid, self.flag = unpack(
             "!iqqb", readbuf[0:REAL_HEADER_SZ])
-        # self.sz is dlen + HEADER_SZ (the length-prefix field's own value),
-        # not the full frame length; add back the length-prefix's own size so
-        # every comparison against self.sz below measures from buffer offset 0.
-        self.sz += REAL_HEADER_SZ - HEADER_SZ
         return True
 
     def write_header(self, response_buf, dlen):
