@@ -26,7 +26,7 @@ To quickly get started with Operational Insights, you can run an instance using 
 These instructions assume the following:
 1. Docker installed and running
 1. No services running on ports `8091` or `8095`
-1. No existing containers named `oi` (or `s3mock` if using S3Mock)
+1. No existing containers named `oi` (or `versitygw` if using Versity S3 Gateway)
 
 ### 1. Create a Docker network
 Create a user-defined network so the container can communicate with other services if needed.
@@ -35,12 +35,20 @@ Create a user-defined network so the container can communicate with other servic
 docker network create oi-net
 ```
 
-### 2. Configure S3Mock (optional)
-If you want to use S3Mock as the blob storage backend, you can start the S3Mock container first. Otherwise, you need to configure Operational Insights to use a different blob storage backend.
+### 2. Start Versity S3 Gateway (optional)
+If you don't have an S3-compatible object store to use as the blob storage backend, you can run [Versity S3 Gateway](https://github.com/versity/versitygw) locally. Otherwise, you need to configure Operational Insights to use a different blob storage backend.
+
+Start the gateway, then create a bucket called `oi-storage`:
 
 ```bash
-docker run -d --name s3mock --network oi-net -e initialBuckets=oi-storage adobe/s3mock
+docker run -d --name versitygw --network oi-net -v oi-s3-data:/data \
+       versity/versitygw --access oiadmin --secret oipassword posix /data
+
+docker exec versitygw versitygw admin --access oiadmin --secret oipassword \
+       --endpoint-url http://localhost:7070 create-bucket --bucket oi-storage --owner oiadmin
 ```
+
+The `oi-s3-data` named volume keeps the stored data across container restarts. Use a named volume rather than a host directory: on macOS, a bind-mounted folder needs extra gateway options and treats object keys as case-insensitive. Replace `oiadmin` / `oipassword` with credentials of your own.
 
 ### 3. Start the Operational Insights container
 Run the Operational Insights container with host and port mappings for the Couchbase Web Console and Operational Insights service, exposed on ports `8091` and `8095` on the host.
@@ -59,10 +67,18 @@ Walk through the Setup wizard
 
 ![Setup wizard](https://d774lla4im6mk.cloudfront.net/ea/setup-wizard.png)
 
-If using S3Mock, you can configure the blob storage settings to point to the S3Mock endpoint:
+If using Versity S3 Gateway, configure the blob storage settings in the wizard as follows:
 
-![Memory & Blob Storage Configuration-1](https://d774lla4im6mk.cloudfront.net/ea/blob-storage-config-1.png)
-![Memory & Blob Storage Configuration-2](https://d774lla4im6mk.cloudfront.net/ea/blob-storage-config-2.png)
+| Setting                   | Value                    |
+|---------------------------|--------------------------|
+| Storage Scheme            | S3-Compatible Storage    |
+| Storage Endpoint          | `http://versitygw:7070`  |
+| Bucket Name               | `oi-storage`             |
+| Bucket Region             | `us-east-1`              |
+| Authentication            | Static Credentials       |
+| Access Key ID             | `oiadmin`                |
+| Secret Access Key         | `oipassword`             |
+| Use Path-Style Addressing | Enabled                  |
 
 Otherwise, configure the blob storage settings to point to your chosen backend (e.g. AWS S3 or another S3-compatible service/appliance).
 
@@ -84,17 +100,17 @@ You can now explore the features of Operational Insights, such as creating views
 
 See the [Operational Insights documentation](https://docs.couchbase.com/enterprise-analytics/current/index.html) for more information.
 
-Alternatively, you can follow the instructions below to set up a multi-node cluster using S3Mock as the blob storage backend.
+Alternatively, you can follow the instructions below to set up a multi-node cluster using Versity S3 Gateway as the blob storage backend.
 
-## Running a Two-Node Operational Insights Cluster with S3Mock
+## Running a Two-Node Operational Insights Cluster with Versity S3 Gateway
 
-The following example shows how to start a two-node Operational Insights cluster, using [Adobe S3Mock](https://github.com/adobe/S3Mock) as the blob storage backend.
+The following example shows how to start a two-node Operational Insights cluster, using [Versity S3 Gateway](https://github.com/versity/versitygw) as the blob storage backend.
 
 ### Prerequisites
 These instructions assume the following:
 
 1. Docker installed and running
-1. No existing containers named `s3mock`, `oi1`, or `oi2`
+1. No existing containers named `versitygw`, `oi1`, or `oi2`
 1. No services running on ports `8091`, `8095`, `9091`, or `9095`
 
 ### 1. Create a Docker network
@@ -105,12 +121,16 @@ Create a user-defined network so the containers can talk to each other by name.
 docker network create oi-net
 ```
 
-### 2. Start the Adobe S3Mock service
+### 2. Start Versity S3 Gateway
 
-Start the S3Mock container with an initial bucket called `oi-storage`.
+Start the gateway with its data on the `oi-s3-data` named volume, then create a bucket called `oi-storage`.
 
 ```bash
-docker run -d --name s3mock --network oi-net -e initialBuckets=oi-storage adobe/s3mock
+docker run -d --name versitygw --network oi-net -v oi-s3-data:/data \
+       versity/versitygw --access oiadmin --secret oipassword posix /data
+
+docker exec versitygw versitygw admin --access oiadmin --secret oipassword \
+       --endpoint-url http://localhost:7070 create-bucket --bucket oi-storage --owner oiadmin
 ```
 
 ### 3. Start the first Operational Insights node
@@ -159,21 +179,22 @@ docker exec oi2 couchbase-cli node-init \
   --node-init-hostname oi2.example.com
 ```
 
-### 7. Configure blob storage to use S3Mock
+### 7. Configure blob storage to use Versity S3 Gateway
 
-* Configure Operational Insights to use the S3Mock endpoint
+* Configure Operational Insights to use the gateway endpoint and its credentials
 
 ```bash
-docker exec oi1 couchbase-cli setting-enterprise-analytics --cluster http://localhost:8091 \
-  --username Administrator --password password \
-  --set \
-  --scheme s3 \
-  --bucket oi-storage \
-  --region us-east-1 \
-  --endpoint http://s3mock:9090 \
-  --anonymous-auth 1 \
-  --path-style-addressing 1 
+docker exec oi1 curl -s -X POST http://localhost:8091/settings/analytics \
+  -d blobStorageScheme=s3 \
+  -d blobStorageBucket=oi-storage \
+  -d blobStorageRegion=us-east-1 \
+  -d blobStorageEndpoint=http://versitygw:7070 \
+  -d blobStoragePathStyleAddressing=true \
+  -d blobStorageAccessKeyId=oiadmin \
+  -d blobStorageSecretAccessKey=oipassword
 ```
+
+The response echoes the settings back, with the secret masked, together with a warning that the HTTP endpoint is insecure. That is expected for a local gateway; use an HTTPS endpoint for anything beyond development.
 
 ### 8. Initialize the cluster
 
