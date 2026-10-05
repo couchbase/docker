@@ -42,13 +42,13 @@ Start the gateway, then create a bucket called `insights-storage`:
 
 ```bash
 docker run -d --name versitygw --network insights-net -v insights-s3-data:/data \
-       versity/versitygw --access insightsadmin --secret insightspassword posix /data
+       versity/versitygw --access Administrator --secret password posix /data
 
-docker exec versitygw versitygw admin --access insightsadmin --secret insightspassword \
-       --endpoint-url http://localhost:7070 create-bucket --bucket insights-storage --owner insightsadmin
+docker exec versitygw versitygw admin --access Administrator --secret password \
+       --endpoint-url http://localhost:7070 create-bucket --bucket insights-storage --owner Administrator
 ```
 
-The `insights-s3-data` named volume keeps the stored data across container restarts. Use a named volume rather than a host directory: on macOS, a bind-mounted folder needs extra gateway options and treats object keys as case-insensitive. Replace `insightsadmin` / `insightspassword` with credentials of your own.
+The `insights-s3-data` named volume keeps the stored data across container restarts. Use a named volume rather than a host directory: on macOS, a bind-mounted folder needs extra gateway options and treats object keys as case-insensitive. Replace `Administrator` / `password` with credentials of your own.
 
 ### 3. Start the Operational Insights container
 Run the Operational Insights container with host and port mappings for the Couchbase Web Console and Operational Insights service, exposed on ports `8091` and `8095` on the host.
@@ -76,8 +76,8 @@ If using Versity S3 Gateway, configure the blob storage settings in the wizard a
 | Bucket Name               | `insights-storage`      |
 | Bucket Region             | `us-east-1`             |
 | Authentication            | Static Credentials      |
-| Access Key ID             | `insightsadmin`         |
-| Secret Access Key         | `insightspassword`      |
+| Access Key ID             | `Administrator`         |
+| Secret Access Key         | `password`              |
 | Use Path-Style Addressing | Enabled                 |
 
 Otherwise, configure the blob storage settings to point to your chosen backend (e.g. AWS S3 or another S3-compatible service/appliance).
@@ -127,10 +127,10 @@ Start the gateway with its data on the `insights-s3-data` named volume, then cre
 
 ```bash
 docker run -d --name versitygw --network insights-net -v insights-s3-data:/data \
-       versity/versitygw --access insightsadmin --secret insightspassword posix /data
+       versity/versitygw --access Administrator --secret password posix /data
 
-docker exec versitygw versitygw admin --access insightsadmin --secret insightspassword \
-       --endpoint-url http://localhost:7070 create-bucket --bucket insights-storage --owner insightsadmin
+docker exec versitygw versitygw admin --access Administrator --secret password \
+       --endpoint-url http://localhost:7070 create-bucket --bucket insights-storage --owner Administrator
 ```
 
 ### 3. Start the first Operational Insights node
@@ -190,8 +190,8 @@ docker exec insights1 curl -s -X POST http://localhost:8091/settings/analytics \
   -d blobStorageRegion=us-east-1 \
   -d blobStorageEndpoint=http://versitygw:7070 \
   -d blobStoragePathStyleAddressing=true \
-  -d blobStorageAccessKeyId=insightsadmin \
-  -d blobStorageSecretAccessKey=insightspassword
+  -d blobStorageAccessKeyId=Administrator \
+  -d blobStorageSecretAccessKey=password
 ```
 
 The response echoes the settings back, with the secret masked, together with a warning that the HTTP endpoint is insecure. That is expected for a local gateway; use an HTTPS endpoint for anything beyond development.
