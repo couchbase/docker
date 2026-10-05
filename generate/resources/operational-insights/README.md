@@ -26,35 +26,35 @@ To quickly get started with Operational Insights, you can run an instance using 
 These instructions assume the following:
 1. Docker installed and running
 1. No services running on ports `8091` or `8095`
-1. No existing containers named `oi` (or `versitygw` if using Versity S3 Gateway)
+1. No existing containers named `insights` (or `versitygw` if using Versity S3 Gateway)
 
 ### 1. Create a Docker network
 Create a user-defined network so the container can communicate with other services if needed.
 
 ```bash
-docker network create oi-net
+docker network create insights-net
 ```
 
 ### 2. Start Versity S3 Gateway (optional)
 If you don't have an S3-compatible object store to use as the blob storage backend, you can run [Versity S3 Gateway](https://github.com/versity/versitygw) locally. Otherwise, you need to configure Operational Insights to use a different blob storage backend.
 
-Start the gateway, then create a bucket called `oi-storage`:
+Start the gateway, then create a bucket called `insights-storage`:
 
 ```bash
-docker run -d --name versitygw --network oi-net -v oi-s3-data:/data \
-       versity/versitygw --access oiadmin --secret oipassword posix /data
+docker run -d --name versitygw --network insights-net -v insights-s3-data:/data \
+       versity/versitygw --access insightsadmin --secret insightspassword posix /data
 
-docker exec versitygw versitygw admin --access oiadmin --secret oipassword \
-       --endpoint-url http://localhost:7070 create-bucket --bucket oi-storage --owner oiadmin
+docker exec versitygw versitygw admin --access insightsadmin --secret insightspassword \
+       --endpoint-url http://localhost:7070 create-bucket --bucket insights-storage --owner insightsadmin
 ```
 
-The `oi-s3-data` named volume keeps the stored data across container restarts. Use a named volume rather than a host directory: on macOS, a bind-mounted folder needs extra gateway options and treats object keys as case-insensitive. Replace `oiadmin` / `oipassword` with credentials of your own.
+The `insights-s3-data` named volume keeps the stored data across container restarts. Use a named volume rather than a host directory: on macOS, a bind-mounted folder needs extra gateway options and treats object keys as case-insensitive. Replace `insightsadmin` / `insightspassword` with credentials of your own.
 
 ### 3. Start the Operational Insights container
 Run the Operational Insights container with host and port mappings for the Couchbase Web Console and Operational Insights service, exposed on ports `8091` and `8095` on the host.
 
 ```bash
-docker run -d --name oi --network oi-net -p 8091:8091 -p 8095:8095 couchbase/operational-insights:3.0.0
+docker run -d --name insights --network insights-net -p 8091:8091 -p 8095:8095 couchbase/operational-insights:3.0.0
 ```
 
 ### 4. Initialize the cluster
@@ -69,16 +69,16 @@ Walk through the Setup wizard
 
 If using Versity S3 Gateway, configure the blob storage settings in the wizard as follows:
 
-| Setting                   | Value                    |
-|---------------------------|--------------------------|
-| Storage Scheme            | S3-Compatible Storage    |
-| Storage Endpoint          | `http://versitygw:7070`  |
-| Bucket Name               | `oi-storage`             |
-| Bucket Region             | `us-east-1`              |
-| Authentication            | Static Credentials       |
-| Access Key ID             | `oiadmin`                |
-| Secret Access Key         | `oipassword`             |
-| Use Path-Style Addressing | Enabled                  |
+| Setting                   | Value                   |
+|---------------------------|-------------------------|
+| Storage Scheme            | S3-Compatible Storage   |
+| Storage Endpoint          | `http://versitygw:7070` |
+| Bucket Name               | `insights-storage`      |
+| Bucket Region             | `us-east-1`             |
+| Authentication            | Static Credentials      |
+| Access Key ID             | `insightsadmin`         |
+| Secret Access Key         | `insightspassword`      |
+| Use Path-Style Addressing | Enabled                 |
 
 Otherwise, configure the blob storage settings to point to your chosen backend (e.g. AWS S3 or another S3-compatible service/appliance).
 
@@ -98,7 +98,7 @@ You can now run a sample query to verify that everything is working correctly. F
 
 You can now explore the features of Operational Insights, such as creating views, running more complex queries, and integrating with other data sources.
 
-See the [Operational Insights documentation](https://docs.couchbase.com/enterprise-analytics/current/index.html) for more information.
+See the [Operational Insights documentation](https://docs.couchbase.com/operational-insights/current/intro/intro.html) for more information.
 
 Alternatively, you can follow the instructions below to set up a multi-node cluster using Versity S3 Gateway as the blob storage backend.
 
@@ -110,7 +110,7 @@ The following example shows how to start a two-node Operational Insights cluster
 These instructions assume the following:
 
 1. Docker installed and running
-1. No existing containers named `versitygw`, `oi1`, or `oi2`
+1. No existing containers named `versitygw`, `insights1`, or `insights2`
 1. No services running on ports `8091`, `8095`, `9091`, or `9095`
 
 ### 1. Create a Docker network
@@ -118,36 +118,36 @@ These instructions assume the following:
 Create a user-defined network so the containers can talk to each other by name.
 
 ```bash
-docker network create oi-net
+docker network create insights-net
 ```
 
 ### 2. Start Versity S3 Gateway
 
-Start the gateway with its data on the `oi-s3-data` named volume, then create a bucket called `oi-storage`.
+Start the gateway with its data on the `insights-s3-data` named volume, then create a bucket called `insights-storage`.
 
 ```bash
-docker run -d --name versitygw --network oi-net -v oi-s3-data:/data \
-       versity/versitygw --access oiadmin --secret oipassword posix /data
+docker run -d --name versitygw --network insights-net -v insights-s3-data:/data \
+       versity/versitygw --access insightsadmin --secret insightspassword posix /data
 
-docker exec versitygw versitygw admin --access oiadmin --secret oipassword \
-       --endpoint-url http://localhost:7070 create-bucket --bucket oi-storage --owner oiadmin
+docker exec versitygw versitygw admin --access insightsadmin --secret insightspassword \
+       --endpoint-url http://localhost:7070 create-bucket --bucket insights-storage --owner insightsadmin
 ```
 
 ### 3. Start the first Operational Insights node
 
-Run the first node (`oi1`) with host and port mappings for the Couchbase Web Console and Analytics service.
+Run the first node (`insights1`) with host and port mappings for the Couchbase Web Console and Analytics service.
 
 ```bash
-docker run -d --name oi1 --network oi-net --hostname oi1.example.com --network-alias oi1.example.com \
+docker run -d --name insights1 --network insights-net --hostname insights1.example.com --network-alias insights1.example.com \
        -p 8091:8091 -p 8095:8095 couchbase/operational-insights:3.0.0
 ```
 
 ### 4. Start the second Operational Insights node
 
-Run the second node (`oi2`) with its own mapped ports so you can access it separately from `oi1`.
+Run the second node (`insights2`) with its own mapped ports so you can access it separately from `insights1`.
 
 ```bash
-docker run -d --name oi2 --network oi-net --hostname oi2.example.com --network-alias oi2.example.com \
+docker run -d --name insights2 --network insights-net --hostname insights2.example.com --network-alias insights2.example.com \
        -p 9091:8091 -p 9095:8095 couchbase/operational-insights:3.0.0
 ```
 
@@ -163,20 +163,20 @@ $ curl http://localhost:8091/pools/default
 
 ### 6. Initialize the nodes
 
-Initialize `oi1` and `oi2` nodes with hostnames and admin credentials.
+Initialize `insights1` and `insights2` nodes with hostnames and admin credentials.
 
 ```bash
-docker exec oi1 couchbase-cli node-init \
+docker exec insights1 couchbase-cli node-init \
   --cluster http://localhost:8091 \
   --username Administrator \
   --password password \
-  --node-init-hostname oi1.example.com
+  --node-init-hostname insights1.example.com
 
-docker exec oi2 couchbase-cli node-init \
+docker exec insights2 couchbase-cli node-init \
   --cluster http://localhost:8091 \
   --username Administrator \
   --password password \
-  --node-init-hostname oi2.example.com
+  --node-init-hostname insights2.example.com
 ```
 
 ### 7. Configure blob storage to use Versity S3 Gateway
@@ -184,14 +184,14 @@ docker exec oi2 couchbase-cli node-init \
 * Configure Operational Insights to use the gateway endpoint and its credentials
 
 ```bash
-docker exec oi1 curl -s -X POST http://localhost:8091/settings/analytics \
+docker exec insights1 curl -s -X POST http://localhost:8091/settings/analytics \
   -d blobStorageScheme=s3 \
-  -d blobStorageBucket=oi-storage \
+  -d blobStorageBucket=insights-storage \
   -d blobStorageRegion=us-east-1 \
   -d blobStorageEndpoint=http://versitygw:7070 \
   -d blobStoragePathStyleAddressing=true \
-  -d blobStorageAccessKeyId=oiadmin \
-  -d blobStorageSecretAccessKey=oipassword
+  -d blobStorageAccessKeyId=insightsadmin \
+  -d blobStorageSecretAccessKey=insightspassword
 ```
 
 The response echoes the settings back, with the secret masked, together with a warning that the HTTP endpoint is insecure. That is expected for a local gateway; use an HTTPS endpoint for anything beyond development.
@@ -201,26 +201,26 @@ The response echoes the settings back, with the secret masked, together with a w
 Initialize the Operational Insights cluster.
 
 ```bash
-docker exec oi1 couchbase-cli cluster-init \
+docker exec insights1 couchbase-cli cluster-init \
   --cluster http://localhost:8091 \
   --cluster-username Administrator \
   --cluster-password password
 ```
 
-### 9. Add the second node (oi2) to the cluster (oi1)
+### 9. Add the second node (insights2) to the cluster (insights1)
 
-Add `oi2` to the cluster, and perform a rebalance.
+Add `insights2` to the cluster, and perform a rebalance.
 
 ```bash
-docker exec oi1 couchbase-cli server-add \
+docker exec insights1 couchbase-cli server-add \
   --cluster http://localhost:8091 \
   --username Administrator \
   --password password \
-  --server-add oi2.example.com \
+  --server-add insights2.example.com \
   --server-add-username Administrator \
   --server-add-password password
   
-docker exec oi1 couchbase-cli rebalance \
+docker exec insights1 couchbase-cli rebalance \
   --cluster http://localhost:8091 \
   --username Administrator \
   --password password
@@ -230,8 +230,8 @@ docker exec oi1 couchbase-cli rebalance \
 
 Once rebalanced, the cluster is ready to be used. Access the UI at:
 
-- **oi1:** [http://localhost:8091](http://localhost:8091)
-- **oi2:** [http://localhost:9091](http://localhost:9091)
+- **insights1:** [http://localhost:8091](http://localhost:8091)
+- **insights2:** [http://localhost:9091](http://localhost:9091)
 
 ## Ports
 
@@ -249,7 +249,7 @@ Data in Operational Insights is stored under `/opt/couchbase/var/lib/couchbase/d
 Example:
 
 ```bash
-docker run -d --name oi1 -v oi1-data:/opt/couchbase/var/lib/couchbase/data   couchbase/operational-insights:3.0.0
+docker run -d --name insights1 -v insights1-data:/opt/couchbase/var/lib/couchbase/data   couchbase/operational-insights:3.0.0
 ```
 
 ## License
