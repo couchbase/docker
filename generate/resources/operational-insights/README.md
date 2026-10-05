@@ -48,7 +48,7 @@ docker exec versitygw versitygw admin --access Administrator --secret password \
        --endpoint-url http://localhost:7070 create-bucket --bucket insights-storage --owner Administrator
 ```
 
-The `insights-s3-data` named volume keeps the stored data across container restarts. Use a named volume rather than a host directory: on macOS, a bind-mounted folder needs extra gateway options and treats object keys as case-insensitive. Replace `Administrator` / `password` with credentials of your own.
+The `insights-s3-data` named volume keeps the stored data when the container is removed or re-created, for example to upgrade the image; without it, the data lives only as long as the container does. The gateway also needs `/data` to exist, which the volume provides: for a throwaway trial without one, serve from a directory already in the image, such as `posix /tmp`. Use a named volume rather than a host directory: on macOS, a bind-mounted folder needs extra gateway options and treats object keys as case-insensitive. Replace `Administrator` / `password` with credentials of your own.
 
 ### 3. Start the Operational Insights container
 Run the Operational Insights container with host and port mappings for the Couchbase Web Console and Operational Insights service, exposed on ports `8091` and `8095` on the host.
@@ -244,7 +244,7 @@ Once rebalanced, the cluster is ready to be used. Access the UI at:
 
 ## Volumes
 
-Data in Operational Insights is stored under `/opt/couchbase/var/lib/couchbase/data`. For persistent deployments, mount a Docker volume or host directory to this path.
+Data in Operational Insights is stored under `/opt/couchbase/var/lib/couchbase/data`. A volume is optional for a quick trial, but needed if you want the data to survive re-creating the container, for example to upgrade the image. Without a named volume, Docker gives each new container a fresh, empty anonymous volume, and the old data is left orphaned. For persistent deployments, mount a named Docker volume or host directory to this path.
 
 Example:
 
