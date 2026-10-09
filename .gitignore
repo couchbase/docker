@@ -8,3 +8,4 @@ auto-save-list
 tramp
 .\#*
 generate/generator/generator
+.DS_Store
