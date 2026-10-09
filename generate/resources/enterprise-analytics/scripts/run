@@ -9,25 +9,23 @@ unset HOME
 exec 2>&1
 
 # Create directories where couchbase stores its data
-cd /opt/enterprise-analytics
-mkdir -p var/lib/couchbase \
-         var/lib/couchbase/config \
-         var/lib/couchbase/data \
-         var/lib/couchbase/stats \
-         var/lib/couchbase/logs \
-         var/lib/moxi
+cd /opt/enterprise-analytics/var/lib/couchbase
+mkdir -p config \
+         data \
+         stats \
+         logs
 
-# If container is running as root, ensure contents of /opt/enterprise-analytics/var are
+# If container is running as root, ensure contents of the data directory are
 # owned by the 'couchbase' user. If running as 'couchbase', don't attempt to
 # claim ownership, but instead warn when encountering unwritable paths.
 # Skip "inbox" as it may contain readonly-mounted things like k8s certs.
 container_user=$(whoami)
 if [ "${container_user}" = "root" ]; then
-    find var -path var/lib/couchbase/inbox -prune -o -print0 | \
+    find . -path ./inbox -prune -o -print0 | \
       xargs -0 chown --no-dereference couchbase:couchbase
 else
-    find var -path var/lib/couchbase/inbox -prune -o \! -writable -print0 | \
-      xargs -0 -I {} echo "Warning: '/opt/enterprise-analytics/{}' is not writable by user '${container_user}'"
+    find . -path ./inbox -prune -o \! -writable -print0 | \
+      xargs -0 -I {} echo "Warning: '/opt/enterprise-analytics/var/lib/couchbase/{}' is not writable by user '${container_user}'"
 fi
 unset container_user
 
