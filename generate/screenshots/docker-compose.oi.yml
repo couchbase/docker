@@ -1,0 +1,37 @@
+services:
+  # Throwaway gateway: serves from /tmp, which already exists in the image, so
+  # the stack needs no volume and every run starts with an empty bucket. The
+  # bucket is created from inside the gateway container rather than by a
+  # one-shot service, because --exit-code-from implies
+  # --abort-on-container-exit and would stop the stack when that service ended.
+  versitygw:
+    image: versity/versitygw
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        versitygw --access Administrator --secret password posix /tmp &
+        until versitygw admin --access Administrator --secret password \
+            --endpoint-url http://localhost:7070 \
+            create-bucket --bucket insights-storage --owner Administrator; do
+          sleep 1
+        done
+        wait
+  operational-insights:
+    image: ${IMAGE:-couchbase/operational-insights}:${TAG}
+    depends_on:
+      - versitygw
+  robot:
+    build: robot-oi
+    environment:
+      - OI_HOST=operational-insights
+      - S3_ENDPOINT=http://versitygw:7070
+      - S3_BUCKET=insights-storage
+      - S3_ACCESS_KEY=Administrator
+      - S3_SECRET_KEY=password
+      - CLUSTER_NAME=insights-cluster
+      - OI_USER=Administrator
+      - OI_PASS=password
+    volumes:
+      - ./output/oi:/output
+    depends_on:
+      - operational-insights
