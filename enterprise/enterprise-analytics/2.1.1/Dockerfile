@@ -89,6 +89,36 @@ RUN set -x \
     && ln -s dummy.sh /usr/local/bin/vgdisplay \
     && ln -s dummy.sh /usr/local/bin/pvdisplay
 
+# Replace the bundled Python certifi CA bundle with a pinned Mozilla bundle
+# from curl.se, bumping certifi's version to match and keeping its dist-info
+# RECORD valid
+ARG CACERT_DATE=2026-10-20
+ARG CACERT_SHA256=796f1389bfea13c0ed78f663b765baaff54a508e5483786bd6ece73c5e3e3cbe
+RUN set -ex \
+    && PYTHON_LIB_DIR=$(find /opt/enterprise-analytics/lib/python/interp/lib -mindepth 1 -maxdepth 1 -type d -name "python3.*") \
+    && [ $(echo "${PYTHON_LIB_DIR}" | wc -l) -eq 1 ] \
+    && cd "${PYTHON_LIB_DIR}/site-packages" \
+    && OLD_DIST_INFO=$(ls -d certifi-*.dist-info) \
+    && OLD_VERSION=$(sed -n 's/^Version: //p' "${OLD_DIST_INFO}/METADATA") \
+    && wget -q https://curl.se/ca/cacert-${CACERT_DATE}.pem -O certifi/cacert.pem \
+    && echo "${CACERT_SHA256}  certifi/cacert.pem" | sha256sum -c - \
+    && VERSION=$(date -d "${CACERT_DATE}" +"%Y.%-m.%-d") \
+    && PADDED_VERSION=$(date -d "${CACERT_DATE}" +"%Y.%m.%d") \
+    && [ "$(printf '%s\n%s\n' "${OLD_VERSION}" "${VERSION}" | sort -V | tail -1)" = "${VERSION}" ] \
+    && DIST_INFO="certifi-${VERSION}.dist-info" \
+    && if [ "${OLD_DIST_INFO}" != "${DIST_INFO}" ]; then \
+           mv "${OLD_DIST_INFO}" "${DIST_INFO}"; \
+           sed -i "s|^${OLD_DIST_INFO}/|${DIST_INFO}/|" "${DIST_INFO}/RECORD"; \
+       fi \
+    && sed -i -E "s/^Version: .*/Version: ${VERSION}/" "${DIST_INFO}/METADATA" \
+    && sed -i -E "s/^__version__ = .*/__version__ = \"${PADDED_VERSION}\"/" certifi/__init__.py \
+    && for f in certifi/cacert.pem certifi/__init__.py "${DIST_INFO}/METADATA"; do \
+           hash=$(sha256sum "$f" | cut -d' ' -f1 | perl -ne 'chomp; print pack("H*", $_)' \
+                  | base64 | tr '+/' '-_' | tr -d '=\n'); \
+           size=$(stat -c %s "$f"); \
+           sed -i "s|^$f,.*|$f,sha256=${hash},${size}|" "${DIST_INFO}/RECORD"; \
+       done
+
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
