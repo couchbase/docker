@@ -223,13 +223,28 @@ Once rebalanced, the cluster is ready to be used. Access the UI at:
 
 ## Volumes
 
-Data in Enterprise Analytics is stored under `/opt/enterprise-analytics/var/lib/couchbase/data`. For persistent deployments, mount a Docker volume or host directory to this path.
+Enterprise Analytics writes all persistent, node-specific data, including configuration, data and logs, under `/opt/enterprise-analytics/var`. For persistent deployments, mount a Docker volume or host directory to this path. When upgrading, start the new container with the same `/opt/enterprise-analytics/var` mount rather than `--volumes-from`, which also carries over the old version's `/opt/enterprise-analytics/etc` volume. With Docker Compose, run `docker compose up -d --renew-anon-volumes` after changing the image version, for the same reason. This also discards an anonymous `/opt/enterprise-analytics/var` volume, so map it to a named volume or host directory first.
 
 Example:
 
 ```bash
-docker run -d --name ea1 -v ea1-data:/opt/enterprise-analytics/var/lib/couchbase/data   couchbase/enterprise-analytics:2.0.0
+docker run -d --name ea1 -v ea1-data:/opt/enterprise-analytics/var couchbase/enterprise-analytics:2.0.0
 ```
+
+### Read-only root filesystem
+
+Images from Enterprise Analytics X.Y.Z onwards can run with a read-only root filesystem, as long as `/run` and `/tmp` are writable. Earlier images fail to start.
+
+```bash
+docker run -d --name ea1 --read-only --tmpfs /run --tmpfs /tmp -v ea1-data:/opt/enterprise-analytics/var couchbase/enterprise-analytics:X.Y.Z
+```
+
+This works as root or as the `couchbase` user (UID 1000), but not as an arbitrary UID. `/opt/enterprise-analytics/var` and `/opt/enterprise-analytics/etc` are declared as volumes. Keep the following in mind:
+
+- `/opt/enterprise-analytics/etc` must start out with the image's contents, so use a Docker named or anonymous volume for it, never an empty bind mount or volume. Don't reuse an `etc` volume with a different image version; see the upgrade note under Volumes.
+- Build images derived from this one with BuildKit if they `RUN` commands that modify `/opt/enterprise-analytics/etc`. The legacy builder discards `RUN` changes to volume paths.
+- Don't add read-only `.ini` files under `/opt/enterprise-analytics/etc/couchdb/local.d`. Enterprise Analytics writes to the last of these files at startup.
+- Kubernetes ignores declared volumes. Mount an `emptyDir` at `/run` and `/tmp`, and put `/opt/enterprise-analytics/etc` and `/opt/enterprise-analytics/var/lib/couchbase` on volumes. Kubernetes volumes start empty, so copy the image's `/opt/enterprise-analytics/etc` into the `etc` volume before the server starts, for example with an init container.
 
 ## License
 

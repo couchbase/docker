@@ -41,15 +41,26 @@ overridePort "ssl_proxy_upstream_port"
 
 [[ "$1" == "enterprise-analytics" ]] && {
 
-    # Create the supervise directory in /run for runit
-    mkdir -p /run/enterprise-analytics/supervise
-    chown -R couchbase:couchbase /run/enterprise-analytics
+    # runit's supervise directory; /run may be an empty tmpfs
+    supervise=/run/enterprise-analytics/supervise
+    mkdir -p ${supervise} 2>/dev/null || true
+    if [ ! -w ${supervise} ]; then
+        echo "${supervise} is not writable by the container user"
+        echo "Aborting: /run must be writable, e.g. --tmpfs /run"
+        exit 1
+    fi
 
     if [ "$(whoami)" = "couchbase" ]; then
-        # Ensure that /opt/enterprise-analytics/var is owned by user 'couchbase' and
-        # is writable
-        if [ ! -w /opt/enterprise-analytics/var -o \
-            $(find /opt/enterprise-analytics/var -maxdepth 0 -printf '%u') != "couchbase" ]; then
+        datadir=/opt/enterprise-analytics/var/lib/couchbase
+        if [ -d ${datadir} ]; then
+            # May be a root-owned, group-writable volume (k8s fsGroup)
+            if [ ! -w ${datadir} ]; then
+                echo "${datadir} is not writable by UID 1000"
+                echo "Aborting as Enterprise Analytics will likely not run"
+                exit 1
+            fi
+        elif [ ! -w /opt/enterprise-analytics/var -o \
+            "$(find /opt/enterprise-analytics/var -maxdepth 0 -printf '%u')" != "couchbase" ]; then
             echo "/opt/enterprise-analytics/var is not owned and writable by UID 1000"
             echo "Aborting as Enterprise Analytics will likely not run"
             exit 1

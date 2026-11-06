@@ -41,15 +41,26 @@ overridePort "ssl_proxy_upstream_port"
 
 [[ "$1" == "couchbase-server" ]] && {
 
-    # Create the supervise directory in /run for runit
-    mkdir -p /run/couchbase-server/supervise
-    chown -R couchbase:couchbase /run/couchbase-server
+    # runit's supervise directory; /run may be an empty tmpfs
+    supervise=/run/couchbase-server/supervise
+    mkdir -p ${supervise} 2>/dev/null || true
+    if [ ! -w ${supervise} ]; then
+        echo "${supervise} is not writable by the container user"
+        echo "Aborting: /run must be writable, e.g. --tmpfs /run"
+        exit 1
+    fi
 
     if [ "$(whoami)" = "couchbase" ]; then
-        # Ensure that /opt/couchbase/var is owned by user 'couchbase' and
-        # is writable
-        if [ ! -w /opt/couchbase/var -o \
-            $(find /opt/couchbase/var -maxdepth 0 -printf '%u') != "couchbase" ]; then
+        datadir=/opt/couchbase/var/lib/couchbase
+        if [ -d ${datadir} ]; then
+            # May be a root-owned, group-writable volume (k8s fsGroup)
+            if [ ! -w ${datadir} ]; then
+                echo "${datadir} is not writable by UID 1000"
+                echo "Aborting as Couchbase Server will likely not run"
+                exit 1
+            fi
+        elif [ ! -w /opt/couchbase/var -o \
+            "$(find /opt/couchbase/var -maxdepth 0 -printf '%u')" != "couchbase" ]; then
             echo "/opt/couchbase/var is not owned and writable by UID 1000"
             echo "Aborting as Couchbase Server will likely not run"
             exit 1

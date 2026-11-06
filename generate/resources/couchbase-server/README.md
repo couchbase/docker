@@ -78,13 +78,24 @@ Official Couchbase Server images on Docker Hub are based on the latest supported
 
 **Map Couchbase Node Specific Data to a Local Folder :** A Couchbase Server Docker container will write all persistent and node-specific data under the directory `/opt/couchbase/var` by default. It is recommended to map this directory to a directory on the host file system using the `-v` option to `docker run` to get persistence and performance.
 
--	Persistence: Storing `/opt/couchbase/var` outside the container with the `-v` option allows you to delete the container and recreate it later without losing the data in Couchbase Server. You can even update to a container running a later release/version of Couchbase Server without losing your data.
+-	Persistence: Storing `/opt/couchbase/var` outside the container with the `-v` option allows you to delete the container and recreate it later without losing the data in Couchbase Server. You can even update to a container running a later release/version of Couchbase Server without losing your data. When you do, start the new container with the same `/opt/couchbase/var` mount rather than `--volumes-from`, which also carries over the old version's `/opt/couchbase/etc` volume. With Docker Compose, run `docker compose up -d --renew-anon-volumes` after changing the image version, for the same reason. This also discards an anonymous `/opt/couchbase/var` volume, so map it to a named volume or host directory first.
 
 -	Performance: In a standard Docker environment using a union file system, leaving `/opt/couchbase/var` inside the container results in some amount of performance degradation.
 
 NOTE for SELinux : If you have SELinux enabled, mounting the host volumes in a container requires an extra step. Assuming you are mounting the `~/couchbase` directory on the host file system, you need to run the following command once before running your first container on that host:
 
 `mkdir ~/couchbase && chcon -Rt svirt_sandbox_file_t ~/couchbase`
+
+**Running with a Read-Only Root Filesystem :** Images from Couchbase Server X.Y.Z onwards can run with a read-only root filesystem, as long as `/run` and `/tmp` are writable. Earlier images fail to start.
+
+`docker run -d --name db --read-only --tmpfs /run --tmpfs /tmp -p 8091-8097:8091-8097 -p 9123:9123 -p 11207:11207 -p 11210:11210 -p 11280:11280 -p 18091-18097:18091-18097 couchbase`
+
+This works as root or as the `couchbase` user (UID 1000), but not as an arbitrary UID. `/opt/couchbase/var` and `/opt/couchbase/etc` are declared as volumes. Keep the following in mind:
+
+-	`/opt/couchbase/etc` must start out with the image's contents, so use a Docker named or anonymous volume for it, never an empty bind mount or volume. Don't reuse an `etc` volume with a different image version; see the upgrade note above.
+-	Build images derived from this one with BuildKit if they `RUN` commands that modify `/opt/couchbase/etc`. The legacy builder discards `RUN` changes to volume paths.
+-	Don't add read-only `.ini` files under `/opt/couchbase/etc/couchdb/local.d`. Couchbase Server writes to the last of these files at startup.
+-	Kubernetes ignores declared volumes. Mount an `emptyDir` at `/run` and `/tmp`, and put `/opt/couchbase/etc` and `/opt/couchbase/var/lib/couchbase` on volumes. Kubernetes volumes start empty, so copy the image's `/opt/couchbase/etc` into the `etc` volume before the server starts, for example with an init container.
 
 **Increase ULIMIT in Production Deployments :** Couchbase Server normally expects the following changes to ulimits:
 
