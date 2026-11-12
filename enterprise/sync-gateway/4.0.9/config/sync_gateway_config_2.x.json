@@ -1,0 +1,19 @@
+{
+	"logging": {
+		"console": {
+			"enabled": true,
+			"log_level": "info",
+			"log_keys": ["HTTP"]
+		}
+	},
+	"interface": ":4984",
+	"databases": {
+		"db": {
+			"server": "walrus:/opt/couchbase-sync-gateway/data",
+			"users": {
+				"GUEST": {"disabled": false, "admin_channels": ["*"] }
+			}
+		}
+	}
+}
+
