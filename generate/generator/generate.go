@@ -326,18 +326,19 @@ func generateDockerfile(variant DockerfileVariant) error {
 	if variant.Product == ProductServer {
 		// template parameters
 		params = map[string]any{
-			"CB_VERSION":         variant.VersionWithSubstitutions(),
-			"CB_PACKAGE":         variant.serverPackageFile(Archgeneric),
-			"CB_PACKAGE_NAME":    variant.serverPackageName(),
-			"CB_EXTRA_DEPS":      variant.extraDependencies(),
-			"CB_SHA256_arm64":    variant.getSHA256(Archarm64),
-			"CB_SHA256_amd64":    variant.getSHA256(Archamd64),
-			"CB_RELEASE_URL":     variant.releaseURL(),
-			"DOCKER_BASE_IMAGE":  variant.dockerBaseImage(),
-			"PKG_COMMAND":        variant.serverPkgCommand(),
-			"SYSTEMD_WORKAROUND": variant.systemdWorkaround(),
-			"CB_MULTIARCH":       len(variant.Arches) > 1,
-			"CB_SKIP_CHECKSUM":   "false",
+			"CB_VERSION":           variant.VersionWithSubstitutions(),
+			"CB_PACKAGE":           variant.serverPackageFile(Archgeneric),
+			"CB_PACKAGE_NAME":      variant.serverPackageName(),
+			"CB_EXTRA_DEPS":        variant.extraDependencies(),
+			"CB_SHA256_arm64":      variant.getSHA256(Archarm64),
+			"CB_SHA256_amd64":      variant.getSHA256(Archamd64),
+			"CB_RELEASE_URL":       variant.releaseURL(),
+			"DOCKER_BASE_IMAGE":    variant.dockerBaseImage(),
+			"DOCKER_RUNTIME_IMAGE": variant.dockerRuntimeImage(),
+			"PKG_COMMAND":          variant.serverPkgCommand(),
+			"SYSTEMD_WORKAROUND":   variant.systemdWorkaround(),
+			"CB_MULTIARCH":         len(variant.Arches) > 1,
+			"CB_SKIP_CHECKSUM":     "false",
 		}
 
 	} else if variant.Product == ProductSyncGw {
@@ -614,6 +615,9 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 	case ProductEdgeServer:
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	case ProductServer:
+		if variant.usesHardenedBaseImage() {
+			return dhiBuildBase
+		}
 		return fmt.Sprintf("ubuntu:%s", variant.ubuntuVersion())
 	case ProductSandbox:
 		return fmt.Sprintf("couchbase/server:%s", variant.Version)
@@ -627,6 +631,36 @@ func (variant DockerfileVariant) dockerBaseImage() string {
 		log.Printf("Failed %v", variant.Product)
 		panic("Unexpected product")
 	}
+}
+
+const dhiBuildBase = "dhi.io/debian-base:trixie-dev"
+
+// dhiRuntimeBase is the plain runtime Docker Hardened Image used for
+// the final stage: no package manager, non-root by default.
+const dhiRuntimeBase = "dhi.io/debian-base:trixie"
+
+// dockerRuntimeImage returns the runtime-stage base image for multi-stage
+// Dockerfiles, or "" for variants that stay single-stage.
+func (variant DockerfileVariant) dockerRuntimeImage() string {
+	if variant.usesHardenedBaseImage() {
+		return dhiRuntimeBase
+	}
+	return ""
+}
+
+func (variant DockerfileVariant) usesHardenedBaseImage() bool {
+	if variant.Product != ProductServer {
+		return false
+	}
+	v, err := version.NewVersion(variant.Version)
+	if err != nil {
+		log.Fatalf("go-version failed to parse %v", variant.Version)
+	}
+	c, err := version.NewConstraint(">= 7.6.2, < 8.1.0")
+	if err != nil {
+		log.Fatalf("Error creating hardened base image constraint: %v", err)
+	}
+	return c.Check(v)
 }
 
 func (variant DockerfileVariant) serverPkgCommand() string {
