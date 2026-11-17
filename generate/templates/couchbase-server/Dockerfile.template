@@ -47,7 +47,9 @@ RUN set -x \
     && git clone https://github.com/couchbasedeps/runit \
     && cd runit \
     && git checkout edb631449d89d5b452a5992c6ffaa1e384fea697 \
+{{- if .DOCKER_RUNTIME_IMAGE }}
     && sed -i '1 s/$/ -Wno-error=implicit-function-declaration -Wno-error=incompatible-pointer-types/' src/conf-cc \
+{{- end }}
     && ./package/compile \
     && cp ./command/* /sbin/ \
 {{- if .DOCKER_RUNTIME_IMAGE }}

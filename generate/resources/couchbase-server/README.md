@@ -82,6 +82,12 @@ Official Couchbase Server images on Docker Hub are based on the latest supported
 
 -	Performance: In a standard Docker environment using a union file system, leaving `/opt/couchbase/var` inside the container results in some amount of performance degradation.
 
+NOTE for hardened images : Recent images (built on Docker Hardened Images) run as the non-root user `couchbase` (UID/GID 1000) by default. If you bind-mount a host directory, it must be owned and writable by UID 1000, otherwise the container will abort at startup. Docker creates a missing host directory as root, so create it beforehand and set ownership:
+
+`mkdir -p ~/couchbase && sudo chown -R 1000:1000 ~/couchbase`
+
+If you are migrating an existing mount that was written by an earlier image (which ran as root), run the same `chown -R 1000:1000` on it before starting the new container. Named Docker volumes need no preparation.
+
 NOTE for SELinux : If you have SELinux enabled, mounting the host volumes in a container requires an extra step. Assuming you are mounting the `~/couchbase` directory on the host file system, you need to run the following command once before running your first container on that host:
 
 `mkdir ~/couchbase && chcon -Rt svirt_sandbox_file_t ~/couchbase`
