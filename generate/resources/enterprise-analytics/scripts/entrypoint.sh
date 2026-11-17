@@ -60,6 +60,15 @@ overridePort "ssl_proxy_upstream_port"
 
     echo "Starting Enterprise Analytics -- Web UI available at http://<ip>:$restPortValue"
     echo "and logs available in /opt/enterprise-analytics/var/lib/couchbase/logs"
+
+    # runsvdir runs the service scripts as root when started as root, so make
+    # sure nothing under /etc/service is writable by anyone else (e.g. the
+    # couchbase-owned supervise directory used for non-root starts).
+    if [ "$(id -u)" = "0" ]; then
+        chown -R --no-dereference root:root /etc/service
+        find /etc/service ! -type l -exec chmod go-w {} +
+    fi
+
     exec runsvdir -P /etc/service
 }
 
