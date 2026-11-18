@@ -656,7 +656,11 @@ func (variant DockerfileVariant) usesHardenedBaseImage() bool {
 	if err != nil {
 		log.Fatalf("go-version failed to parse %v", variant.Version)
 	}
-	c, err := version.NewConstraint(">= 7.6.2, < 8.1.0")
+	// 7.6.2 is the first Server version built on Ubuntu 24.04 (see
+	// ubuntuVersion); older releases keep their existing base image. There is
+	// no upper bound so that 8.1 and later releases are hardened by default
+	// (CBD-6651).
+	c, err := version.NewConstraint(">= 7.6.2")
 	if err != nil {
 		log.Fatalf("Error creating hardened base image constraint: %v", err)
 	}
