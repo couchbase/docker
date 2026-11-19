@@ -1,4 +1,9 @@
-FROM {{ .DOCKER_BASE_IMAGE }}
+{{ if .DOCKER_RUNTIME_IMAGE -}}
+# Runtime base, declared first so the builder stage can see what it already has
+FROM {{ .DOCKER_RUNTIME_IMAGE }} AS runtime
+
+{{ end -}}
+FROM {{ .DOCKER_BASE_IMAGE }}{{ if .DOCKER_RUNTIME_IMAGE }} AS builder{{ end }}
 
 LABEL maintainer="docker@couchbase.com"
 
@@ -8,6 +13,14 @@ ARG CLEANUP_COMMAND="yum clean -q all"
 {{ else -}}
 ARG UPDATE_COMMAND="apt-get update -y -q"
 ARG CLEANUP_COMMAND="rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+{{- end }}
+{{- if .DOCKER_RUNTIME_IMAGE }}
+
+# Record the packages in the base image so the final stage can copy across
+# only what is installed below (kept outside /tmp, which CLEANUP_COMMAND wipes)
+RUN dpkg-query -W -f='${Package}\n' | sort > /root/pkgs.before
+# Copy of the runtime image's filesystem, used to copy across only what it lacks
+COPY --from=runtime / /runtime-base
 {{- end }}
 
 # Install dependencies:
@@ -34,8 +47,15 @@ RUN set -x \
     && git clone https://github.com/couchbasedeps/runit \
     && cd runit \
     && git checkout edb631449d89d5b452a5992c6ffaa1e384fea697 \
+{{- if .DOCKER_RUNTIME_IMAGE }}
+    && sed -i '1 s/$/ -Wno-error=implicit-function-declaration -Wno-error=incompatible-pointer-types/' src/conf-cc \
+{{- end }}
     && ./package/compile \
     && cp ./command/* /sbin/ \
+{{- if .DOCKER_RUNTIME_IMAGE }}
+    && mkdir -p /rootfs/usr/sbin \
+    && cp ./command/* /rootfs/usr/sbin/ \
+{{- end }}
     && apt-get purge -y --autoremove gcc git make \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /usr/src/runit
@@ -147,6 +167,60 @@ RUN set -ex \
             {{ .PKG_COMMAND }} autoremove -y; \
             ${CLEANUP_COMMAND}; \
         fi
+{{- if .DOCKER_RUNTIME_IMAGE }}
+
+# Collect the files of every package installed above (plus grep and awk, which
+# entrypoint.sh needs) into /rootfs, resolving merged-/usr symlinked paths
+RUN set -e \
+    && dpkg-query -W -f='${Package}\n' | sort > /root/pkgs.after \
+    && awkpkg=$(dpkg -S "$(readlink -f /usr/bin/awk)" | cut -d: -f1 | head -1) \
+    && pkgs="$(comm -13 /root/pkgs.before /root/pkgs.after | grep -v '^couchbase-server') grep ${awkpkg}" \
+    && for p in ${pkgs}; do dpkg -L "$p"; done | sort -u | while read -r f; do \
+         { [ -f "$f" ] || [ -L "$f" ]; } || continue; \
+         nd=$(readlink -f "$(dirname "$f")"); \
+         mkdir -p "/rootfs${nd}"; \
+         cp -a "${nd}/$(basename "$f")" "/rootfs${nd}/"; \
+       done \
+    && for f in /usr/bin/getent /usr/bin/dmesg /usr/bin/lsblk; do \
+         [ -e "/runtime-base${f}" ] || { mkdir -p "/rootfs$(dirname "$f")"; cp -a "$f" "/rootfs$(dirname "$f")/"; }; \
+       done \
+    && find /rootfs -type f \( -perm -u+x -o -name '*.so*' \) -exec ldd {} + 2>/dev/null \
+       | awk '/=>/ {print $3}' | sort -u | while read -r lib; do \
+         [ -e "$lib" ] || continue; \
+         lib="$(readlink -f "$(dirname "$lib")")/$(basename "$lib")"; \
+         real=$(readlink -f "$lib"); \
+         for p in "$lib" "$real"; do \
+           [ -e "/runtime-base${p}" ] || [ -e "/rootfs${p}" ] || { mkdir -p "/rootfs$(dirname "$p")"; cp -a "$p" "/rootfs$(dirname "$p")/"; }; \
+         done; \
+       done
+
+# Final stage: hardened runtime image with no package manager
+FROM runtime
+LABEL maintainer="docker@couchbase.com"
+ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
+USER 0
+
+COPY --from=builder /rootfs/ /
+COPY --from=builder /opt/couchbase /opt/couchbase
+COPY --from=builder /etc/service /etc/service
+COPY --from=builder /usr/local/bin/dummy.sh /usr/local/bin/dummy.sh
+
+# The runtime image has no root entry and no couchbase user; entrypoint.sh and
+# the runit run script call whoami and chpst, which need both
+RUN set -x \
+    && echo 'root:x:0:' >> /etc/group \
+    && echo 'root:x:0:0:root:/root:/bin/sh' >> /etc/passwd \
+    && echo 'couchbase:x:1000:' >> /etc/group \
+    && echo 'couchbase:x:1000:1000::/home/couchbase:/bin/sh' >> /etc/passwd \
+    && mkdir -p /home/couchbase \
+    && chown 1000:1000 /home/couchbase \
+    && ln -s mawk /usr/bin/awk \
+    && ln -s sar.sysstat /usr/bin/sar \
+    && ln -s dummy.sh /usr/local/bin/iptables-save \
+    && ln -s dummy.sh /usr/local/bin/lvdisplay \
+    && ln -s dummy.sh /usr/local/bin/vgdisplay \
+    && ln -s dummy.sh /usr/local/bin/pvdisplay
+{{- end }}
 
 # Add bootstrap script
 COPY scripts/entrypoint.sh /
@@ -199,3 +273,7 @@ EXPOSE 8091 \
        18097
 
 VOLUME /opt/couchbase/var
+{{- if .DOCKER_RUNTIME_IMAGE }}
+
+USER 1000
+{{- end }}
