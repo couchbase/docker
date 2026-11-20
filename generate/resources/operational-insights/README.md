@@ -35,7 +35,7 @@ To quickly get started with Operational Insights, you can run an instance using 
 These instructions assume the following:
 1. Docker installed and running
 1. A host that meets the container requirements described under "Container Requirements" below
-1. No services running on ports `8091` or `8095`
+1. No services running on ports `8091` or `8095` (or `7070` or `8080` if using Versity S3 Gateway)
 1. No existing containers named `insights` (or `versitygw` if using Versity S3 Gateway)
 1. No existing Docker network named `insights-net`
 
@@ -52,14 +52,24 @@ If you don't have an object store to use as the blob storage backend, you can ru
 Start the gateway, then create a bucket called `insights-storage`:
 
 ```bash
-docker run -d --name versitygw --network insights-net -v insights-s3-data:/data \
-       versity/versitygw --access Administrator --secret password posix /data
+docker run -d --name versitygw --network insights-net \
+       -p 127.0.0.1:7070:7070 -p 127.0.0.1:8080:8080 -v insights-s3-data:/data \
+       versity/versitygw --access Administrator --secret password \
+       --webui :8080 --webui-gateways http://localhost:7070 \
+       --cors-allow-origin http://localhost:8080 posix /data
 
 docker exec versitygw versitygw admin --access Administrator --secret password \
        --endpoint-url http://localhost:7070 create-bucket --bucket insights-storage --owner Administrator
 ```
 
 The `insights-s3-data` named volume keeps the stored data when the container is removed or re-created, for example to upgrade the image; without it, the data lives only as long as the container does. The gateway also needs `/data` to exist, which the volume provides: for a throwaway trial without one, serve from a directory already in the image, such as `posix /tmp`. Use a named volume rather than a host directory: on macOS, a bind-mounted folder needs extra gateway options and treats object keys as case-insensitive. Replace `Administrator` / `password` with credentials of your own.
+
+The gateway serves the S3 API on port `7070` and a web UI on port `8080`, both reachable from this host only. Operational Insights reaches the S3 API over the Docker network as `http://versitygw:7070`, while your browser and any S3 tools on the host use `http://localhost:7070`:
+
+* `--webui-gateways` tells the web UI which S3 endpoint to sign in to. Without it, the web UI offers the container's internal address, which a browser cannot reach under Docker Desktop, and sign-in does not complete.
+* `--cors-allow-origin` lets the web UI, served from `http://localhost:8080`, call the S3 API on the other port. Open the web UI at exactly that address; `http://127.0.0.1:8080` is a different origin, and its requests are refused.
+
+Sign in to the web UI at http://localhost:8080 with the access key `Administrator` and the secret key `password` to create buckets and to upload or download files, the same way you would with Amazon S3. See "Querying your own files" below.
 
 ### 3. Start the Operational Insights container
 Run the Operational Insights container with host and port mappings for the Couchbase Web Console and Operational Insights service, exposed on ports `8091` and `8095` on the host.
@@ -112,7 +122,47 @@ You can now run a sample query to verify that everything is working correctly. F
 
 ![Sample query](https://d774lla4im6mk.cloudfront.net/oi/3.0.0/sample-query.png)
 
-### 7. Next steps
+### 7. Querying your own files
+
+If you started Versity S3 Gateway, its web UI is a simple way to share files between your computer and Operational Insights.
+
+1. Open http://localhost:8080 and sign in with the access key `Administrator` and the secret key `password`.
+2. Create a bucket for your data, such as `my-data`, and upload your JSON, CSV, or Parquet files into a folder in it, such as `horses/`. Keep your files out of the `insights-storage` bucket, which Operational Insights uses for its own storage.
+3. Create a link to the gateway with the [Links REST API](https://docs.couchbase.com/operational-insights/current/analytics-rest-links/index.html):
+
+```bash
+curl -X POST -u Administrator:password \
+  http://localhost:8095/api/v1/link/gatewayLink \
+  -d type=s3 \
+  -d accessKeyId=Administrator \
+  -d secretAccessKey=password \
+  -d region=us-east-1 \
+  -d serviceEndpoint=http://versitygw:7070 \
+  -d pathStyleAddressing=true
+```
+
+The link uses the gateway's address on the Docker network, `http://versitygw:7070`, not the `localhost` address your browser uses, and needs path-style addressing for the same reason as the blob storage settings.
+
+Alternatively, create the link in the UI. In the Workbench, next to **Links**, click **+ new link** and fill in the dialog:
+
+   - **Link Name**: `gatewayLink`
+   - **Link Type**: **S3**
+   - **Region**: `us-east-1`
+   - **Endpoint**: `http://versitygw:7070`
+   - **Authentication Method**: **Access Keys**, with the access key ID `Administrator` and the secret access key `password`
+   - Expand **Advanced** and select **Use Path-Style Addressing**. It is off by default, and the link does not work without it.
+   - Click **Save**.
+
+4. In the Workbench, create an external collection over that folder and query it:
+
+```sql
+CREATE EXTERNAL COLLECTION horses ON `my-data` AT gatewayLink
+  PATH "horses/" WITH { "format": "json" };
+
+SELECT * FROM horses;
+```
+
+### 8. Next steps
 
 You can now explore the features of Operational Insights, such as creating views, running more complex queries, and integrating with other data sources.
 
@@ -131,7 +181,7 @@ These instructions assume the following:
 1. A host that meets the container requirements described under "Container Requirements" below
 1. No existing containers named `versitygw`, `insights1`, or `insights2`
 1. No existing Docker network named `insights-net`
-1. No services running on ports `8091`, `8095`, `9091`, or `9095`
+1. No services running on ports `7070`, `8080`, `8091`, `8095`, `9091`, or `9095`
 
 ### 1. Create a Docker network
 
@@ -143,11 +193,14 @@ docker network create insights-net
 
 ### 2. Start Versity S3 Gateway
 
-Start the gateway with its data on the `insights-s3-data` named volume, then create a bucket called `insights-storage`.
+Start the gateway with its data on the `insights-s3-data` named volume and its web UI on http://localhost:8080, then create a bucket called `insights-storage`. The quickstart above explains the web UI options.
 
 ```bash
-docker run -d --name versitygw --network insights-net -v insights-s3-data:/data \
-       versity/versitygw --access Administrator --secret password posix /data
+docker run -d --name versitygw --network insights-net \
+       -p 127.0.0.1:7070:7070 -p 127.0.0.1:8080:8080 -v insights-s3-data:/data \
+       versity/versitygw --access Administrator --secret password \
+       --webui :8080 --webui-gateways http://localhost:7070 \
+       --cors-allow-origin http://localhost:8080 posix /data
 
 docker exec versitygw versitygw admin --access Administrator --secret password \
        --endpoint-url http://localhost:7070 create-bucket --bucket insights-storage --owner Administrator
