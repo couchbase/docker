@@ -58,8 +58,12 @@ overridePort "ssl_proxy_upstream_port"
     # sure nothing under /etc/service is writable by anyone else (e.g. the
     # couchbase-owned supervise directory used for non-root starts).
     if [ "$(id -u)" = "0" ]; then
-        chown -R --no-dereference root:root /etc/service
-        find /etc/service ! -type l -exec chmod go-w {} +
+        if ! chown -R --no-dereference root:root /etc/service \
+            || ! find /etc/service ! -type l -exec chmod go-w {} +; then
+            echo "ERROR: unable to make /etc/service root-owned and not group/other-writable." >&2
+            echo "       Is /etc/service mounted read-only? It must be writable by root at startup." >&2
+            exit 1
+        fi
     fi
 
     exec runsvdir -P /etc/service
