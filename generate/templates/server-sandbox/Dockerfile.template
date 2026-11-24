@@ -1,5 +1,6 @@
 FROM {{ .DOCKER_BASE_IMAGE }}
 
 COPY scripts/configure-node.sh /etc/service/config-couchbase/run
-RUN chown -R couchbase:couchbase /etc/service
+RUN mkdir -p /etc/service/config-couchbase/supervise \
+    && chown couchbase:couchbase /etc/service/config-couchbase/supervise
 COPY scripts/create-index.json /opt/couchbase

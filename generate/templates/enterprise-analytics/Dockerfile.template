@@ -86,12 +86,13 @@ RUN \
 RUN sed -i -e '1 s/$/\/docker/' /opt/enterprise-analytics/VARIANT.txt
 
 # Add runit service script for enterprise-analytics
+# Only the supervise directory is owned by couchbase (needed when the container
+# starts as that user). /etc/service and the run script stay root-owned, since
+# runsvdir executes them as root when the container starts as root.
 COPY scripts/run /etc/service/enterprise-analytics/run
 RUN set -x \
     && mkdir -p /etc/service/enterprise-analytics/supervise \
-    && chown -R couchbase:couchbase \
-                /etc/service \
-                /etc/service/enterprise-analytics/supervise
+    && chown couchbase:couchbase /etc/service/enterprise-analytics/supervise
 
 # Add dummy script for commands invoked by cbcollect_info that
 # make no sense in a Docker container
